@@ -1,0 +1,119 @@
+// Initialize Pi SDK
+Pi.init({
+  version: "2.0",
+  sandbox: true
+});
+
+// Elements
+const loginBtn = document.getElementById("loginBtn");
+const payBtn = document.getElementById("payBtn");
+const userStatus = document.getElementById("userStatus");
+const statusBox = document.getElementById("statusBox");
+
+// Login with Pi
+loginBtn.addEventListener("click", async () => {
+
+  try {
+
+    statusBox.innerText = "Opening Pi authentication...";
+
+    const scopes = ["username", "payments"];
+
+    const auth = await Pi.authenticate(scopes, function(payment) {
+      console.log("Incomplete payment found:", payment);
+    });
+
+    const username = auth.user.username;
+
+    userStatus.innerText = "Logged in: " + username;
+    statusBox.innerText = "Authentication successful";
+
+    // Enable payment button after login
+    payBtn.disabled = false;
+
+  } catch (error) {
+
+    console.error(error);
+    statusBox.innerText = "Authentication failed";
+
+  }
+
+});
+
+
+// Payment creation
+payBtn.addEventListener("click", () => {
+
+  statusBox.innerText = "Creating payment...";
+
+  Pi.createPayment({
+
+    amount: 1,
+    memo: "FinPi Test Payment",
+    metadata: { service: "test-payment" }
+
+  }, {
+
+    // Step 1 — Payment ready for backend approval
+    onReadyForServerApproval: function(paymentId) {
+
+      statusBox.innerText = "Waiting for server approval...";
+
+      fetch("https://your-backend-url.com/approve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ paymentId: paymentId })
+      })
+      .then(res => res.json())
+      .then(data => console.log("Approval response:", data))
+      .catch(err => console.error(err));
+
+    },
+
+
+    // Step 2 — Payment ready for completion
+    onReadyForServerCompletion: function(paymentId, txid) {
+
+      statusBox.innerText = "Completing payment...";
+
+      fetch("https://your-backend-url.com/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          paymentId: paymentId,
+          txid: txid
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log("Completion response:", data);
+        statusBox.innerText = "Payment completed successfully";
+      })
+      .catch(err => console.error(err));
+
+    },
+
+
+    // User cancels payment
+    onCancel: function(paymentId) {
+
+      statusBox.innerText = "Payment cancelled";
+
+    },
+
+
+    // Error during payment
+    onError: function(error, payment) {
+
+      console.error(error);
+      statusBox.innerText = "Payment error occurred";
+
+    }
+
+  });
+
+});
