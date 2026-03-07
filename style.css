@@ -1,23 +1,57 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a; /* dark background */
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    color: #6c4cff; /* purple title */
+    margin-bottom: 15px;
+}
+
+p {
+    color: #cbd5e1; /* soft gray text */
+    font-size: 0.95rem;
+    margin-bottom: 25px;
+}
+
+button {
+    width: 90%;
+    padding: 14px;
+    margin: 12px auto;
+    border-radius: 12px;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: block; /* ensures margin auto works */
+    transition: 0.3s;
+}
+
+/* Pi login button */
 #loginBtn {
     background: #6c4cff;
     color: white;
-    width: 90%;
-    padding: 16px;
-    margin: 12px auto;
-    border-radius: 12px;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
 }
 
+/* Pi payment button */
 #payBtn {
     background: #00c896;
     color: white;
-    width: 90%;
-    padding: 16px;
-    margin: 12px auto;
-    border-radius: 12px;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
+}
+
+/* Hover effect */
+button:hover {
+    opacity: 0.85;
+}
+
+#statusBox {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
 }
