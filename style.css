@@ -1,57 +1,92 @@
-body {
-    font-family: Arial, sans-serif;
-    background: #0f172a; /* dark background */
-    color: white;
-    text-align: center;
-    margin: 0;
-    padding: 20px;
+body{
+font-family: Arial, sans-serif;
+background:#0f172a;
+color:white;
+margin:0;
+padding:0;
 }
 
-h1 {
-    color: #6c4cff; /* purple title */
-    margin-bottom: 15px;
+/* App wrapper */
+.app-container{
+max-width:420px;
+margin:auto;
+padding:20px;
 }
 
-p {
-    color: #cbd5e1; /* soft gray text */
-    font-size: 0.95rem;
-    margin-bottom: 25px;
+/* Header */
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
 }
 
-button {
-    width: 90%;
-    padding: 14px;
-    margin: 12px auto;
-    border-radius: 12px;
-    border: none;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    display: block; /* ensures margin auto works */
-    transition: 0.3s;
+.brand{
+font-size:22px;
+font-weight:bold;
+color:#7c7cff;
 }
 
-/* Pi login button */
-#loginBtn {
-    background: #6c4cff;
-    color: white;
+.user-status{
+font-size:12px;
+color:#9ca3af;
 }
 
-/* Pi payment button */
-#payBtn {
-    background: #00c896;
-    color: white;
+/* Main card */
+.main-card{
+background:#111827;
+padding:25px;
+border-radius:14px;
+text-align:center;
+box-shadow:0 8px 25px rgba(0,0,0,0.4);
 }
 
-/* Hover effect */
-button:hover {
-    opacity: 0.85;
+.description{
+font-size:14px;
+color:#cbd5e1;
+margin-bottom:20px;
 }
 
-#statusBox {
-    margin-top: 20px;
-    padding: 12px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.1);
-    color: #fff;
+/* Buttons */
+.btn{
+width:100%;
+padding:14px;
+margin-top:12px;
+border:none;
+border-radius:10px;
+font-size:16px;
+cursor:pointer;
+}
+
+.primary{
+background:#6c4cff;
+color:white;
+}
+
+.secondary{
+background:#10b981;
+color:white;
+}
+
+.btn:disabled{
+opacity:0.5;
+cursor:not-allowed;
+}
+
+/* Status box */
+.status-box{
+margin-top:20px;
+padding:10px;
+background:#1f2937;
+border-radius:8px;
+font-size:13px;
+color:#e5e7eb;
+}
+
+/* Footer */
+.footer{
+margin-top:25px;
+text-align:center;
+font-size:12px;
+color:#9ca3af;
 }
