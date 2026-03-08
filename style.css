@@ -1,12 +1,12 @@
 body{
 font-family: Arial, sans-serif;
-background:#0f172a;
-color:white;
+background:#f5f7fb;
+color:#1f2937;
 margin:0;
 padding:0;
 }
 
-/* App wrapper */
+/* App container */
 .app-container{
 max-width:420px;
 margin:auto;
@@ -24,26 +24,26 @@ margin-bottom:20px;
 .brand{
 font-size:22px;
 font-weight:bold;
-color:#7c7cff;
+color:#5b5df5;
 }
 
 .user-status{
 font-size:12px;
-color:#9ca3af;
+color:#6b7280;
 }
 
 /* Main card */
 .main-card{
-background:#111827;
+background:white;
 padding:25px;
 border-radius:14px;
 text-align:center;
-box-shadow:0 8px 25px rgba(0,0,0,0.4);
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
 }
 
 .description{
 font-size:14px;
-color:#cbd5e1;
+color:#6b7280;
 margin-bottom:20px;
 }
 
@@ -73,14 +73,14 @@ opacity:0.5;
 cursor:not-allowed;
 }
 
-/* Status box */
+/* Status */
 .status-box{
 margin-top:20px;
 padding:10px;
-background:#1f2937;
+background:#f1f5f9;
 border-radius:8px;
 font-size:13px;
-color:#e5e7eb;
+color:#374151;
 }
 
 /* Footer */
@@ -88,5 +88,5 @@ color:#e5e7eb;
 margin-top:25px;
 text-align:center;
 font-size:12px;
-color:#9ca3af;
-  }
+color:#6b7280;
+}
