@@ -1,19 +1,42 @@
+const axios = require("axios");
+
 exports.handler = async (event, context) => {
 
-  const data = JSON.parse(event.body);
+  try {
 
-  const paymentId = data.paymentId;
-  const txid = data.txid;
+    const data = JSON.parse(event.body);
 
-  console.log("Completing payment:", paymentId, txid);
+    const paymentId = data.paymentId;
+    const txid = data.txid;
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: "Payment completed",
-      paymentId: paymentId,
-      txid: txid
-    })
-  };
+    console.log("Completing payment:", paymentId, txid);
+
+    const response = await axios.post(
+      `https://api.minepi.com/v2/payments/${paymentId}/complete`,
+      { txid: txid },
+      {
+        headers: {
+          Authorization: `Key ${process.env.PI_API_KEY}`
+        }
+      }
+    );
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(response.data)
+    };
+
+  } catch (error) {
+
+    console.error(error);
+
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Payment completion failed"
+      })
+    };
+
+  }
 
 };
