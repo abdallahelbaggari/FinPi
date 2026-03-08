@@ -10,6 +10,7 @@ const payBtn = document.getElementById("payBtn");
 const userStatus = document.getElementById("userStatus");
 const statusBox = document.getElementById("statusBox");
 
+
 // Login with Pi
 loginBtn.addEventListener("click", async () => {
 
@@ -59,7 +60,7 @@ payBtn.addEventListener("click", () => {
 
       statusBox.innerText = "Waiting for server approval...";
 
-      fetch("https://your-backend-url.com/approve", {
+      fetch("/.netlify/functions/approve", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -67,8 +68,13 @@ payBtn.addEventListener("click", () => {
         body: JSON.stringify({ paymentId: paymentId })
       })
       .then(res => res.json())
-      .then(data => console.log("Approval response:", data))
-      .catch(err => console.error(err));
+      .then(data => {
+        console.log("Approval response:", data);
+      })
+      .catch(err => {
+        console.error(err);
+        statusBox.innerText = "Server approval failed";
+      });
 
     },
 
@@ -78,7 +84,7 @@ payBtn.addEventListener("click", () => {
 
       statusBox.innerText = "Completing payment...";
 
-      fetch("https://your-backend-url.com/complete", {
+      fetch("/.netlify/functions/complete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -90,10 +96,17 @@ payBtn.addEventListener("click", () => {
       })
       .then(res => res.json())
       .then(data => {
+
         console.log("Completion response:", data);
         statusBox.innerText = "Payment completed successfully";
+
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+
+        console.error(err);
+        statusBox.innerText = "Completion failed";
+
+      });
 
     },
 
@@ -101,6 +114,7 @@ payBtn.addEventListener("click", () => {
     // User cancels payment
     onCancel: function(paymentId) {
 
+      console.log("Payment cancelled:", paymentId);
       statusBox.innerText = "Payment cancelled";
 
     },
@@ -109,7 +123,7 @@ payBtn.addEventListener("click", () => {
     // Error during payment
     onError: function(error, payment) {
 
-      console.error(error);
+      console.error("Payment error:", error);
       statusBox.innerText = "Payment error occurred";
 
     }
