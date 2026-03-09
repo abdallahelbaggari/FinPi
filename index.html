@@ -16,9 +16,32 @@
     <h1>FinPi</h1>
     <p class="lead">Secure digital payments built on Pi Network</p>
 
+    <!-- LOGIN BUTTON -->
     <button id="loginBtn" class="btn login">🔐 Continue with Pi</button>
+
+    <!-- DASHBOARD (Hidden until login) -->
+    <div id="dashboard" class="dashboard" style="display:none;">
+
+      <h2>Welcome to FinPi</h2>
+
+      <p id="usernameDisplay" class="username"></p>
+
+      <div class="dash-card">
+        <p>Account Status</p>
+        <strong>Active</strong>
+      </div>
+
+      <div class="dash-card">
+        <p>Service</p>
+        <strong>Pi Payments Enabled</strong>
+      </div>
+
+    </div>
+
+    <!-- PAYMENT BUTTON -->
     <button id="payBtn" class="btn pay">💸 Pay 1 π</button>
 
+    <!-- STATUS -->
     <div id="status" class="status">
       Open FinPi in Pi Browser to continue.
     </div>
