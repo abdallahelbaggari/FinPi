@@ -8,18 +8,18 @@ Pi.init({
 const loginBtn = document.getElementById("loginBtn");
 const payBtn = document.getElementById("payBtn");
 const statusBox = document.getElementById("status");
+
 const dashboard = document.getElementById("dashboard");
 const usernameDisplay = document.getElementById("usernameDisplay");
+const transactions = document.getElementById("transactions");
+const txList = document.getElementById("txList");
 
 // Disable payment until login
 payBtn.disabled = true;
 
-
 // Login with Pi
 loginBtn.addEventListener("click", async () => {
-
   try {
-
     statusBox.innerText = "Opening Pi authentication...";
 
     const scopes = ["username", "payments"];
@@ -30,27 +30,21 @@ loginBtn.addEventListener("click", async () => {
 
     const username = auth.user.username;
 
+    statusBox.innerText = "Logged in as: " + username;
+
     // Show dashboard
     dashboard.style.display = "block";
-    usernameDisplay.innerText = "Logged in as: " + username;
+    usernameDisplay.innerText = "Hello, " + username;
+    transactions.style.display = "block";
 
-    // Hide login button
-    loginBtn.style.display = "none";
-
-    statusBox.innerText = "Authentication successful";
-
-    // Enable payment button
+    // Enable payment button after login
     payBtn.disabled = false;
 
   } catch (error) {
-
     console.error(error);
     statusBox.innerText = "Authentication failed";
-
   }
-
 });
-
 
 // Payment creation
 payBtn.addEventListener("click", () => {
@@ -88,7 +82,6 @@ payBtn.addEventListener("click", () => {
 
     },
 
-
     // Step 2 — Payment ready for completion
     onReadyForServerCompletion: function(paymentId, txid) {
 
@@ -110,32 +103,29 @@ payBtn.addEventListener("click", () => {
         console.log("Completion response:", data);
         statusBox.innerText = "Payment completed successfully";
 
+        // Add transaction to history
+        const item = document.createElement("li");
+        item.innerText = "Paid 1 π - FinPi Test Payment";
+        txList.appendChild(item);
+
       })
       .catch(err => {
-
         console.error(err);
         statusBox.innerText = "Completion failed";
-
       });
 
     },
 
-
     // User cancels payment
     onCancel: function(paymentId) {
-
       console.log("Payment cancelled:", paymentId);
       statusBox.innerText = "Payment cancelled";
-
     },
-
 
     // Error during payment
     onError: function(error, payment) {
-
       console.error("Payment error:", error);
       statusBox.innerText = "Payment error occurred";
-
     }
 
   });
