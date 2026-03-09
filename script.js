@@ -8,6 +8,8 @@ Pi.init({
 const loginBtn = document.getElementById("loginBtn");
 const payBtn = document.getElementById("payBtn");
 const statusBox = document.getElementById("status");
+const dashboard = document.getElementById("dashboard");
+const usernameDisplay = document.getElementById("usernameDisplay");
 
 // Disable payment until login
 payBtn.disabled = true;
@@ -28,9 +30,16 @@ loginBtn.addEventListener("click", async () => {
 
     const username = auth.user.username;
 
-    statusBox.innerText = "Logged in as: " + username;
+    // Show dashboard
+    dashboard.style.display = "block";
+    usernameDisplay.innerText = "Logged in as: " + username;
 
-    // Enable payment button after login
+    // Hide login button
+    loginBtn.style.display = "none";
+
+    statusBox.innerText = "Authentication successful";
+
+    // Enable payment button
     payBtn.disabled = false;
 
   } catch (error) {
