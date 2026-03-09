@@ -11,15 +11,24 @@ const statusBox = document.getElementById("status");
 
 const dashboard = document.getElementById("dashboard");
 const usernameDisplay = document.getElementById("usernameDisplay");
+
 const transactions = document.getElementById("transactions");
 const txList = document.getElementById("txList");
+
+const balanceDisplay = document.getElementById("balance");
+
+// Local balance tracker
+let balance = 0;
 
 // Disable payment until login
 payBtn.disabled = true;
 
-// Login with Pi
+
+// LOGIN WITH PI
 loginBtn.addEventListener("click", async () => {
+
   try {
+
     statusBox.innerText = "Opening Pi authentication...";
 
     const scopes = ["username", "payments"];
@@ -34,19 +43,26 @@ loginBtn.addEventListener("click", async () => {
 
     // Show dashboard
     dashboard.style.display = "block";
+
     usernameDisplay.innerText = "Hello, " + username;
+
     transactions.style.display = "block";
 
-    // Enable payment button after login
+    // Enable payment button
     payBtn.disabled = false;
 
   } catch (error) {
+
     console.error(error);
+
     statusBox.innerText = "Authentication failed";
+
   }
+
 });
 
-// Payment creation
+
+// CREATE PAYMENT
 payBtn.addEventListener("click", () => {
 
   statusBox.innerText = "Creating payment...";
@@ -59,7 +75,7 @@ payBtn.addEventListener("click", () => {
 
   }, {
 
-    // Step 1 — Payment ready for backend approval
+    // STEP 1: WAITING FOR SERVER APPROVAL
     onReadyForServerApproval: function(paymentId) {
 
       statusBox.innerText = "Waiting for server approval...";
@@ -69,20 +85,26 @@ payBtn.addEventListener("click", () => {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ paymentId: paymentId })
+        body: JSON.stringify({
+          paymentId: paymentId
+        })
       })
       .then(res => res.json())
       .then(data => {
         console.log("Approval response:", data);
       })
       .catch(err => {
+
         console.error(err);
+
         statusBox.innerText = "Server approval failed";
+
       });
 
     },
 
-    // Step 2 — Payment ready for completion
+
+    // STEP 2: COMPLETE PAYMENT
     onReadyForServerCompletion: function(paymentId, txid) {
 
       statusBox.innerText = "Completing payment...";
@@ -101,31 +123,52 @@ payBtn.addEventListener("click", () => {
       .then(data => {
 
         console.log("Completion response:", data);
+
         statusBox.innerText = "Payment completed successfully";
 
-        // Add transaction to history
+        // UPDATE BALANCE
+        balance += 1;
+
+        balanceDisplay.innerText = balance + " π";
+
+        // ADD TRANSACTION
         const item = document.createElement("li");
-        item.innerText = "Paid 1 π - FinPi Test Payment";
+
+        const date = new Date().toLocaleString();
+
+        item.innerText = "Paid 1 π — FinPi Test Payment (" + date + ")";
+
         txList.appendChild(item);
 
       })
       .catch(err => {
+
         console.error(err);
+
         statusBox.innerText = "Completion failed";
+
       });
 
     },
 
-    // User cancels payment
+
+    // USER CANCELS PAYMENT
     onCancel: function(paymentId) {
+
       console.log("Payment cancelled:", paymentId);
+
       statusBox.innerText = "Payment cancelled";
+
     },
 
-    // Error during payment
+
+    // PAYMENT ERROR
     onError: function(error, payment) {
+
       console.error("Payment error:", error);
+
       statusBox.innerText = "Payment error occurred";
+
     }
 
   });
