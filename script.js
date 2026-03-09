@@ -7,8 +7,10 @@ Pi.init({
 // Elements
 const loginBtn = document.getElementById("loginBtn");
 const payBtn = document.getElementById("payBtn");
-const userStatus = document.getElementById("userStatus");
-const statusBox = document.getElementById("statusBox");
+const statusBox = document.getElementById("status");
+
+// Disable payment until login
+payBtn.disabled = true;
 
 
 // Login with Pi
@@ -26,8 +28,7 @@ loginBtn.addEventListener("click", async () => {
 
     const username = auth.user.username;
 
-    userStatus.innerText = "Logged in: " + username;
-    statusBox.innerText = "Authentication successful";
+    statusBox.innerText = "Logged in as: " + username;
 
     // Enable payment button after login
     payBtn.disabled = false;
