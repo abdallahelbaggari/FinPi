@@ -37,6 +37,22 @@ let balance = 0;
 payBtn.disabled = true;
 
 
+// TRANSACTION HELPER
+function addTransaction(text) {
+
+  if (txList.children.length === 1 &&
+      txList.children[0].innerText === "No transactions yet") {
+
+      txList.innerHTML = "";
+  }
+
+  const li = document.createElement("li");
+  li.innerText = text;
+  txList.appendChild(li);
+
+}
+
+
 // LOGIN
 loginBtn.addEventListener("click", async () => {
 
@@ -107,16 +123,12 @@ payBtn.addEventListener("click", () => {
       .then(()=>{
 
         balance += 1;
-
         balanceDisplay.innerText = balance + " π";
 
-        const li = document.createElement("li");
-
-        li.innerText =
-        "Paid 1 π — FinPi Service (" +
-        new Date().toLocaleString() + ")";
-
-        txList.appendChild(li);
+        addTransaction(
+          "Paid 1 π — FinPi Service (" +
+          new Date().toLocaleString() + ")"
+        );
 
         statusBox.innerText = "Payment completed";
 
@@ -133,7 +145,6 @@ payBtn.addEventListener("click", () => {
     onError:error=>{
 
       statusBox.innerText = "Payment error";
-
       console.error(error);
 
     }
@@ -154,13 +165,10 @@ rechargeBtn.addEventListener("click",()=>{
     return;
   }
 
-  const li = document.createElement("li");
-
-  li.innerText =
-  "Recharge " + amt + " π → " + num +
-  " (" + new Date().toLocaleString() + ")";
-
-  txList.appendChild(li);
+  addTransaction(
+    "Recharge " + amt + " π → " + num +
+    " (" + new Date().toLocaleString() + ")"
+  );
 
   rechargeNumber.value="";
   rechargeAmount.value="";
@@ -179,13 +187,10 @@ billBtn.addEventListener("click",()=>{
     return;
   }
 
-  const li = document.createElement("li");
-
-  li.innerText =
-  "Bill Payment " + amt + " π → " + acct +
-  " (" + new Date().toLocaleString() + ")";
-
-  txList.appendChild(li);
+  addTransaction(
+    "Bill Payment " + amt + " π → " + acct +
+    " (" + new Date().toLocaleString() + ")"
+  );
 
   billAccount.value="";
   billAmount.value="";
@@ -204,13 +209,10 @@ sendPiBtn.addEventListener("click",()=>{
     return;
   }
 
-  const li = document.createElement("li");
-
-  li.innerText =
-  "Sent " + amt + " π → " + wallet +
-  " (" + new Date().toLocaleString() + ")";
-
-  txList.appendChild(li);
+  addTransaction(
+    "Sent " + amt + " π → " + wallet +
+    " (" + new Date().toLocaleString() + ")"
+  );
 
   walletId.value="";
   sendPiAmount.value="";
@@ -229,7 +231,6 @@ submitFeedback.addEventListener("click",()=>{
   }
 
   feedbackStatus.innerText="Feedback received";
-
   feedbackInput.value="";
 
 });
