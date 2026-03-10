@@ -19,9 +19,8 @@
     <!-- LOGIN BUTTON -->
     <button id="loginBtn" class="btn login">🔐 Continue with Pi</button>
 
-    <!-- DASHBOARD -->
+    <!-- DASHBOARD (Hidden until login) -->
     <div id="dashboard" class="dashboard" style="display:none;">
-
       <h2>Welcome, <span id="usernameDisplay"></span></h2>
 
       <!-- ACCOUNT INFO -->
@@ -38,37 +37,37 @@
       <!-- PAYMENT UTILITIES -->
       <h3>Utilities</h3>
 
-      <!-- 1. Pi Payment -->
+      <!-- Pay 1 π Service -->
       <div class="utility-card">
         <p>💸 Pay 1 π for FinPi Service</p>
         <button id="payBtn" class="btn pay" disabled>Pay 1 π</button>
       </div>
 
-      <!-- 2. Mobile Recharge -->
+      <!-- Mobile Recharge -->
       <div class="utility-card">
         <p>📱 Mobile Recharge</p>
-        <input type="text" id="rechargeNumber" placeholder="Enter Phone Number">
-        <input type="number" id="rechargeAmount" placeholder="Amount in π">
+        <input type="text" placeholder="Enter Phone Number" id="rechargeNumber">
+        <input type="number" placeholder="Amount in π" id="rechargeAmount">
         <button id="rechargeBtn" class="btn">Recharge</button>
       </div>
 
-      <!-- 3. Bill Payment -->
+      <!-- Bill Payment -->
       <div class="utility-card">
         <p>💡 Pay Bills (Electricity, Water, etc.)</p>
-        <input type="text" id="billAccount" placeholder="Enter Account Number">
-        <input type="number" id="billAmount" placeholder="Amount in π">
+        <input type="text" placeholder="Enter Account Number" id="billAccount">
+        <input type="number" placeholder="Amount in π" id="billAmount">
         <button id="billBtn" class="btn">Pay Bill</button>
       </div>
 
-      <!-- 4. Send Pi / QR Scan -->
+      <!-- Send Pi / QR Scan -->
       <div class="utility-card">
         <p>🔗 Send Pi to Wallet / QR Scan</p>
-        <input type="text" id="walletId" placeholder="Recipient Wallet ID">
-        <input type="number" id="sendPiAmount" placeholder="Amount in π">
+        <input type="text" placeholder="Recipient Wallet ID" id="walletId">
+        <input type="number" placeholder="Amount in π" id="sendPiAmount">
         <button id="sendPiBtn" class="btn">Send Pi</button>
       </div>
 
-      <!-- 5. Feedback & Comments -->
+      <!-- Feedback -->
       <div class="utility-card feedback-section">
         <h3>📝 Feedback & Comments</h3>
         <textarea id="userFeedback" placeholder="Enter your feedback here..."></textarea>
@@ -76,7 +75,7 @@
         <p id="feedbackStatus"></p>
       </div>
 
-      <!-- 6. Support Section -->
+      <!-- Support -->
       <div class="utility-card support-section">
         <h3>🛠 Support & Help</h3>
         <input type="text" id="supportEmail" placeholder="Your email" />
@@ -92,7 +91,6 @@
           <li>No transactions yet</li>
         </ul>
       </div>
-
     </div>
 
     <!-- STATUS -->
@@ -105,6 +103,162 @@
 
   <!-- Pi SDK -->
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <script src="script.js"></script>
+
+  <!-- Script -->
+  <script>
+    // Initialize Pi SDK in Testnet
+    Pi.init({ version: "2.0", sandbox: true });
+
+    const loginBtn = document.getElementById("loginBtn");
+    const payBtn = document.getElementById("payBtn");
+    const statusBox = document.getElementById("status");
+    const dashboard = document.getElementById("dashboard");
+    const usernameDisplay = document.getElementById("usernameDisplay");
+    const txList = document.getElementById("txList");
+    const balanceDisplay = document.getElementById("balance");
+
+    // Utilities
+    const rechargeNumber = document.getElementById("rechargeNumber");
+    const rechargeAmount = document.getElementById("rechargeAmount");
+    const rechargeBtn = document.getElementById("rechargeBtn");
+
+    const billAccount = document.getElementById("billAccount");
+    const billAmount = document.getElementById("billAmount");
+    const billBtn = document.getElementById("billBtn");
+
+    const walletId = document.getElementById("walletId");
+    const sendPiAmount = document.getElementById("sendPiAmount");
+    const sendPiBtn = document.getElementById("sendPiBtn");
+
+    const feedbackInput = document.getElementById("userFeedback");
+    const submitFeedback = document.getElementById("submitFeedback");
+    const feedbackStatus = document.getElementById("feedbackStatus");
+
+    const supportEmail = document.getElementById("supportEmail");
+    const supportMessage = document.getElementById("supportMessage");
+    const submitSupport = document.getElementById("submitSupport");
+    const supportStatus = document.getElementById("supportStatus");
+
+    let balance = 0;
+    payBtn.disabled = true;
+
+    // -------- LOGIN --------
+    loginBtn.addEventListener("click", async () => {
+      try {
+        statusBox.innerText = "Opening Pi authentication...";
+        const auth = await Pi.authenticate(["username", "payments"]);
+        const username = auth.user.username;
+
+        dashboard.style.display = "block";
+        usernameDisplay.innerText = username;
+        payBtn.disabled = false;
+        statusBox.innerText = "Logged in as: " + username;
+
+      } catch (err) {
+        console.error(err);
+        statusBox.innerText = "Authentication failed";
+      }
+    });
+
+    // -------- PI PAYMENT WITH SERVER APPROVAL --------
+    payBtn.addEventListener("click", () => {
+      statusBox.innerText = "Processing payment...";
+      Pi.createPayment({
+        amount: 1,
+        memo: "FinPi Test Payment",
+        metadata: { service: "test-payment" }
+      }, {
+        onReadyForServerApproval: paymentId => {
+          fetch("/.netlify/functions/approve", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentId })
+          }).then(res => res.json())
+            .then(data => console.log("Approved:", data))
+            .catch(err => console.error(err));
+        },
+        onReadyForServerCompletion: (paymentId, txid) => {
+          fetch("/.netlify/functions/complete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentId, txid })
+          }).then(res => res.json())
+            .then(() => {
+              balance += 1;
+              balanceDisplay.innerText = balance + " π";
+
+              const li = document.createElement("li");
+              li.innerText = "Paid 1 π — FinPi Test Payment (" + new Date().toLocaleString() + ")";
+              txList.appendChild(li);
+
+              statusBox.innerText = "Payment completed!";
+            });
+        },
+        onCancel: () => statusBox.innerText = "Payment cancelled",
+        onError: err => statusBox.innerText = "Payment error: " + err
+      });
+    });
+
+    // -------- SIMULATED UTILITIES --------
+    rechargeBtn.addEventListener("click", () => {
+      const num = rechargeNumber.value.trim();
+      const amt = rechargeAmount.value.trim();
+      if(!num || !amt) return alert("Enter phone number and amount!");
+      const li = document.createElement("li");
+      li.innerText = "Mobile Recharge: " + amt + " π → " + num + " (" + new Date().toLocaleString() + ")";
+      txList.appendChild(li);
+      rechargeNumber.value = "";
+      rechargeAmount.value = "";
+      statusBox.innerText = "Mobile Recharge simulated!";
+    });
+
+    billBtn.addEventListener("click", () => {
+      const acct = billAccount.value.trim();
+      const amt = billAmount.value.trim();
+      if(!acct || !amt) return alert("Enter account number and amount!");
+      const li = document.createElement("li");
+      li.innerText = "Bill Payment: " + amt + " π → " + acct + " (" + new Date().toLocaleString() + ")";
+      txList.appendChild(li);
+      billAccount.value = "";
+      billAmount.value = "";
+      statusBox.innerText = "Bill Payment simulated!";
+    });
+
+    sendPiBtn.addEventListener("click", () => {
+      const wallet = walletId.value.trim();
+      const amt = sendPiAmount.value.trim();
+      if(!wallet || !amt) return alert("Enter wallet ID and amount!");
+      const li = document.createElement("li");
+      li.innerText = "Sent Pi: " + amt + " π → " + wallet + " (" + new Date().toLocaleString() + ")";
+      txList.appendChild(li);
+      walletId.value = "";
+      sendPiAmount.value = "";
+      statusBox.innerText = "Send Pi simulated!";
+    });
+
+    // -------- FEEDBACK --------
+    submitFeedback.addEventListener("click", () => {
+      const feedback = feedbackInput.value.trim();
+      if(!feedback) return alert("Enter your feedback!");
+      const li = document.createElement("li");
+      li.innerText = feedback + " (" + new Date().toLocaleString() + ")";
+      txList.appendChild(li);
+      feedbackStatus.innerText = "Thanks for your feedback!";
+      feedbackInput.value = "";
+    });
+
+    // -------- SUPPORT --------
+    submitSupport.addEventListener("click", () => {
+      const email = supportEmail.value.trim();
+      const msg = supportMessage.value.trim();
+      if(!email || !msg) return alert("Enter email and message!");
+      const li = document.createElement("li");
+      li.innerText = "Support Request from " + email + ": " + msg + " (" + new Date().toLocaleString() + ")";
+      txList.appendChild(li);
+      supportStatus.innerText = "Support request submitted!";
+      supportEmail.value = "";
+      supportMessage.value = "";
+    });
+  </script>
 </body>
 </html>
