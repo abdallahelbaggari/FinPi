@@ -19,31 +19,74 @@
     <!-- LOGIN BUTTON -->
     <button id="loginBtn" class="btn login">🔐 Continue with Pi</button>
 
-    <!-- DASHBOARD (Hidden until login) -->
+    <!-- DASHBOARD -->
     <div id="dashboard" class="dashboard" style="display:none;">
 
-      <h2>Welcome to FinPi</h2>
+      <h2>Welcome, <span id="usernameDisplay"></span></h2>
 
-      <p id="usernameDisplay" class="username"></p>
-
+      <!-- ACCOUNT INFO -->
       <div class="dash-card">
         <p>Account Status</p>
         <strong>Active</strong>
       </div>
 
       <div class="dash-card">
-        <p>Service</p>
-        <strong>Pi Payments Enabled</strong>
-      </div>
-
-      <!-- BALANCE CARD -->
-      <div class="dash-card">
         <p>FinPi Balance</p>
         <strong id="balance">0 π</strong>
       </div>
 
-      <!-- TRANSACTION HISTORY -->
-      <div id="transactions" class="transactions" style="display:none;">
+      <!-- PAYMENT UTILITIES -->
+      <h3>Utilities</h3>
+
+      <!-- 1. Pi Payment -->
+      <div class="utility-card">
+        <p>💸 Pay 1 π for FinPi Service</p>
+        <button id="payBtn" class="btn pay" disabled>Pay 1 π</button>
+      </div>
+
+      <!-- 2. Mobile Recharge -->
+      <div class="utility-card">
+        <p>📱 Mobile Recharge</p>
+        <input type="text" id="rechargeNumber" placeholder="Enter Phone Number">
+        <input type="number" id="rechargeAmount" placeholder="Amount in π">
+        <button id="rechargeBtn" class="btn">Recharge</button>
+      </div>
+
+      <!-- 3. Bill Payment -->
+      <div class="utility-card">
+        <p>💡 Pay Bills (Electricity, Water, etc.)</p>
+        <input type="text" id="billAccount" placeholder="Enter Account Number">
+        <input type="number" id="billAmount" placeholder="Amount in π">
+        <button id="billBtn" class="btn">Pay Bill</button>
+      </div>
+
+      <!-- 4. Send Pi / QR Scan -->
+      <div class="utility-card">
+        <p>🔗 Send Pi to Wallet / QR Scan</p>
+        <input type="text" id="walletId" placeholder="Recipient Wallet ID">
+        <input type="number" id="sendPiAmount" placeholder="Amount in π">
+        <button id="sendPiBtn" class="btn">Send Pi</button>
+      </div>
+
+      <!-- 5. Feedback & Comments -->
+      <div class="utility-card feedback-section">
+        <h3>📝 Feedback & Comments</h3>
+        <textarea id="userFeedback" placeholder="Enter your feedback here..."></textarea>
+        <button id="submitFeedback" class="btn">Submit Feedback</button>
+        <p id="feedbackStatus"></p>
+      </div>
+
+      <!-- 6. Support Section -->
+      <div class="utility-card support-section">
+        <h3>🛠 Support & Help</h3>
+        <input type="text" id="supportEmail" placeholder="Your email" />
+        <textarea id="supportMessage" placeholder="Describe your issue"></textarea>
+        <button id="submitSupport" class="btn">Submit Support Ticket</button>
+        <p id="supportStatus"></p>
+      </div>
+
+      <!-- Transaction History -->
+      <div id="transactions" class="transactions">
         <h3>Transaction History</h3>
         <ul id="txList">
           <li>No transactions yet</li>
@@ -51,9 +94,6 @@
       </div>
 
     </div>
-
-    <!-- PAYMENT BUTTON -->
-    <button id="payBtn" class="btn pay">💸 Pay 1 π</button>
 
     <!-- STATUS -->
     <div id="status" class="status">
