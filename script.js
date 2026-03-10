@@ -1,7 +1,7 @@
-// Initialize Pi SDK in Testnet mode
+// Initialize Pi SDK (TESTNET)
 Pi.init({ version: "2.0", sandbox: true });
 
-// DOM Elements
+// Elements
 const loginBtn = document.getElementById("loginBtn");
 const payBtn = document.getElementById("payBtn");
 const statusBox = document.getElementById("status");
@@ -32,125 +32,223 @@ const supportMessage = document.getElementById("supportMessage");
 const submitSupport = document.getElementById("submitSupport");
 const supportStatus = document.getElementById("supportStatus");
 
-// Local balance tracker
+// Local balance
 let balance = 0;
 payBtn.disabled = true;
 
-// -------- LOGIN --------
+
+// LOGIN
 loginBtn.addEventListener("click", async () => {
+
   try {
+
     statusBox.innerText = "Opening Pi authentication...";
-    const auth = await Pi.authenticate(["username", "payments"]);
+
+    const auth = await Pi.authenticate(["username","payments"]);
+
     const username = auth.user.username;
 
     dashboard.style.display = "block";
     usernameDisplay.innerText = username;
-    payBtn.disabled = false;
-    statusBox.innerText = "Logged in as: " + username;
 
-  } catch (err) {
-    console.error(err);
+    payBtn.disabled = false;
+
+    statusBox.innerText = "Logged in as " + username;
+
+  } catch(error) {
+
+    console.error(error);
+
     statusBox.innerText = "Authentication failed";
+
   }
+
 });
 
-// -------- PI PAYMENT --------
-payBtn.addEventListener("click", async () => {
+
+// PAYMENT
+payBtn.addEventListener("click", () => {
+
   statusBox.innerText = "Processing payment...";
-  await Pi.createPayment({
+
+  Pi.createPayment({
+
     amount: 1,
     memo: "FinPi Test Payment",
-    metadata: { service: "test-payment" }
+    metadata: { service: "FinPi Payment" }
+
   }, {
-    onReadyForServerApproval: id => console.log("Server approval:", id),
-    onReadyForServerCompletion: (id, txid) => {
-      balance += 1;
-      balanceDisplay.innerText = balance + " π";
 
-      const li = document.createElement("li");
-      li.innerText = "Paid 1 π — FinPi Test Payment (" + new Date().toLocaleString() + ")";
-      txList.appendChild(li);
+    onReadyForServerApproval: paymentId => {
 
-      statusBox.innerText = "Payment completed!";
+      fetch("/.netlify/functions/approve",{
+
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ paymentId })
+
+      })
+      .then(res => res.json())
+      .then(data => console.log("Approved",data))
+      .catch(err => console.log(err));
+
     },
-    onCancel: () => statusBox.innerText = "Payment cancelled",
-    onError: err => statusBox.innerText = "Payment error: " + err
+
+    onReadyForServerCompletion:(paymentId,txid)=>{
+
+      fetch("/.netlify/functions/complete",{
+
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ paymentId,txid })
+
+      })
+      .then(res => res.json())
+      .then(()=>{
+
+        balance += 1;
+
+        balanceDisplay.innerText = balance + " π";
+
+        const li = document.createElement("li");
+
+        li.innerText =
+        "Paid 1 π — FinPi Service (" +
+        new Date().toLocaleString() + ")";
+
+        txList.appendChild(li);
+
+        statusBox.innerText = "Payment completed";
+
+      });
+
+    },
+
+    onCancel:()=>{
+
+      statusBox.innerText = "Payment cancelled";
+
+    },
+
+    onError:error=>{
+
+      statusBox.innerText = "Payment error";
+
+      console.error(error);
+
+    }
+
   });
+
 });
 
-// -------- MOBILE RECHARGE (SIMULATED) --------
-rechargeBtn.addEventListener("click", () => {
+
+// MOBILE RECHARGE
+rechargeBtn.addEventListener("click",()=>{
+
   const num = rechargeNumber.value.trim();
   const amt = rechargeAmount.value.trim();
-  if (!num || !amt) return alert("Enter phone number and amount!");
-  
-  const li = document.createElement("li");
-  li.innerText = "Mobile Recharge: " + amt + " π → " + num + " (" + new Date().toLocaleString() + ")";
-  txList.appendChild(li);
-  alert("Mobile Recharge simulated: " + amt + " π to " + num);
 
-  rechargeNumber.value = "";
-  rechargeAmount.value = "";
+  if(!num || !amt){
+    alert("Enter phone number and amount");
+    return;
+  }
+
+  const li = document.createElement("li");
+
+  li.innerText =
+  "Recharge " + amt + " π → " + num +
+  " (" + new Date().toLocaleString() + ")";
+
+  txList.appendChild(li);
+
+  rechargeNumber.value="";
+  rechargeAmount.value="";
+
 });
 
-// -------- BILL PAYMENT (SIMULATED) --------
-billBtn.addEventListener("click", () => {
+
+// BILL PAYMENT
+billBtn.addEventListener("click",()=>{
+
   const acct = billAccount.value.trim();
   const amt = billAmount.value.trim();
-  if (!acct || !amt) return alert("Enter account number and amount!");
-  
-  const li = document.createElement("li");
-  li.innerText = "Bill Payment: " + amt + " π → " + acct + " (" + new Date().toLocaleString() + ")";
-  txList.appendChild(li);
-  alert("Bill Payment simulated: " + amt + " π to " + acct);
 
-  billAccount.value = "";
-  billAmount.value = "";
+  if(!acct || !amt){
+    alert("Enter account number and amount");
+    return;
+  }
+
+  const li = document.createElement("li");
+
+  li.innerText =
+  "Bill Payment " + amt + " π → " + acct +
+  " (" + new Date().toLocaleString() + ")";
+
+  txList.appendChild(li);
+
+  billAccount.value="";
+  billAmount.value="";
+
 });
 
-// -------- SEND PI (SIMULATED + QR SCAN OPTION) --------
-sendPiBtn.addEventListener("click", async () => {
+
+// SEND PI
+sendPiBtn.addEventListener("click",()=>{
+
   const wallet = walletId.value.trim();
   const amt = sendPiAmount.value.trim();
-  if (!wallet || !amt) return alert("Enter wallet ID and amount!");
-  
-  const li = document.createElement("li");
-  li.innerText = "Sent Pi: " + amt + " π → " + wallet + " (" + new Date().toLocaleString() + ")";
-  txList.appendChild(li);
-  alert("Send Pi simulated: " + amt + " π to " + wallet);
 
-  walletId.value = "";
-  sendPiAmount.value = "";
+  if(!wallet || !amt){
+    alert("Enter wallet and amount");
+    return;
+  }
+
+  const li = document.createElement("li");
+
+  li.innerText =
+  "Sent " + amt + " π → " + wallet +
+  " (" + new Date().toLocaleString() + ")";
+
+  txList.appendChild(li);
+
+  walletId.value="";
+  sendPiAmount.value="";
+
 });
 
-// OPTIONAL: QR SCANNER FOR SEND PI
-// Pi Browser QR scan API can be integrated here in mainnet for real scanning
-// e.g., Pi.scanQRCode().then(walletId => { ... });
 
-// -------- FEEDBACK --------
-submitFeedback.addEventListener("click", () => {
+// FEEDBACK
+submitFeedback.addEventListener("click",()=>{
+
   const feedback = feedbackInput.value.trim();
-  if (!feedback) return alert("Enter your feedback!");
-  
-  const li = document.createElement("li");
-  li.innerText = feedback + " (" + new Date().toLocaleString() + ")";
-  txList.appendChild(li);
 
-  feedbackStatus.innerText = "Thanks for your feedback!";
-  feedbackInput.value = "";
+  if(!feedback){
+    alert("Enter feedback");
+    return;
+  }
+
+  feedbackStatus.innerText="Feedback received";
+
+  feedbackInput.value="";
+
 });
 
-// -------- SUPPORT --------
-submitSupport.addEventListener("click", () => {
+
+// SUPPORT
+submitSupport.addEventListener("click",()=>{
+
   const email = supportEmail.value.trim();
   const msg = supportMessage.value.trim();
-  if (!email || !msg) return alert("Enter email and message!");
-  
-  const li = document.createElement("li");
-  li.innerText = "Support Request from " + email + ": " + msg + " (" + new Date().toLocaleString() + ")";
-  txList.appendChild(li);
 
-  supportStatus.innerText = "Support request submitted!";
-  supportEmail.value = "";
-  supportMessage.value = "";
+  if(!email || !msg){
+    alert("Enter email and message");
+    return;
+  }
+
+  supportStatus.innerText="Support request submitted";
+
+  supportEmail.value="";
+  supportMessage.value="";
+
 });
