@@ -1,108 +1,225 @@
-body{
-font-family:Arial;
-background:#f4f6fb;
-margin:0;
-padding:0;
-display:flex;
-justify-content:center;
-align-items:center;
-min-height:100vh;
+/* ---------------------- GLOBAL ---------------------- */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f7f9fc;
+  margin: 0;
+  padding: 0;
+  color: #333;
 }
 
-.card{
-width:90%;
-max-width:500px;
-background:white;
-padding:25px;
-border-radius:12px;
-box-shadow:0 10px 25px rgba(0,0,0,0.1);
-text-align:center;
+h1, h2, h3 {
+  margin: 0.2em 0;
 }
 
-.logo{
-width:80px;
-margin-bottom:10px;
+p {
+  margin: 0.2em 0 0.8em 0;
 }
 
-h1{
-margin:5px 0;
+/* ---------------------- CARD CONTAINER ---------------------- */
+.card {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
 }
 
-.lead{
-color:#666;
-margin-bottom:20px;
+/* ---------------------- LOGO & HEADER ---------------------- */
+.logo {
+  width: 60px;
+  display: block;
+  margin: 0 auto 1rem auto;
 }
 
-.btn{
-width:100%;
-padding:12px;
-margin-top:10px;
-border:none;
-border-radius:8px;
-background:#5c4cff;
-color:white;
-font-size:15px;
-cursor:pointer;
+.lead {
+  text-align: center;
+  font-weight: 500;
+  color: #555;
 }
 
-.btn:hover{
-background:#4637d9;
+/* ---------------------- BUTTONS ---------------------- */
+.btn {
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
 }
 
-.login{
-background:#ffb300;
-color:black;
+.btn:hover {
+  opacity: 0.9;
 }
 
-.pay{
-background:#2ecc71;
+/* Main Buttons */
+.btn.login {
+  background: #2c6bed;
+  color: #fff;
+  width: 100%;
+  font-size: 1.1rem;
 }
 
-input, textarea{
-width:100%;
-padding:10px;
-margin-top:8px;
-border:1px solid #ddd;
-border-radius:6px;
+.btn.pay {
+  background: #28a745;
+  color: #fff;
 }
 
-textarea{
-resize:none;
-height:70px;
+.btn.small-btn {
+  background: #6c757d;
+  color: #fff;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
 }
 
-.utility-card{
-background:#fafafa;
-padding:15px;
-margin-top:15px;
-border-radius:8px;
-text-align:left;
+.btn.logout {
+  background: #dc3545;
+  color: #fff;
 }
 
-.dash-card{
-background:#fafafa;
-padding:12px;
-border-radius:8px;
-margin-top:10px;
+/* ---------------------- DASHBOARD ---------------------- */
+.dashboard {
+  margin-top: 2rem;
 }
 
-.transactions{
-margin-top:20px;
-text-align:left;
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
 }
 
-ul{
-padding-left:20px;
+.dash-card {
+  background: #f1f5f9;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-.status{
-margin-top:15px;
-color:#555;
-font-size:14px;
+.wallet-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-footer{
-margin-top:20px;
-font-size:13px;
-color:#888;
+/* ---------------------- SECURITY NOTICE ---------------------- */
+.security-card {
+  background: #e9f7ef;
+  color: #2c6f2e;
+  font-size: 0.95rem;
+}
+
+/* ---------------------- UTILITIES ---------------------- */
+.utility-card {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.utility-card input {
+  padding: 0.5rem;
+  margin-right: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  width: calc(50% - 0.5rem);
+  margin-bottom: 0.5rem;
+}
+
+.utility-card button {
+  display: block;
+}
+
+/* ---------------------- FEEDBACK & SUPPORT ---------------------- */
+.feedback-section textarea,
+.support-section textarea {
+  width: 100%;
+  height: 60px;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  margin-bottom: 0.5rem;
+  resize: vertical;
+}
+
+.feedback-section p,
+.support-section p {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 0.2rem;
+}
+
+/* ---------------------- TRANSACTION HISTORY ---------------------- */
+.transactions {
+  margin-top: 1.5rem;
+}
+
+.transactions ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.transactions li {
+  background: #fff;
+  border-left: 4px solid #2c6bed;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.transactions li:nth-child(even) {
+  background: #f1f5f9;
+}
+
+/* ---------------------- QR PAYMENT ---------------------- */
+#qrCode canvas {
+  margin-top: 0.5rem;
+  display: block;
+}
+
+/* ---------------------- STATUS BOX ---------------------- */
+.status {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 0.5rem;
+  color: #555;
+}
+
+/* ---------------------- FOOTER ---------------------- */
+footer {
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+/* ---------------------- LOADING SPINNER ---------------------- */
+.loading {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #2c6bed;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
+/* ---------------------- RESPONSIVE ---------------------- */
+@media (max-width: 600px){
+  .dash-header { flex-direction: column; text-align: center; }
+  .wallet-card { flex-direction: column; align-items: flex-start; }
+  .utility-card input { width: 100%; margin-bottom: 0.5rem; }
 }
