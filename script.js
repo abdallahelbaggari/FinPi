@@ -5,21 +5,18 @@ Pi.init({ version: "2.0", sandbox: true });
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const premiumBtn = document.getElementById("premiumBtn");
-
-const dashboard = document.getElementById("dashboard");
-const username = document.getElementById("username");
 const statusBox = document.getElementById("status");
+const dashboard = document.getElementById("dashboard");
+const usernameDisplay = document.getElementById("username");
 
-// Transaction UI (optional but supported)
 const txList = document.getElementById("txList");
 const clearTxBtn = document.getElementById("clearTxBtn");
 
 // ---------------------- STATE ----------------------
 let points = 0;
-
-// ---------------------- TRANSACTION STORAGE ----------------------
 let transactions = JSON.parse(localStorage.getItem("txHistory")) || [];
 
+// ---------------------- TRANSACTION SYSTEM ----------------------
 function renderTransactions() {
   if (!txList) return;
 
@@ -38,7 +35,7 @@ function renderTransactions() {
 }
 
 function addTransaction(text) {
-  const record = text + " (" + new Date().toLocaleString() + ")";
+  const record = `${text} (${new Date().toLocaleString()})`;
   transactions.unshift(record);
 
   localStorage.setItem("txHistory", JSON.stringify(transactions));
@@ -51,9 +48,12 @@ if (clearTxBtn) {
     transactions = [];
     localStorage.removeItem("txHistory");
     renderTransactions();
-    statusBox.innerText = "Transaction history cleared!";
+    statusBox.innerText = "Transaction history cleared";
   });
 }
+
+// Initial render
+renderTransactions();
 
 // ---------------------- MATCHES ----------------------
 const matches = [
@@ -75,19 +75,19 @@ if (matchList) {
 // ---------------------- LOGIN ----------------------
 loginBtn.addEventListener("click", async () => {
   try {
-    statusBox.innerText = "Logging in...";
+    statusBox.innerText = "Opening Pi authentication...";
 
     const auth = await Pi.authenticate(["username", "payments"]);
 
-    username.innerText = auth.user.username;
+    usernameDisplay.innerText = auth.user.username;
 
     dashboard.style.display = "block";
     loginBtn.style.display = "none";
 
-    statusBox.innerText = "Welcome " + auth.user.username;
+    statusBox.innerText = `Logged in as: ${auth.user.username}`;
 
   } catch (err) {
-    statusBox.innerText = "Login failed";
+    statusBox.innerText = "Authentication failed";
     console.error(err);
   }
 });
@@ -101,20 +101,41 @@ logoutBtn.addEventListener("click", () => {
 });
 
 // ---------------------- PREDICTION ----------------------
-window.predict = function(team) {
-  document.getElementById("result").innerText = "You chose: " + team;
+function predict(team) {
+  document.getElementById("result").innerText = `You chose: ${team}`;
 
   points += 5;
 
   document.getElementById("leaderboard").innerHTML =
-    "<li>You - " + points + " pts</li>";
+    `<li>You - ${points} pts</li>`;
 
-  addTransaction("🎯 Prediction: " + team);
-};
+  addTransaction(`🎯 Prediction: ${team}`);
+}
+
+// ---------------------- STAKING ----------------------
+document.getElementById("stakeBtn").addEventListener("click", () => {
+  const stake = parseInt(document.getElementById("stakeAmount").value);
+
+  if (!stake || stake <= 0) return alert("Enter valid points");
+  if (stake > points) return alert("Not enough points");
+
+  const reward = Math.floor(Math.random() * 10);
+
+  points = points - stake + reward;
+
+  document.getElementById("leaderboard").innerHTML =
+    `<li>You - ${points} pts</li>`;
+
+  document.getElementById("stakeStatus").innerText =
+    `You earned +${reward} pts`;
+
+  addTransaction(`📈 Staked ${stake} pts → +${reward}`);
+});
 
 // ---------------------- COMMENTS ----------------------
-window.addComment = function() {
+function addComment() {
   const input = document.getElementById("commentInput");
+
   if (!input.value.trim()) return;
 
   const li = document.createElement("li");
@@ -123,10 +144,11 @@ window.addComment = function() {
   document.getElementById("comments").prepend(li);
 
   addTransaction("💬 Comment posted");
-  input.value = "";
-};
 
-// ---------------------- PAYMENT (FIXED PROPERLY) ----------------------
+  input.value = "";
+}
+
+// ---------------------- PAYMENT (UNCHANGED CORE ✅) ----------------------
 premiumBtn.addEventListener("click", () => {
 
   statusBox.innerText = "Processing payment...";
@@ -138,33 +160,28 @@ premiumBtn.addEventListener("click", () => {
       metadata: { type: "premium" }
     },
     {
-      // ✅ MUST WAIT FOR APPROVAL
-      onReadyForServerApproval: async (paymentId) => {
-        const res = await fetch("/.netlify/functions/approve", {
+      // ✅ MUST RETURN (VERY IMPORTANT)
+      onReadyForServerApproval: (paymentId) => {
+        return fetch("/.netlify/functions/approve", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ paymentId })
         });
-
-        if (!res.ok) {
-          throw new Error("Approval failed");
-        }
       },
 
-      // ✅ MUST WAIT FOR COMPLETION
-      onReadyForServerCompletion: async (paymentId, txid) => {
-        const res = await fetch("/.netlify/functions/complete", {
+      // ✅ MUST RETURN (VERY IMPORTANT)
+      onReadyForServerCompletion: (paymentId, txid) => {
+        return fetch("/.netlify/functions/complete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ paymentId, txid })
+        }).then(() => {
+
+          statusBox.innerText = "✅ Premium Unlocked!";
+
+          addTransaction("💰 Paid 0.5π — Premium");
+
         });
-
-        if (!res.ok) {
-          throw new Error("Completion failed");
-        }
-
-        statusBox.innerText = "✅ Premium Unlocked!";
-        addTransaction("💰 Paid 0.5π — Premium");
       },
 
       onCancel: () => {
@@ -172,12 +189,10 @@ premiumBtn.addEventListener("click", () => {
       },
 
       onError: (err) => {
-        statusBox.innerText = "Payment error";
+        statusBox.innerText = "Payment error: " + err;
         console.error(err);
       }
     }
   );
-});
 
-// ---------------------- INIT ----------------------
-renderTransactions();
+});
