@@ -1,258 +1,875 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-  <meta charset="utf-8" />  
-  <meta name="viewport" content="width=device-width, initial-scale=1" />  
-  <title>FinPi</title>  
-  <meta name="description" content="FinPi — secure digital payments powered by Pi Network" />  
-  <link rel="icon" href="/logo.png" />  
-  <link rel="stylesheet" href="style.css" />  
-  <!-- QR Code Library -->  
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>  
-</head>  <body>  
-<div class="card">  
-  <img src="/logo.png" class="logo" alt="FinPi Logo" />  
-  <h1>FinPi</h1>  
-  <p class="lead">Secure digital payments built on Pi Network</p>    <!-- LOGIN BUTTON -->  <button id="loginBtn" class="btn login">🔐 Continue with Pi</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FinPi — Finance. Trust. Pi.</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F172A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --deep-blue:#1E3A8A;
+  --primary-blue:#2563EB;
+  --teal:#06B6D4;
+  --purple:#7C3AED;
+  --gold:#F4C430;
+  --bg:#0B1120;
+  --surface:#131C31;
+  --surface2:#1B2740;
+  --border:rgba(255,255,255,0.08);
+  --text:#F1F5F9;
+  --subtext:#8A99B3;
+  --success:#10B981;
+  --error:#EF4444;
+  --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:'Poppins',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'JetBrains Mono',monospace;}
+button{font-family:inherit;border:none;cursor:pointer;background:none;color:inherit;}
+input,select{font-family:inherit;}
+::-webkit-scrollbar{display:none;}
+*{scrollbar-width:none;}
 
-  <!-- DASHBOARD -->    <div id="dashboard" class="dashboard" style="display:none;">  <!-- Header -->  
-<div class="dash-header">  
-  <h2>Welcome, <span id="usernameDisplay"></span></h2>  
-  <button id="logoutBtn" class="btn logout">Logout</button>  
-</div>  
+#app{
+  max-width:460px;
+  margin:0 auto;
+  height:100vh;
+  height:100dvh;
+  position:relative;
+  background:var(--bg);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
 
-<!-- Wallet Info -->  
-<div class="dash-card wallet-card">  
-  <p>💰 Wallet Balance</p>  
-  <strong id="balance">0 π</strong>  
-  <button id="refreshBalance" class="btn small-btn">Refresh</button>  
-</div>  
+/* ---------- Splash / Onboarding ---------- */
+.onboard-screen{
+  position:fixed;inset:0;background:radial-gradient(circle at 50% 0%, #16224A 0%, #0B1120 60%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 32px;text-align:center;z-index:500;max-width:460px;margin:0 auto;
+}
+.pi-mark{
+  width:88px;height:88px;border-radius:24px;
+  background:linear-gradient(135deg,var(--primary-blue),var(--teal));
+  display:flex;align-items:center;justify-content:center;
+  font-size:40px;font-weight:800;color:#fff;margin-bottom:24px;
+  box-shadow:0 0 60px rgba(37,99,235,0.5);
+  animation:floatIn .8s ease both;
+}
+@keyframes floatIn{from{opacity:0;transform:translateY(18px) scale(.92);}to{opacity:1;transform:translateY(0) scale(1);}}
+.onboard-title{font-size:28px;font-weight:800;margin-bottom:8px;animation:floatIn .8s .1s ease both;}
+.onboard-sub{color:var(--subtext);font-size:14.5px;line-height:1.6;margin-bottom:40px;max-width:320px;animation:floatIn .8s .2s ease both;}
+.pin-dots{display:flex;gap:16px;margin-bottom:32px;}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--subtext);transition:.2s;}
+.pin-dot.filled{background:var(--teal);border-color:var(--teal);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:280px;margin-bottom:8px;}
+.pin-key{
+  aspect-ratio:1;border-radius:50%;background:var(--surface2);
+  font-size:20px;font-weight:600;display:flex;align-items:center;justify-content:center;
+  transition:.15s;
+}
+.pin-key:active{transform:scale(.9);background:var(--primary-blue);}
+.btn-primary{
+  width:100%;max-width:320px;padding:16px;border-radius:14px;
+  background:linear-gradient(90deg,var(--primary-blue),var(--teal));
+  color:#fff;font-weight:700;font-size:15px;
+  box-shadow:0 8px 24px rgba(37,99,235,0.35);
+  transition:.15s;
+}
+.btn-primary:active{transform:scale(.97);}
+.btn-ghost{padding:14px;color:var(--subtext);font-weight:600;font-size:14px;}
+.step-progress{display:flex;gap:6px;margin-top:36px;}
+.step-progress span{width:26px;height:4px;border-radius:2px;background:var(--surface2);transition:.3s;}
+.step-progress span.active{background:var(--teal);}
 
-<!-- Security Notice -->  
-<div class="dash-card security-card">  
-  <p>🔒 All payments are secured with Pi Network authentication.</p>  
-  <p>⚡ Transactions are processed in real-time. 🛡️ We never store sensitive data.</p>  
-</div>  
+/* ---------- App Shell ---------- */
+.screen{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  background:var(--bg);opacity:0;pointer-events:none;transform:translateY(10px);
+  transition:opacity .25s ease, transform .25s ease;
+}
+.screen.active{opacity:1;pointer-events:auto;transform:translateY(0);z-index:5;}
+.topbar{
+  padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.topbar h1{font-size:20px;font-weight:700;}
+.icon-btn{
+  width:38px;height:38px;border-radius:12px;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-size:16px;transition:.15s;
+}
+.icon-btn:active{transform:scale(.9);}
+.scroll-area{flex:1;overflow-y:auto;padding:0 20px 100px;}
 
-<!-- PAYMENT UTILITIES -->  
-<h3>Utilities</h3>  
+/* ---------- Bottom Nav ---------- */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;height:78px;
+  background:rgba(19,28,49,0.92);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-around;
+  padding-bottom:14px;z-index:50;
+}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--subtext);font-size:10.5px;font-weight:600;transition:.2s;}
+.nav-item .nav-icon{font-size:20px;transition:.2s;}
+.nav-item.active{color:var(--teal);}
+.nav-item.active .nav-icon{transform:translateY(-2px);}
 
-<div class="utility-card">  
-  <p>💸 Pay 1 π for FinPi Service</p>  
-  <button id="payBtn" class="btn pay" disabled>Pay 1 π</button>  
-</div>  
+/* ---------- Cards ---------- */
+.glass-card{
+  background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px;backdrop-filter:blur(10px);
+}
+.balance-card{
+  background:linear-gradient(135deg, var(--deep-blue), var(--primary-blue) 55%, var(--teal));
+  border-radius:20px;padding:24px 22px;color:#fff;position:relative;overflow:hidden;margin-bottom:18px;
+}
+.balance-card::after{
+  content:"π";position:absolute;right:-10px;top:-20px;font-size:150px;font-weight:800;
+  color:rgba(255,255,255,0.08);
+}
+.balance-label{font-size:12.5px;opacity:.85;margin-bottom:6px;}
+.balance-amount{font-size:34px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-1px;}
+.balance-usd{font-size:12.5px;opacity:.8;margin-top:4px;}
+.quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px;position:relative;z-index:2;}
+.qa-btn{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.qa-icon{
+  width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,0.18);
+  display:flex;align-items:center;justify-content:center;font-size:19px;transition:.15s;
+}
+.qa-btn:active .qa-icon{transform:scale(.88);background:rgba(255,255,255,0.3);}
+.qa-btn span{font-size:11px;font-weight:600;}
 
-<div class="utility-card">  
-  <p>📱 Mobile Recharge</p>  
-  <input type="text" placeholder="Enter Phone Number" id="rechargeNumber">  
-  <input type="number" placeholder="Amount in π" id="rechargeAmount">  
-  <button id="rechargeBtn" class="btn">Recharge</button>  
-</div>  
+.section-title{font-size:14px;font-weight:700;color:var(--subtext);margin:22px 0 12px;letter-spacing:.3px;text-transform:uppercase;}
+.section-title.first{margin-top:4px;}
 
-<div class="utility-card">  
-  <p>💡 Pay Bills (Electricity, Water, etc.)</p>  
-  <input type="text" placeholder="Enter Account Number" id="billAccount">  
-  <input type="number" placeholder="Amount in π" id="billAmount">  
-  <button id="billBtn" class="btn">Pay Bill</button>  
-</div>  
+.tx-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.tx-row:last-child{border-bottom:none;}
+.tx-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.tx-icon.out{background:rgba(239,68,68,0.15);color:var(--error);}
+.tx-icon.in{background:rgba(16,185,129,0.15);color:var(--success);}
+.tx-info{flex:1;min-width:0;}
+.tx-title{font-size:14.5px;font-weight:600;}
+.tx-sub{font-size:12px;color:var(--subtext);margin-top:2px;}
+.tx-amt{font-size:14.5px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.tx-amt.out{color:var(--error);}
+.tx-amt.in{color:var(--success);}
 
-<div class="utility-card">  
-  <p>🔗 Send Pi to Wallet / QR Scan</p>  
-  <input type="text" placeholder="Recipient Wallet ID" id="walletId">  
-  <input type="number" placeholder="Amount in π" id="sendPiAmount">  
-  <button id="sendPiBtn" class="btn">Send Pi</button>  
-</div>  
+.list-row{
+  display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid var(--border);transition:.15s;
+}
+.list-row:active{background:var(--surface2);}
+.list-row:last-child{border-bottom:none;}
+.list-icon{width:40px;height:40px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.list-body{flex:1;}
+.list-title{font-size:14.5px;font-weight:600;}
+.list-sub{font-size:12px;color:var(--subtext);margin-top:1px;}
+.chev{color:var(--subtext);font-size:14px;}
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.3px;}
+.badge.live{background:rgba(16,185,129,0.15);color:var(--success);}
+.badge.soon{background:rgba(244,196,48,0.15);color:var(--gold);}
 
-<div class="utility-card">  
-  <p>🖼 Generate QR Payment</p>  
-  <input type="number" id="qrAmount" placeholder="Amount in π">  
-  <input type="text" id="qrMemo" placeholder="Memo">  
-  <button id="generateQRBtn" class="btn">Generate QR</button>  
-  <div id="qrCode"></div>  
-</div>  
+/* ---------- More Drawer ---------- */
+.drawer-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:80;
+  opacity:0;pointer-events:none;transition:.25s;
+}
+.drawer-overlay.open{opacity:1;pointer-events:auto;}
+.drawer{
+  position:absolute;bottom:0;left:0;right:0;max-height:82%;
+  background:var(--surface);border-radius:24px 24px 0 0;z-index:90;
+  transform:translateY(100%);transition:.3s cubic-bezier(.22,1,.36,1);
+  padding:10px 20px 24px;overflow-y:auto;
+}
+.drawer.open{transform:translateY(0);}
+.drawer-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:8px auto 16px;}
+.drawer h2{font-size:17px;font-weight:700;margin-bottom:14px;}
 
-<!-- Feedback -->  
-<div class="utility-card feedback-section">  
-  <h3>📝 Feedback & Comments</h3>  
-  <textarea id="userFeedback" placeholder="Enter your feedback here..."></textarea>  
-  <button id="submitFeedback" class="btn">Submit Feedback</button>  
-  <p id="feedbackStatus"></p>  
-</div>  
+/* ---------- Modal ---------- */
+.modal-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,0.6);z-index:100;
+  opacity:0;pointer-events:none;transition:.2s;display:flex;align-items:flex-end;
+}
+.modal-overlay.open{opacity:1;pointer-events:auto;}
+.modal{
+  background:var(--surface);width:100%;border-radius:22px 22px 0 0;padding:22px 22px 30px;
+  transform:translateY(30px);transition:.28s cubic-bezier(.22,1,.36,1);
+}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.modal-header h3{font-size:17px;font-weight:700;}
+.input-field{
+  width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+  padding:14px;color:var(--text);font-size:15px;margin-bottom:12px;
+}
+.input-field:focus{outline:none;border-color:var(--teal);}
+.qr-box{
+  width:200px;height:200px;margin:0 auto 18px;background:#fff;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.qr-pattern{width:170px;height:170px;background:
+  repeating-linear-gradient(90deg,#0B1120 0 8px, transparent 8px 16px),
+  repeating-linear-gradient(0deg,#0B1120 0 8px, transparent 8px 16px);
+  background-blend-mode:multiply;border-radius:8px;position:relative;}
+.qr-pattern::before{content:"π";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:var(--primary-blue);background:#fff;width:44px;height:44px;margin:auto;border-radius:8px;}
 
-<!-- Support -->  
-<div class="utility-card support-section">  
-  <h3>🛠 Support & Help</h3>  
-  <input type="text" id="supportEmail" placeholder="Your email" />  
-  <textarea id="supportMessage" placeholder="Describe your issue"></textarea>  
-  <button id="submitSupport" class="btn">Submit Support Ticket</button>  
-  <p id="supportStatus"></p>  
-</div>  
+/* ---------- Toast ---------- */
+.toast{
+  position:absolute;top:16px;left:20px;right:20px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;
+  z-index:200;transform:translateY(-80px);opacity:0;transition:.35s cubic-bezier(.22,1,.36,1);
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast-icon{width:34px;height:34px;border-radius:10px;background:rgba(16,185,129,0.15);color:var(--success);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.toast-text{font-size:13px;font-weight:600;}
+.toast-sub{font-size:11.5px;color:var(--subtext);}
 
-<!-- Transaction History -->  
-<div id="transactions" class="transactions">  
-  <h3>Transaction History</h3>  
-  <button id="clearTxBtn" class="btn small-btn">Clear History</button>  
-  <ul id="txList"></ul>  
+/* ---------- Roadmap ---------- */
+.roadmap-cat{margin-bottom:22px;}
+.roadmap-cat h4{font-size:13px;color:var(--gold);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;}
+.roadmap-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.roadmap-item:last-child{border-bottom:none;}
+.roadmap-item span{font-size:13.5px;}
+.roadmap-tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--surface2);color:var(--subtext);}
+
+/* ---------- Coming Soon preview card ---------- */
+.soon-card{text-align:center;padding:50px 20px;}
+.soon-icon{width:64px;height:64px;border-radius:18px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 18px;}
+.soon-card h3{font-size:18px;font-weight:700;margin-bottom:8px;}
+.soon-card p{font-size:13.5px;color:var(--subtext);line-height:1.6;margin-bottom:22px;max-width:280px;margin-left:auto;margin-right:auto;}
+
+.legal-body{font-size:13px;line-height:1.75;color:var(--subtext);}
+.legal-body h4{color:var(--text);font-size:14.5px;margin:18px 0 6px;}
+.security-score-ring{width:120px;height:120px;margin:0 auto 16px;position:relative;}
+.toggle{width:46px;height:26px;border-radius:20px;background:var(--surface2);position:relative;transition:.2s;flex-shrink:0;}
+.toggle.on{background:var(--success);}
+.toggle::after{content:"";position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s;}
+.toggle.on::after{left:23px;}
+.row-between{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border);}
+.row-between:last-child{border-bottom:none;}
+.row-between .lbl{font-size:14px;font-weight:500;}
+
+@media (min-width:461px){
+  body{background:#05070D;}
+  #app{border-left:1px solid var(--border);border-right:1px solid var(--border);box-shadow:0 0 80px rgba(0,0,0,0.5);}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===================== ONBOARDING ===================== -->
+  <div class="onboard-screen" id="ob-welcome">
+    <div class="pi-mark">π</div>
+    <div class="onboard-title">Welcome to FinPi</div>
+    <div class="onboard-sub">A comprehensive financial platform built for the Pi ecosystem. Send, save, and manage Pi with confidence.</div>
+    <button class="btn-primary" onclick="goOnboard('ob-signin')">Continue with Pi</button>
+    <button class="btn-ghost" onclick="goOnboard('ob-signin')">Learn how FinPi works</button>
+    <div class="step-progress"><span class="active"></span><span></span><span></span></div>
+  </div>
+
+  <div class="onboard-screen" id="ob-signin" style="display:none;">
+    <div class="pi-mark" style="animation:none;">🔐</div>
+    <div class="onboard-title">Connect Your Pi Wallet</div>
+    <div class="onboard-sub">FinPi uses official Pi Authentication. Your Pi credentials are never seen or stored by FinPi.</div>
+    <button class="btn-primary" onclick="simulateAuth()" id="authBtn">Authenticate with Pi SDK</button>
+    <button class="btn-ghost" onclick="goOnboard('ob-welcome')">Back</button>
+    <div class="step-progress"><span class="active"></span><span class="active"></span><span></span></div>
+  </div>
+
+  <div class="onboard-screen" id="ob-pin" style="display:none;">
+    <div class="pi-mark" style="animation:none;">🔢</div>
+    <div class="onboard-title">Create Your PIN</div>
+    <div class="onboard-sub" id="pinSub">Set a 6-digit PIN to protect your FinPi account.</div>
+    <div class="pin-dots" id="pinDots"></div>
+    <div class="pin-pad" id="pinPad"></div>
+    <div class="step-progress"><span class="active"></span><span class="active"></span><span class="active"></span></div>
+  </div>
+
+  <div class="onboard-screen" id="ob-bio" style="display:none;">
+    <div class="pi-mark" style="animation:none;">👆</div>
+    <div class="onboard-title">Enable Biometric Login</div>
+    <div class="onboard-sub">Use Face ID or fingerprint for faster, secure sign-in.</div>
+    <button class="btn-primary" onclick="finishOnboarding()">Enable Biometrics</button>
+    <button class="btn-ghost" onclick="finishOnboarding()">Skip for now</button>
+  </div>
+
+  <!-- ===================== TOAST ===================== -->
+  <div class="toast" id="toast">
+    <div class="toast-icon">✓</div>
+    <div>
+      <div class="toast-text" id="toastText">Done</div>
+      <div class="toast-sub" id="toastSub"></div>
+    </div>
+  </div>
+
+  <!-- ===================== HOME ===================== -->
+  <div class="screen" id="screen-home">
+    <div class="topbar">
+      <div>
+        <div style="font-size:12px;color:var(--subtext);">Good day,</div>
+        <h1>@abdullahi.b</h1>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="icon-btn" onclick="openScreen('screen-activity')">🔔</button>
+        <button class="icon-btn" onclick="openDrawer()">☰</button>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="balance-card">
+        <div class="balance-label">Total Balance</div>
+        <div class="balance-amount mono" id="balanceDisplay">0.00 π</div>
+        <div class="balance-usd">≈ $0.00 USD · rate updates hourly</div>
+        <div class="quick-actions">
+          <div class="qa-btn" onclick="openModal('modal-send')"><div class="qa-icon">↑</div><span>Send</span></div>
+          <div class="qa-btn" onclick="openModal('modal-receive')"><div class="qa-icon">↓</div><span>Receive</span></div>
+          <div class="qa-btn" onclick="openModal('modal-scan')"><div class="qa-icon">▦</div><span>Scan</span></div>
+          <div class="qa-btn" onclick="openScreen('screen-payments')"><div class="qa-icon">•••</div><span>More</span></div>
+        </div>
+      </div>
+
+      <div class="section-title first">Recent Activity</div>
+      <div class="glass-card" id="homeTxList"></div>
+
+      <div class="section-title">Explore FinPi</div>
+      <div class="glass-card" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;">
+        <div class="qa-btn" style="flex-direction:row;justify-content:flex-start;gap:8px;padding:10px;background:var(--surface2);border-radius:12px;" onclick="openScreen('screen-security')"><span>🛡</span><span style="font-size:12.5px;font-weight:600;">Security</span></div>
+        <div class="qa-btn" style="flex-direction:row;justify-content:flex-start;gap:8px;padding:10px;background:var(--surface2);border-radius:12px;" onclick="openLegal()"><span>⚖</span><span style="font-size:12.5px;font-weight:600;">Legal</span></div>
+        <div class="qa-btn" style="flex-direction:row;justify-content:flex-start;gap:8px;padding:10px;background:var(--surface2);border-radius:12px;" onclick="openScreen('screen-support')"><span>🆘</span><span style="font-size:12.5px;font-weight:600;">Support</span></div>
+        <div class="qa-btn" style="flex-direction:row;justify-content:flex-start;gap:8px;padding:10px;background:var(--surface2);border-radius:12px;" onclick="openScreen('screen-roadmap')"><span>🗺</span><span style="font-size:12.5px;font-weight:600;">Roadmap</span></div>
+      </div>
+    </div>
+    <div class="bottom-nav"></div>
+  </div>
+
+  <!-- ===================== PAYMENTS ===================== -->
+  <div class="screen" id="screen-payments">
+    <div class="topbar"><h1>Payments</h1><button class="icon-btn" onclick="openDrawer()">☰</button></div>
+    <div class="scroll-area">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px;">
+        <button class="btn-primary" style="max-width:none;" onclick="openModal('modal-send')">↑ Send Pi</button>
+        <button class="btn-primary" style="max-width:none;background:var(--surface2);box-shadow:none;" onclick="openModal('modal-receive')">↓ Receive Pi</button>
+      </div>
+      <div class="section-title">Tools</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="list-row" onclick="openModal('modal-scan')"><div class="list-icon">▦</div><div class="list-body"><div class="list-title">Scan QR</div><div class="list-sub">Pay a merchant or pioneer instantly</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="openModal('modal-receive')"><div class="list-icon">⬜</div><div class="list-body"><div class="list-title">Generate QR</div><div class="list-sub">Show your code to get paid</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="openModal('modal-request')"><div class="list-icon">✉</div><div class="list-body"><div class="list-title">Payment Requests</div><div class="list-sub">Ask someone to pay you</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showToast('Favorites','Coming soon — save contacts you pay often')"><div class="list-icon">★</div><div class="list-body"><div class="list-title">Favorites</div><div class="list-sub">Quick access to frequent contacts</div></div><span class="badge soon">Soon</span></div>
+      </div>
+      <div class="section-title">All Transactions</div>
+      <div class="glass-card" id="paymentsTxList"></div>
+    </div>
+    <div class="bottom-nav"></div>
+  </div>
+
+  <!-- ===================== WALLET ===================== -->
+  <div class="screen" id="screen-wallet">
+    <div class="topbar"><h1>Wallet</h1><button class="icon-btn" onclick="openDrawer()">☰</button></div>
+    <div class="scroll-area">
+      <div class="balance-card">
+        <div class="balance-label">Pi Balance</div>
+        <div class="balance-amount mono" id="balanceDisplay2">0.00 π</div>
+        <div class="balance-usd">Wallet ID: FP-8827-XQ19</div>
+      </div>
+      <div class="section-title first">Wallet Information</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="row-between"><span class="lbl">Network</span><span class="mono" style="font-size:13px;">Pi Mainnet</span></div>
+        <div class="row-between"><span class="lbl">Authentication</span><span style="color:var(--success);font-size:13px;font-weight:600;">● Connected</span></div>
+        <div class="row-between"><span class="lbl">Last synced</span><span style="font-size:13px;color:var(--subtext);">Just now</span></div>
+      </div>
+      <div class="section-title">Wallet Security</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="list-row" onclick="openScreen('screen-security')"><div class="list-icon">🔑</div><div class="list-body"><div class="list-title">Backup Guide</div><div class="list-sub">Protect your Pi recovery phrase</div></div><span class="chev">›</span></div>
+        <div class="list-row" onclick="openScreen('screen-security')"><div class="list-icon">🛡</div><div class="list-body"><div class="list-title">Wallet Security</div><div class="list-sub">PIN, biometrics & device trust</div></div><span class="chev">›</span></div>
+      </div>
+      <div class="section-title">Expand</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="list-row" onclick="showToast('Connected Wallets','Coming soon — link multiple Pi wallets')"><div class="list-icon">🔗</div><div class="list-body"><div class="list-title">Connected Wallets</div><div class="list-sub">Manage multiple wallets in one place</div></div><span class="badge soon">Soon</span></div>
+      </div>
+    </div>
+    <div class="bottom-nav"></div>
+  </div>
+
+  <!-- ===================== ACTIVITY ===================== -->
+  <div class="screen" id="screen-activity">
+    <div class="topbar"><h1>Activity</h1><button class="icon-btn" onclick="openDrawer()">☰</button></div>
+    <div class="scroll-area">
+      <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;">
+        <button class="badge live" style="padding:8px 14px;font-size:12px;">All</button>
+        <button class="badge" style="padding:8px 14px;font-size:12px;background:var(--surface2);color:var(--subtext);">Payments</button>
+        <button class="badge" style="padding:8px 14px;font-size:12px;background:var(--surface2);color:var(--subtext);">Security</button>
+        <button class="badge" style="padding:8px 14px;font-size:12px;background:var(--surface2);color:var(--subtext);">System</button>
+      </div>
+      <div class="section-title first">Today</div>
+      <div class="glass-card" id="activityList"></div>
+    </div>
+    <div class="bottom-nav"></div>
+  </div>
+
+  <!-- ===================== PROFILE ===================== -->
+  <div class="screen" id="screen-profile">
+    <div class="topbar"><h1>Profile</h1><button class="icon-btn" onclick="openDrawer()">☰</button></div>
+    <div class="scroll-area">
+      <div class="glass-card" style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <div style="width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,var(--primary-blue),var(--teal));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;">AB</div>
+        <div>
+          <div style="font-weight:700;font-size:16px;">Abdullahi B. Abubakar</div>
+          <div style="font-size:12.5px;color:var(--subtext);">@abdullahi.b · Pi Authenticated ✓</div>
+        </div>
+      </div>
+      <div class="section-title first">Identity</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="list-row" onclick="openModal('modal-idcard')"><div class="list-icon">🪪</div><div class="list-body"><div class="list-title">Identity Card</div><div class="list-sub">Digital ID with QR code</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showToast('KYC Status','Coming soon — pending reliable Pi Network KYC data')"><div class="list-icon">✅</div><div class="list-body"><div class="list-title">KYC Status</div><div class="list-sub">Verification level</div></div><span class="badge soon">Soon</span></div>
+        <div class="list-row" onclick="showToast('FinPi Reputation','Coming soon — platform-specific score, not an official Pi metric')"><div class="list-icon">📈</div><div class="list-body"><div class="list-title">FinPi Reputation</div><div class="list-sub">Not an official Pi Network score</div></div><span class="badge soon">Soon</span></div>
+      </div>
+      <div class="section-title">Account</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="list-row" onclick="openScreen('screen-security')"><div class="list-icon">🛡</div><div class="list-body"><div class="list-title">Security Center</div></div><span class="chev">›</span></div>
+        <div class="list-row" onclick="openScreen('screen-settings')"><div class="list-icon">⚙</div><div class="list-body"><div class="list-title">Settings</div></div><span class="chev">›</span></div>
+        <div class="list-row" onclick="openScreen('screen-support')"><div class="list-icon">🆘</div><div class="list-body"><div class="list-title">Support Center</div></div><span class="chev">›</span></div>
+        <div class="list-row" onclick="openLegal()"><div class="list-icon">⚖</div><div class="list-body"><div class="list-title">Legal & Compliance</div></div><span class="chev">›</span></div>
+      </div>
+    </div>
+    <div class="bottom-nav"></div>
+  </div>
+
+  <!-- ===================== SECURITY CENTER ===================== -->
+  <div class="screen" id="screen-security">
+    <div class="topbar"><button class="icon-btn" onclick="openScreen('screen-profile')">←</button><h1>Security Center</h1><div style="width:38px;"></div></div>
+    <div class="scroll-area">
+      <div class="glass-card" style="text-align:center;padding:24px;">
+        <div style="font-size:13px;color:var(--subtext);margin-bottom:6px;">Security Score</div>
+        <div style="font-size:38px;font-weight:800;color:var(--success);" class="mono">82</div>
+        <div style="font-size:12px;color:var(--subtext);">Good — enable 2 more checks to reach Excellent</div>
+      </div>
+      <div class="section-title first">Access Controls</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="row-between"><span class="lbl">PIN Lock</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="row-between"><span class="lbl">Biometric Login</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="row-between"><span class="lbl">Auto-logout (5 min idle)</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+      <div class="section-title">Monitoring</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="list-row" onclick="openScreen('screen-activity')"><div class="list-icon">📜</div><div class="list-body"><div class="list-title">Login History</div><div class="list-sub">2 sessions this week</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showToast('Trusted Devices','This device is trusted')"><div class="list-icon">📱</div><div class="list-body"><div class="list-title">Trusted Devices</div><div class="list-sub">1 device</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showToast('Fraud Alerts','Coming soon — real-time anomaly detection')"><div class="list-icon">⚠</div><div class="list-body"><div class="list-title">Fraud Alerts</div></div><span class="badge soon">Soon</span></div>
+      </div>
+      <div class="section-title">Recovery</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="list-row" onclick="showToast('Backup Guide','Never share your Pi passphrase with anyone, including FinPi')"><div class="list-icon">🔑</div><div class="list-body"><div class="list-title">Backup Guide</div></div><span class="chev">›</span></div>
+      </div>
+    </div>
+    <div class="bottom-nav"></div>
+  </div>
+
+  <!-- ===================== SETTINGS ===================== -->
+  <div class="screen" id="screen-settings">
+    <div class="topbar"><button class="icon-btn" onclick="openScreen('screen-profile')">←</button><h1>Settings</h1><div style="width:38px;"></div></div>
+    <div class="scroll-area">
+      <div class="section-title first">General</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="row-between"><span class="lbl">Language</span><span style="color:var(--subtext);font-size:13px;">English</span></div>
+        <div class="row-between"><span class="lbl">Currency</span><span style="color:var(--subtext);font-size:13px;">USD</span></div>
+        <div class="row-between"><span class="lbl">Dark Theme</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+      <div class="section-title">Privacy</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="row-between"><span class="lbl">Data Sharing</span><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        <div class="list-row" onclick="showToast('Export Data','Your data export will be emailed within 24 hours')"><div class="list-icon">📤</div><div class="list-body"><div class="list-title">Export My Data</div></div><span class="chev">›</span></div>
+      </div>
+      <div class="section-title">App</div>
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="row-between"><span class="lbl">Clear Cache</span><span style="color:var(--teal);font-size:13px;font-weight:600;" onclick="showToast('Cache Cleared','12.4 MB freed')">Clear</span></div>
+        <div class="row-between"><span class="lbl">Version</span><span style="color:var(--subtext);font-size:13px;">1.0.0 (MVP)</span></div>
+        <div class="list-row" onclick="showToast('Accessibility','Full screen-reader & reduced-motion support ships in v1.1')"><div class="list-icon">♿</div><div class="list-body"><div class="list-title">Accessibility</div></div><span class="badge soon">Soon</span></div>
+      </div>
+    </div>
+    <div class="bottom-nav"></div>
+  </div>
+
+  <!-- ===================== SUPPORT CENTER ===================== -->
+  <div class="screen" id="screen-support">
+    <div class="topbar"><button class="icon-btn" onclick="openScreen('screen-profile')">←</button><h1>Support Center</h1><div style="width:38px;"></div></div>
+    <div class="scroll-area">
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="list-row" onclick="showToast('Help Center','Search articles or browse by topic')"><div class="list-icon">📖</div><div class="list-body"><div class="list-title">Help Center</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showToast('Ticket Submitted','Our team replies within 24 hours')"><div class="list-icon">🎫</div><div class="list-body"><div class="list-title">Submit a Ticket</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showToast('Payment Issue Reported','Reference #FP-2291 created')"><div class="list-icon">⚠</div><div class="list-body"><div class="list-title">Report a Payment Issue</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showToast('Report a Merchant','Coming soon — no merchants live yet')"><div class="list-icon">🏪</div><div class="list-body"><div class="list-title">Report a Merchant</div></div><span class="badge soon">Soon</span></div>
+        <div class="list-row" onclick="showToast('All Systems Operational','Last checked just now')"><div class="list-icon">🟢</div><div class="list-body"><div class="list-title">App Status</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showToast('Thanks!','Your feedback helps shape FinPi')"><div class="list-icon">💬</div><div class="list-body"><div class="list-title">Feedback & Suggestions</div></div><span class="badge live">Live</span></div>
+      </div>
+    </div>
+    <div class="bottom-nav"></div>
+  </div>
+
+  <!-- ===================== LEGAL & COMPLIANCE ===================== -->
+  <div class="screen" id="screen-legal">
+    <div class="topbar"><button class="icon-btn" onclick="closeLegalDetail()">←</button><h1 id="legalTitle">Legal & Compliance</h1><div style="width:38px;"></div></div>
+    <div class="scroll-area" id="legalList">
+      <div class="glass-card" style="padding:6px 14px;">
+        <div class="list-row" onclick="showLegal('privacy')"><div class="list-icon">🔒</div><div class="list-body"><div class="list-title">Privacy Policy</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showLegal('terms')"><div class="list-icon">📄</div><div class="list-body"><div class="list-title">Terms of Service</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showLegal('guidelines')"><div class="list-icon">🤝</div><div class="list-body"><div class="list-title">Community Guidelines</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showLegal('risk')"><div class="list-icon">⚠</div><div class="list-body"><div class="list-title">Risk Disclosure</div></div><span class="badge live">Live</span></div>
+        <div class="list-row" onclick="showLegal('security')"><div class="list-icon">🛡</div><div class="list-body"><div class="list-title">Security Policy</div></div><span class="badge live">Live</span></div>
+      </div>
+    </div>
+    <div class="scroll-area legal-body" id="legalDetail" style="display:none;"></div>
+    <div class="bottom-nav"></div>
+  </div>
+
+  <!-- ===================== ROADMAP ===================== -->
+  <div class="screen" id="screen-roadmap">
+    <div class="topbar"><button class="icon-btn" onclick="openScreen('screen-home')">←</button><h1>Roadmap</h1><div style="width:38px;"></div></div>
+    <div class="scroll-area">
+      <div class="glass-card" style="margin-bottom:20px;">
+        <div style="font-size:13.5px;color:var(--subtext);line-height:1.6;">Every feature below is planned and scheduled. Nothing on this list is live yet — we'd rather tell you honestly than show you something that doesn't work.</div>
+      </div>
+
+      <div class="roadmap-cat">
+        <h4>v2 · Growth</h4>
+        <div class="roadmap-item"><span>Marketplace (Buy/Sell/Services)</span><span class="roadmap-tag">v2</span></div>
+        <div class="roadmap-item"><span>Business Center & Merchant Directory</span><span class="roadmap-tag">v2</span></div>
+        <div class="roadmap-item"><span>Budget Tracker & Savings Goals</span><span class="roadmap-tag">v2</span></div>
+        <div class="roadmap-item"><span>AI Financial Assistant</span><span class="roadmap-tag">v2</span></div>
+        <div class="roadmap-item"><span>Personal Finance Insights</span><span class="roadmap-tag">v2</span></div>
+        <div class="roadmap-item"><span>FinPi Reputation Score</span><span class="roadmap-tag">v2</span></div>
+      </div>
+
+      <div class="roadmap-cat">
+        <h4>v3 · Scale</h4>
+        <div class="roadmap-item"><span>Business Analytics</span><span class="roadmap-tag">v3</span></div>
+        <div class="roadmap-item"><span>Community (Charity, Rewards)</span><span class="roadmap-tag">v3</span></div>
+        <div class="roadmap-item"><span>Learn (Education Hub)</span><span class="roadmap-tag">v3</span></div>
+        <div class="roadmap-item"><span>Escrow <span style="color:var(--subtext);">(pending Pi policy review)</span></span><span class="roadmap-tag">v3</span></div>
+      </div>
+
+      <div class="roadmap-cat">
+        <h4>Future exploration</h4>
+        <div class="roadmap-item"><span>Developer Platform (API/SDK)</span><span class="roadmap-tag">Future</span></div>
+        <div class="roadmap-item"><span>Enterprise Tools</span><span class="roadmap-tag">Future</span></div>
+      </div>
+    </div>
+    <div class="bottom-nav"></div>
+  </div>
+
+  <!-- ===================== More-menu Coming Soon target ===================== -->
+  <div class="screen" id="screen-soon">
+    <div class="topbar"><button class="icon-btn" onclick="openScreen('screen-home')">←</button><h1 id="soonHeaderTitle">Module</h1><div style="width:38px;"></div></div>
+    <div class="soon-card" style="margin:auto;">
+      <div class="soon-icon" id="soonIcon">🚧</div>
+      <h3 id="soonTitle">Coming Soon</h3>
+      <p id="soonDesc">This module is planned and scheduled.</p>
+      <button class="btn-primary" style="max-width:240px;" onclick="openScreen('screen-roadmap')">View Full Roadmap</button>
+    </div>
+  </div>
+
+  <!-- ===================== DRAWER ===================== -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-handle"></div>
+    <h2>More</h2>
+    <div class="glass-card" style="padding:4px 14px;">
+      <div class="list-row" onclick="openSoon('💰','Personal Finance','Budget tracking, savings goals, spending analysis and financial calendar.')"><div class="list-icon">💰</div><div class="list-body"><div class="list-title">Personal Finance</div></div><span class="badge soon">Soon</span></div>
+      <div class="list-row" onclick="openSoon('🤖','AI Financial Assistant','Claude-powered spending advice, budget planning and financial education.')"><div class="list-icon">🤖</div><div class="list-body"><div class="list-title">AI Financial Assistant</div></div><span class="badge soon">Soon</span></div>
+      <div class="list-row" onclick="openSoon('🛒','Marketplace','Buy and sell digital & physical goods and services with Pi.')"><div class="list-icon">🛒</div><div class="list-body"><div class="list-title">Marketplace</div></div><span class="badge soon">Soon</span></div>
+      <div class="list-row" onclick="openSoon('🏪','Business Center','Merchant tools — directory, invoicing, verification, inventory.')"><div class="list-icon">🏪</div><div class="list-body"><div class="list-title">Business Center</div></div><span class="badge soon">Soon</span></div>
+      <div class="list-row" onclick="openSoon('📊','Analytics','Revenue and spending analytics for individuals and merchants.')"><div class="list-icon">📊</div><div class="list-body"><div class="list-title">Analytics</div></div><span class="badge soon">Soon</span></div>
+      <div class="list-row" onclick="openSoon('❤️','Community','Verified charity donations, rewards and community campaigns.')"><div class="list-icon">❤️</div><div class="list-body"><div class="list-title">Community</div></div><span class="badge soon">Soon</span></div>
+      <div class="list-row" onclick="openSoon('📚','Learn','Financial education, Pi ecosystem guides and tutorials.')"><div class="list-icon">📚</div><div class="list-body"><div class="list-title">Learn</div></div><span class="badge soon">Soon</span></div>
+      <div class="list-row" onclick="openScreen('screen-security'); closeDrawer();"><div class="list-icon">🛡</div><div class="list-body"><div class="list-title">Security Center</div></div><span class="badge live">Live</span></div>
+      <div class="list-row" onclick="openScreen('screen-support'); closeDrawer();"><div class="list-icon">🆘</div><div class="list-body"><div class="list-title">Support Center</div></div><span class="badge live">Live</span></div>
+      <div class="list-row" onclick="openLegal(); closeDrawer();"><div class="list-icon">⚖</div><div class="list-body"><div class="list-title">Legal & Compliance</div></div><span class="badge live">Live</span></div>
+      <div class="list-row" onclick="openScreen('screen-settings'); closeDrawer();"><div class="list-icon">⚙</div><div class="list-body"><div class="list-title">Settings</div></div><span class="badge live">Live</span></div>
+      <div class="list-row" onclick="openScreen('screen-roadmap'); closeDrawer();"><div class="list-icon">🗺</div><div class="list-body"><div class="list-title">Roadmap</div></div><span class="chev">›</span></div>
+      <div class="list-row" onclick="openSoon('👨‍💻','Developer Platform','REST API, SDK, webhooks and sandbox for building on FinPi.')"><div class="list-icon">👨‍💻</div><div class="list-body"><div class="list-title">Developer Platform</div></div><span class="badge soon">Soon</span></div>
+      <div class="list-row" onclick="openSoon('🏢','Enterprise','Organization accounts, team roles, audit logs, POS integration.')"><div class="list-icon">🏢</div><div class="list-body"><div class="list-title">Enterprise</div></div><span class="badge soon">Soon</span></div>
+      <div class="list-row" onclick="showToast('FinPi','Version 1.0.0 · Built for the Pi ecosystem')"><div class="list-icon">ℹ</div><div class="list-body"><div class="list-title">About FinPi</div></div><span class="chev">›</span></div>
+    </div>
+  </div>
+
+  <!-- ===================== MODALS ===================== -->
+  <div class="modal-overlay" id="modal-send">
+    <div class="modal">
+      <div class="modal-header"><h3>Send Pi</h3><button class="icon-btn" onclick="closeModal('modal-send')">✕</button></div>
+      <input class="input-field" placeholder="@username or scan QR" id="sendTo">
+      <input class="input-field" placeholder="0.00" type="number" id="sendAmt">
+      <input class="input-field" placeholder="Add a note (optional)">
+      <button class="btn-primary" style="max-width:none;" onclick="doSend()">Review & Send</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-receive">
+    <div class="modal">
+      <div class="modal-header"><h3>Receive Pi</h3><button class="icon-btn" onclick="closeModal('modal-receive')">✕</button></div>
+      <div class="qr-box"><div class="qr-pattern"></div></div>
+      <div style="text-align:center;font-size:13px;color:var(--subtext);margin-bottom:16px;">Your FinPi ID: <span class="mono" style="color:var(--text);">@abdullahi.b</span></div>
+      <button class="btn-primary" style="max-width:none;" onclick="showToast('Link Copied','Share your payment link with anyone')">Share Payment Link</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-scan">
+    <div class="modal">
+      <div class="modal-header"><h3>Scan QR</h3><button class="icon-btn" onclick="closeModal('modal-scan')">✕</button></div>
+      <div style="height:220px;border-radius:16px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--subtext);font-size:13px;margin-bottom:16px;border:2px dashed var(--border);">Point camera at a FinPi QR code</div>
+      <button class="btn-ghost" style="width:100%;background:var(--surface2);border-radius:12px;" onclick="closeModal('modal-scan')">Cancel</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-request">
+    <div class="modal">
+      <div class="modal-header"><h3>Request Payment</h3><button class="icon-btn" onclick="closeModal('modal-request')">✕</button></div>
+      <input class="input-field" placeholder="@username">
+      <input class="input-field" placeholder="Amount (π)" type="number">
+      <button class="btn-primary" style="max-width:none;" onclick="closeModal('modal-request'); showToast('Request Sent','Payment request sent successfully')">Send Request</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-idcard">
+    <div class="modal">
+      <div class="modal-header"><h3>Identity Card</h3><button class="icon-btn" onclick="closeModal('modal-idcard')">✕</button></div>
+      <div class="glass-card" style="background:linear-gradient(135deg,var(--deep-blue),var(--purple));border:none;">
+        <div style="font-size:12px;opacity:.85;margin-bottom:4px;">FinPi Digital Identity</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:14px;">@abdullahi.b</div>
+        <div class="qr-box" style="width:120px;height:120px;margin:0 0 12px;"><div class="qr-pattern" style="width:100px;height:100px;"></div></div>
+        <div style="font-size:11px;opacity:.8;">Pi Authenticated ✓ · Member since 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-pinlock">
+    <div class="modal" style="text-align:center;">
+      <div class="pi-mark" style="animation:none;margin:0 auto 18px;">🔒</div>
+      <h3 style="margin-bottom:6px;">Enter PIN</h3>
+      <div style="font-size:12.5px;color:var(--subtext);margin-bottom:20px;">Welcome back to FinPi</div>
+      <div class="pin-dots" id="lockDots" style="justify-content:center;"></div>
+      <div class="pin-pad" id="lockPad" style="margin:20px auto 0;"></div>
+    </div>
+  </div>
+
 </div>
 
-  </div>    <!-- STATUS -->    <div id="status" class="status">  
-    Open FinPi in Pi Browser to continue.  
-  </div>    <footer>© 2026 FinPi Technologies</footer>  
-</div>  <!-- Pi SDK -->  <script src="https://sdk.minepi.com/pi-sdk.js"></script>  <!-- Script -->  <script>  
-Pi.init({ version: "2.0", sandbox: true });  
-  
-const loginBtn = document.getElementById("loginBtn");  
-const payBtn = document.getElementById("payBtn");  
-const statusBox = document.getElementById("status");  
-const dashboard = document.getElementById("dashboard");  
-const usernameDisplay = document.getElementById("usernameDisplay");  
-const txList = document.getElementById("txList");  
-const balanceDisplay = document.getElementById("balance");  
-let balance = 0;  
-  
-// Logout  
-const logoutBtn = document.getElementById("logoutBtn");  
-logoutBtn.addEventListener("click", () => {  
-  dashboard.style.display = "none";  
-  loginBtn.style.display = "block";  
-  txList.innerHTML = "";  
-  balance = 0;  
-  balanceDisplay.innerText = "0 π";  
-  statusBox.innerText = "Logged out. Open FinPi in Pi Browser to continue.";  
-});  
-  
-// Refresh Balance  
-const refreshBalance = document.getElementById("refreshBalance");  
-refreshBalance.addEventListener("click", () => {  
-  balanceDisplay.innerText = balance + " π";  
-  statusBox.innerText = "Balance refreshed!";  
-});  
-  
-// Login  
-loginBtn.addEventListener("click", async () => {  
-  try {  
-    statusBox.innerText = "Opening Pi authentication...";  
-    const auth = await Pi.authenticate(["username","payments"]);  
-    usernameDisplay.innerText = auth.user.username;  
-    dashboard.style.display = "block";  
-    loginBtn.style.display = "none";  
-    payBtn.disabled = false;  
-    statusBox.innerText = "Logged in as: " + auth.user.username;  
-  } catch(err) {  
-    statusBox.innerText = "Authentication failed";  
-  }  
-});  
-  
-// Payment  
-payBtn.addEventListener("click", () => {  
-  statusBox.innerHTML = "<span class='loading'></span> Processing payment...";  
-  Pi.createPayment({  
-    amount: 1,  
-    memo: "FinPi Test Payment",  
-    metadata: { service: "test-payment" }  
-  }, {  
-    onReadyForServerApproval: paymentId => {  
-      fetch("/.netlify/functions/approve", {  
-        method: "POST",  
-        headers: {"Content-Type":"application/json"},  
-        body: JSON.stringify({paymentId})  
-      });  
-    },  
-    onReadyForServerCompletion: (paymentId, txid) => {  
-      fetch("/.netlify/functions/complete", {  
-        method:"POST",  
-        headers: {"Content-Type":"application/json"},  
-        body: JSON.stringify({paymentId, txid})  
-      }).then(() => {  
-        balance += 1;  
-        balanceDisplay.innerText = balance + " π";  
-        addTransaction("💸", "Paid 1 π — FinPi Test Payment");  
-        statusBox.innerText = "Payment completed!";  
-      });  
-    },  
-    onCancel: () => statusBox.innerText = "Payment cancelled",  
-    onError: err => statusBox.innerText = "Payment error: " + err  
-  });  
-});  
-  
-// Utilities  
-const rechargeNumber = document.getElementById("rechargeNumber");  
-const rechargeAmount = document.getElementById("rechargeAmount");  
-document.getElementById("rechargeBtn").addEventListener("click", () => {  
-  const num = rechargeNumber.value.trim();  
-  const amt = rechargeAmount.value.trim();  
-  if(!num || !amt) return alert("Enter phone number and amount!");  
-  addTransaction("📱", `${amt} π → ${num}`);  
-  rechargeNumber.value=""; rechargeAmount.value="";  
-  statusBox.innerText="Mobile Recharge simulated!";  
-});  
-  
-const billAccount = document.getElementById("billAccount");  
-const billAmount = document.getElementById("billAmount");  
-document.getElementById("billBtn").addEventListener("click", () => {  
-  const acct = billAccount.value.trim();  
-  const amt = billAmount.value.trim();  
-  if(!acct || !amt) return alert("Enter account number and amount!");  
-  addTransaction("💡", `${amt} π → ${acct}`);  
-  billAccount.value=""; billAmount.value="";  
-  statusBox.innerText="Bill Payment simulated!";  
-});  
-  
-const walletId = document.getElementById("walletId");  
-const sendPiAmount = document.getElementById("sendPiAmount");  
-document.getElementById("sendPiBtn").addEventListener("click", () => {  
-  const wallet = walletId.value.trim();  
-  const amt = sendPiAmount.value.trim();  
-  if(!wallet || !amt) return alert("Enter wallet ID and amount!");  
-  addTransaction("🔗", `${amt} π → ${wallet}`);  
-  walletId.value=""; sendPiAmount.value="";  
-  statusBox.innerText="Send Pi simulated!";  
-});  
-  
-// Feedback  
-const feedbackInput = document.getElementById("userFeedback");  
-document.getElementById("submitFeedback").addEventListener("click", () => {  
-  const feedback = feedbackInput.value.trim();  
-  if(!feedback) return alert("Enter your feedback!");  
-  addTransaction("📝", feedback);  
-  document.getElementById("feedbackStatus").innerText="Thanks for your feedback!";  
-  feedbackInput.value="";  
-});  
-  
-// Support  
-const supportEmail = document.getElementById("supportEmail");  
-const supportMessage = document.getElementById("supportMessage");  
-document.getElementById("submitSupport").addEventListener("click", () => {  
-  const email = supportEmail.value.trim();  
-  const msg = supportMessage.value.trim();  
-  if(!email || !msg) return alert("Enter email and message!");  
-  addTransaction("🛠️", `Support from ${email}: ${msg}`);  
-  document.getElementById("supportStatus").innerText="Support request submitted!";  
-  supportEmail.value=""; supportMessage.value="";  
-});  
-  
-// Clear Transaction History  
-document.getElementById("clearTxBtn").addEventListener("click", () => {  
-  txList.innerHTML="";  
-  statusBox.innerText="Transaction history cleared!";  
-});  
-  
-// Add Transaction Helper  
-function addTransaction(icon, text){  
-  if(txList.children.length===0) txList.innerHTML="";  
-  const li = document.createElement("li");  
-  li.innerHTML=`${icon} ${text} (${new Date().toLocaleString()})`;  
-  txList.prepend(li);  
-}  
-  
-// QR Payment Generator  
-document.getElementById("generateQRBtn").addEventListener("click", ()=>{  
-  const amt = document.getElementById("qrAmount").value.trim();  
-  const memo = document.getElementById("qrMemo").value.trim();  
-  if(!amt) return alert("Enter amount!");  
-  const qrString = `pi://payment?amount=${amt}&memo=${encodeURIComponent(memo)}`;  
-  QRCode.toCanvas(document.getElementById("qrCode"), qrString, {width:200}, function(err){  
-    if(err) console.error(err);  
-  });  
-});  
-</script>  </body>  
+<script>
+/* ---------------- STATE ---------------- */
+const state = {
+  balance: 1234.56,
+  pin: '',
+  targetPin: '',
+  transactions: [
+    {type:'out', title:'Payment Sent', sub:'to @greenfarm · 2m ago', amt:25.00},
+    {type:'in', title:'Payment Received', sub:'from @merchant · 5m ago', amt:50.00},
+    {type:'out', title:'Support Tip', sub:'to @pitech · 1h ago', amt:5.00},
+    {type:'in', title:'Payment Received', sub:'from @sara.k · 3h ago', amt:12.50},
+  ]
+};
+
+/* ---------------- NAV BAR TEMPLATE ---------------- */
+const NAV_ITEMS = [
+  {id:'screen-home', icon:'🏠', label:'Home'},
+  {id:'screen-payments', icon:'💳', label:'Payments'},
+  {id:'screen-wallet', icon:'👛', label:'Wallet'},
+  {id:'screen-activity', icon:'📊', label:'Activity'},
+  {id:'screen-profile', icon:'👤', label:'Profile'},
+];
+function renderNavBars(){
+  document.querySelectorAll('.bottom-nav').forEach(nav=>{
+    nav.innerHTML = NAV_ITEMS.map(it=>`
+      <div class="nav-item" onclick="openScreen('${it.id}')" data-target="${it.id}">
+        <div class="nav-icon">${it.icon}</div><div>${it.label}</div>
+      </div>`).join('');
+  });
+}
+
+/* ---------------- NAVIGATION ---------------- */
+function openScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.toggle('active', n.dataset.target===id);
+  });
+  closeDrawer();
+}
+function openSoon(icon,title,desc){
+  document.getElementById('soonIcon').textContent = icon;
+  document.getElementById('soonHeaderTitle').textContent = title;
+  document.getElementById('soonTitle').textContent = title+' — Coming Soon';
+  document.getElementById('soonDesc').textContent = desc;
+  openScreen('screen-soon');
+}
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawerOverlay').classList.add('open');}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawerOverlay').classList.remove('open');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function openLegal(){openScreen('screen-legal');document.getElementById('legalList').style.display='block';document.getElementById('legalDetail').style.display='none';document.getElementById('legalTitle').textContent='Legal & Compliance';}
+function closeLegalDetail(){
+  if(document.getElementById('legalDetail').style.display==='block'){
+    document.getElementById('legalList').style.display='block';
+    document.getElementById('legalDetail').style.display='none';
+    document.getElementById('legalTitle').textContent='Legal & Compliance';
+  } else { openScreen('screen-profile'); }
+}
+const LEGAL_TEXT = {
+  privacy: {title:'Privacy Policy', body:`<h4>What we collect</h4>FinPi collects only what's needed to operate: your Pi username (via Pi Authentication), transaction records you make within the app, and basic device information for security. We never see or store your Pi passphrase.
+  <h4>How it's used</h4>Solely to provide FinPi's features — processing payments, securing your account, and improving the app. We do not sell personal data to third parties.
+  <h4>Your control</h4>You can export or delete your FinPi data at any time from Settings → Privacy.`},
+  terms: {title:'Terms of Service', body:`<h4>Independent platform</h4>FinPi is an independent application built for the Pi Network ecosystem. It is not an official Pi Network product.
+  <h4>Payments</h4>All Pi transfers are final once confirmed on the Pi Network. FinPi cannot reverse a completed payment.
+  <h4>Acceptable use</h4>You agree not to use FinPi for fraudulent, illegal, or abusive activity. Violating accounts may be suspended.`},
+  guidelines: {title:'Community Guidelines', body:`<h4>Respect</h4>Treat other Pioneers, merchants, and FinPi staff with respect in all interactions.
+  <h4>Honesty</h4>Marketplace listings and business profiles must be accurate. Misrepresentation may result in removal.
+  <h4>Reporting</h4>Use Report a Payment Issue or Report a Merchant if something seems wrong — every report is reviewed.`},
+  risk: {title:'Risk Disclosure', body:`<h4>Pi value</h4>The value of Pi may fluctuate. FinPi does not guarantee, promise, or predict any exchange rate or return.
+  <h4>No investment advice</h4>Nothing in FinPi — including budgeting tools or future AI features — constitutes financial or investment advice.
+  <h4>Irreversible transfers</h4>Double-check recipient details before sending. Pi transfers cannot be undone.`},
+  security: {title:'Security Policy', body:`<h4>Our commitments</h4>Environment-secured API keys, encrypted local storage, rate limiting, and server-side verification of every payment amount.
+  <h4>Responsible disclosure</h4>Found a vulnerability? Email support@finpi.pi. We ask that you report privately and give us reasonable time to fix it before public disclosure.
+  <h4>Your responsibility</h4>Never share your PIN, biometric access, or Pi passphrase with anyone — FinPi staff will never ask for them.`}
+};
+function showLegal(key){
+  const item = LEGAL_TEXT[key];
+  document.getElementById('legalList').style.display='none';
+  const d = document.getElementById('legalDetail');
+  d.style.display='block';
+  d.innerHTML = `<div class="glass-card">${item.body}</div>`;
+  document.getElementById('legalTitle').textContent = item.title;
+}
+
+/* ---------------- TOAST ---------------- */
+let toastTimer;
+function showToast(text, sub){
+  clearTimeout(toastTimer);
+  document.getElementById('toastText').textContent = text;
+  document.getElementById('toastSub').textContent = sub||'';
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+/* ---------------- ONBOARDING FLOW ---------------- */
+function goOnboard(id){
+  document.querySelectorAll('.onboard-screen').forEach(s=>s.style.display='none');
+  document.getElementById(id).style.display='flex';
+}
+function simulateAuth(){
+  const btn = document.getElementById('authBtn');
+  btn.textContent = 'Connecting to Pi SDK…';
+  btn.style.opacity='.7';
+  setTimeout(()=>{
+    goOnboard('ob-pin');
+    setupPinPad('pinPad','pinDots', onPinCreated);
+  }, 1400);
+}
+function onPinCreated(pin){
+  if(!state.targetPin){
+    state.targetPin = pin;
+    document.getElementById('pinSub').textContent = 'Confirm your 6-digit PIN.';
+    resetPinDots('pinDots');
+    setupPinPad('pinPad','pinDots', onPinConfirmed);
+  }
+}
+function onPinConfirmed(pin){
+  if(pin === state.targetPin){
+    goOnboard('ob-bio');
+  } else {
+    document.getElementById('pinSub').textContent = "PINs didn't match — try again.";
+    state.targetPin='';
+    resetPinDots('pinDots');
+    setupPinPad('pinPad','pinDots', onPinCreated);
+  }
+}
+function finishOnboarding(){
+  document.querySelectorAll('.onboard-screen').forEach(s=>s.style.display='none');
+  renderNavBars();
+  openScreen('screen-home');
+  renderTx();
+  animateBalance();
+}
+
+/* PIN pad builder (reused for onboarding + lock screen) */
+function setupPinPad(padId, dotsId, onComplete){
+  const pad = document.getElementById(padId);
+  let entered = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  pad.innerHTML = keys.map(k=>k?`<div class="pin-key" data-k="${k}">${k}</div>`:'<div></div>').join('');
+  renderDots(dotsId,0);
+  pad.querySelectorAll('.pin-key').forEach(el=>{
+    el.onclick = ()=>{
+      const k = el.dataset.k;
+      if(k==='⌫'){ entered = entered.slice(0,-1); }
+      else if(entered.length<6){ entered += k; }
+      renderDots(dotsId, entered.length);
+      if(entered.length===6){ setTimeout(()=>onComplete(entered),150); entered=''; }
+    };
+  });
+}
+function renderDots(id,count){
+  const el = document.getElementById(id);
+  el.innerHTML = Array.from({length:6}).map((_,i)=>`<div class="pin-dot ${i<count?'filled':''}"></div>`).join('');
+}
+function resetPinDots(id){ renderDots(id,0); }
+
+/* ---------------- BALANCE / TX RENDER ---------------- */
+function animateBalance(){
+  let cur = 0; const target = state.balance;
+  const el1 = document.getElementById('balanceDisplay');
+  const el2 = document.getElementById('balanceDisplay2');
+  const step = ()=>{
+    cur += target/24;
+    if(cur>=target){cur=target;}
+    const txt = cur.toFixed(2)+' π';
+    if(el1) el1.textContent = txt;
+    if(el2) el2.textContent = txt;
+    if(cur<target) requestAnimationFrame(step);
+  };
+  step();
+}
+function txRow(tx){
+  const sign = tx.type==='in'?'+':'-';
+  return `<div class="tx-row">
+    <div class="tx-icon ${tx.type}">${tx.type==='in'?'↓':'↑'}</div>
+    <div class="tx-info"><div class="tx-title">${tx.title}</div><div class="tx-sub">${tx.sub}</div></div>
+    <div class="tx-amt ${tx.type} mono">${sign}${tx.amt.toFixed(2)} π</div>
+  </div>`;
+}
+function renderTx(){
+  document.getElementById('homeTxList').innerHTML = state.transactions.slice(0,3).map(txRow).join('');
+  document.getElementById('paymentsTxList').innerHTML = state.transactions.map(txRow).join('');
+  document.getElementById('activityList').innerHTML = state.transactions.map(txRow).join('') +
+    txRow({type:'in',title:'Biometric Login',sub:'This device · Today',amt:0}).replace('±0.00 π','').replace('<div class="tx-amt in mono">+0.00 π</div>','<span style="color:var(--success);font-size:12px;font-weight:600;">Verified</span>');
+}
+
+/* ---------------- SEND FLOW ---------------- */
+function doSend(){
+  const to = document.getElementById('sendTo').value || '@pioneer';
+  const amt = parseFloat(document.getElementById('sendAmt').value) || 1;
+  if(amt > state.balance){ showToast('Insufficient Balance','Check your available Pi balance'); return; }
+  state.balance -= amt;
+  state.transactions.unshift({type:'out', title:'Payment Sent', sub:'to '+to+' · just now', amt:amt});
+  closeModal('modal-send');
+  animateBalance();
+  renderTx();
+  document.getElementById('sendTo').value='';
+  document.getElementById('sendAmt').value='';
+  showToast('Payment Sent ✓', amt.toFixed(2)+' π to '+to);
+}
+
+/* ---------------- INIT ---------------- */
+renderDots('pinDots',0);
+</script>
+</body>
 </html>
