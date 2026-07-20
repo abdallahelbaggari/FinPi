@@ -925,6 +925,108 @@ function goTab(id, el) {
 }
 
 /* ════════════════════════════════════════
+   TRANSACTION ROWS & RECEIPTS
+════════════════════════════════════════ */
+/* ════════════════════════════════════════
+   TRANSACTION ROWS & RECEIPTS
+════════════════════════════════════════ */
+function buildTxRow(tx, idx) {
+  var icon = tx.type==='sent'?'💸':tx.type==='received'?'📥':'⏳';
+  var cls  = tx.type==='sent'?'sent':tx.type==='received'?'recv':'pend';
+  var sign = tx.type==='sent'?'−':tx.type==='received'?'+':'';
+  return '<div class="tx-row" onclick="openReceipt('+idx+')">'
+    +'<div class="tx-ico '+cls+'">'+icon+'</div>'
+    +'<div class="tx-info"><div class="tx-name">'+(tx.note||'Pi Transfer')+'</div><div class="tx-meta">'+fmtDate(tx.date)+'</div></div>'
+    +'<div class="tx-amount"><div class="tx-pi '+cls+'">'+sign+'π '+Number(tx.amount).toFixed(2)+'</div>'
+    +'<div class="tx-status"><span class="pill pill-'+cls+'">'+tx.status+'</span></div></div></div>';
+}
+
+function openReceipt(idx) {
+  var tx = txLog[idx];
+  if(!tx) return;
+  var icon = tx.type==='sent'?'💸':tx.type==='received'?'📥':'⏳';
+  var cls  = tx.type==='sent'?'sent':tx.type==='received'?'recv':'pend';
+  var colVar = tx.type==='sent'?'var(--red)':tx.type==='received'?'var(--green)':'var(--orange)';
+  var sign = tx.type==='sent'?'−':tx.type==='received'?'+':'';
+  var refNo = 'FP-'+String(tx.id||Date.now()).slice(-8).toUpperCase();
+  var dateStr = '';
+  try { dateStr = new Date(tx.date).toLocaleString('en',{dateStyle:'medium',timeStyle:'short'}); } catch(e){}
+  var usdLine = (_piPrice&&_piPrice.usd)?('<div style="font-size:.46rem;color:var(--t3);margin-top:.1rem">≈ $'+(Number(tx.amount)*_piPrice.usd).toFixed(4)+' USD (reference)</div>'):'';
+
+  var rows = [
+    ['Type',        tx.type.charAt(0).toUpperCase()+tx.type.slice(1)],
+    ['Amount',      'π '+Number(tx.amount).toFixed(6)],
+    ['Description', tx.note||'Pi Transfer'],
+    ['Status',      tx.status.charAt(0).toUpperCase()+tx.status.slice(1)],
+    ['Date & Time', dateStr],
+    ['Reference',   refNo],
+    ['Network',     'Pi Mainnet'],
+  ];
+
+  var rowsHtml = rows.map(function(row){
+    var isMono = (row[0]==='Amount'||row[0]==='Reference');
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.44rem .7rem;border-bottom:1px solid var(--border)">'
+      +'<div style="font-size:.44rem;color:var(--t3);font-weight:600">'+row[0]+'</div>'
+      +'<div style="font-size:.5rem;color:var(--t1);font-family:'+(isMono?'var(--f-mono)':'inherit')+';font-weight:'+(isMono?'700':'500')+'">'+row[1]+'</div>'
+      +'</div>';
+  }).join('');
+
+  var html = '<div style="text-align:center;padding:.4rem 0 .8rem">'
+    +'<div style="font-size:2.8rem;margin-bottom:.3rem">'+icon+'</div>'
+    +'<div style="font-family:var(--f-mono);font-size:2rem;font-weight:900;color:'+colVar+'">'+sign+'π '+Number(tx.amount).toFixed(2)+'</div>'
+    +usdLine
+    +'<div style="margin-top:.4rem"><span class="pill pill-'+cls+'">'+tx.status.toUpperCase()+'</span></div>'
+    +'</div>'
+    +'<div style="background:var(--bg0);border-radius:var(--r-md);overflow:hidden;margin-bottom:.6rem">'+rowsHtml+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">'
+    +'<button class="btn btn-outline" onclick="shareReceipt('+idx+')" style="font-size:.62rem">📤 Share</button>'
+    +'<button class="btn btn-outline" onclick="copyReceipt('+idx+')" style="font-size:.62rem">📋 Copy</button>'
+    +'</div>';
+
+  openPanel('Transaction Receipt', html);
+}
+
+function getReceiptText(idx) {
+  var tx = txLog[idx];
+  if(!tx) return '';
+  var refNo = 'FP-'+String(tx.id||Date.now()).slice(-8).toUpperCase();
+  var dateStr='';
+  try{dateStr=new Date(tx.date).toLocaleString('en',{dateStyle:'medium',timeStyle:'short'});}catch(e){}
+  var lines = [
+    'FinPi Transaction Receipt',
+    '─────────────────────────',
+    'Type:        '+tx.type.charAt(0).toUpperCase()+tx.type.slice(1),
+    'Amount:      π '+Number(tx.amount).toFixed(6),
+    'Description: '+(tx.note||'Pi Transfer'),
+    'Status:      '+tx.status,
+    'Date:        '+dateStr,
+    'Reference:   '+refNo,
+    'Network:     Pi Mainnet',
+    '─────────────────────────',
+    'Powered by FinPi · finpi.pages.dev',
+  ];
+  return lines.join('\n');
+}
+
+function copyReceipt(idx){
+  var text = getReceiptText(idx);
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){ toast('Receipt copied!','success'); }).catch(function(){});
+  } else { toast('Tap and hold to copy'); }
+}
+
+function shareReceipt(idx){
+  var text = getReceiptText(idx);
+  if(navigator.share){
+    navigator.share({title:'FinPi Receipt', text:text}).catch(function(){});
+  } else {
+    copyReceipt(idx);
+    toast('Copied — paste to share','success');
+  }
+}
+
+
+/* ════════════════════════════════════════
    HOME
 ════════════════════════════════════════ */
 function renderHome() {
@@ -934,15 +1036,8 @@ function renderHome() {
     recentEl.innerHTML='<div class="empty" style="padding:1.4rem"><div class="empty-ico">📭</div><div class="empty-t">No activity yet</div><div class="empty-s">Your transactions will appear here</div></div>';
     return;
   }
-  recentEl.innerHTML = recent.map(function(tx){
-    var icon = tx.type==='sent'?'💸':tx.type==='received'?'📥':'⏳';
-    var cls  = tx.type==='sent'?'sent':tx.type==='received'?'recv':'pend';
-    var icoBg= tx.type==='sent'?'tx-ico sent':tx.type==='received'?'tx-ico recv':'tx-ico pend';
-    var sign = tx.type==='sent'?'-':tx.type==='received'?'+':'';
-    return '<div class="tx-row"><div class="'+icoBg+'">'+icon+'</div>'
-      +'<div class="tx-info"><div class="tx-name">'+(tx.note||'Pi Transfer')+'</div><div class="tx-meta">'+fmtDate(tx.date)+'</div></div>'
-      +'<div class="tx-amount"><div class="tx-pi '+cls+'">'+sign+'π '+Number(tx.amount).toFixed(2)+'</div>'
-      +'<div class="tx-status"><span class="pill pill-'+cls+'">'+tx.status+'</span></div></div></div>';
+  recentEl.innerHTML = recent.map(function(tx,i){
+    return buildTxRow(tx, i);
   }).join('');
 }
 
@@ -994,13 +1089,8 @@ function renderWallet() {
 
 function walletActivityHTML(){
   if(!txLog.length) return '<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">No transactions yet</div></div>';
-  return txLog.slice(0,20).map(function(tx){
-    var icon=tx.type==='sent'?'💸':tx.type==='received'?'📥':'⏳';
-    var cls =tx.type==='sent'?'sent':tx.type==='received'?'recv':'pend';
-    var sign=tx.type==='sent'?'-':'+';
-    return '<div class="tx-row"><div class="tx-ico '+cls+'">'+icon+'</div>'
-      +'<div class="tx-info"><div class="tx-name">'+(tx.note||'Pi Transfer')+'</div><div class="tx-meta">'+fmtDate(tx.date)+'</div></div>'
-      +'<div class="tx-amount"><div class="tx-pi '+cls+'">'+sign+'π '+Number(tx.amount).toFixed(2)+'</div></div></div>';
+  return txLog.slice(0,20).map(function(tx,i){
+    return buildTxRow(tx,i);
   }).join('');
 }
 
@@ -1125,14 +1215,10 @@ function renderHistory(tab, q) {
   if(tab!=='all') list = list.filter(function(t){ return t.type===tab||(tab==='received'&&t.type==='received')||(tab==='sent'&&t.type==='sent')||(tab==='pending'&&t.status==='pending'); });
   if(q) list = list.filter(function(t){ return (t.note||'').toLowerCase().includes(q.toLowerCase())||(t.amount+'').includes(q); });
   if(!list.length){ body.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-t">No transactions</div><div class="empty-s">Your '+(tab==='all'?'':''+tab+' ')+'transactions will appear here</div></div>'; return; }
-  body.innerHTML = list.map(function(tx){
-    var icon=tx.type==='sent'?'💸':tx.type==='received'?'📥':'⏳';
-    var cls =tx.type==='sent'?'sent':tx.type==='received'?'recv':'pend';
-    var sign=tx.type==='sent'?'-':'+';
-    return '<div class="tx-row"><div class="tx-ico '+cls+'">'+icon+'</div>'
-      +'<div class="tx-info"><div class="tx-name">'+(tx.note||'Pi Transfer')+'</div><div class="tx-meta">'+fmtDate(tx.date)+'</div></div>'
-      +'<div class="tx-amount"><div class="tx-pi '+cls+'">'+sign+'π '+Number(tx.amount).toFixed(2)+'</div>'
-      +'<div class="tx-status"><span class="pill pill-'+cls+'">'+tx.status+'</span></div></div></div>';
+  body.innerHTML = list.map(function(tx,i){
+    /* Find real index in txLog */
+    var realIdx = txLog.indexOf(tx);
+    return buildTxRow(tx, realIdx>=0?realIdx:i);
   }).join('');
 }
 function exportTx() {
@@ -1335,27 +1421,83 @@ function calcKey(k){
   if(pi) pi.textContent='π '+parseFloat(_calcVal||0).toFixed(2);
 }
 
+/* Pi price cache */
+var _piPrice = null;
+var _piPriceTs = 0;
+var _fxRates = null;
+
 function openConverter(){
-  openPanel('Currency Reference',
-    '<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:var(--r-sm);padding:.5rem .7rem;margin-bottom:.7rem;font-size:.46rem;color:var(--orange)">⚠️ Reference only — not financial advice. Pi value is determined by the Pi community.</div>'
-    +'<div style="font-size:.7rem;font-weight:800;color:var(--t1);margin-bottom:.4rem">Pi Amount</div>'
-    +'<div class="finput-prefix" style="margin-bottom:.6rem"><span class="finput-sym">π</span><input class="finput mono" id="conv-pi" type="number" step="0.01" placeholder="1.00" oninput="updateConv(this.value)"></div>'
-    +'<div id="conv-results" style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">'
-      +[['USD','$','1.00'],['EUR','€','0.92'],['GBP','£','0.79'],['SAR','﷼','3.75'],['AED','د.إ','3.67'],['NGN','₦','1,580']].map(function(c){
-        return '<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .6rem"><div style="font-size:.4rem;color:var(--t3)">'+c[0]+'</div><div style="font-family:var(--f-mono);font-size:.88rem;font-weight:700;color:var(--t1)" id="conv-'+c[0].toLowerCase()+'">'+c[1]+'—</div></div>';
-      }).join('')
+  openPanel('Pi Converter',
+    '<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:var(--r-sm);padding:.4rem .6rem;margin-bottom:.5rem;font-size:.42rem;color:var(--orange)">⚠️ Reference data from CoinGecko — not financial advice</div>'
+    +'<div id="conv-price-row" style="background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .7rem;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between">'
+      +'<div><div style="font-size:.38rem;color:var(--t3);margin-bottom:.04rem">PI PRICE (CoinGecko)</div><div style="font-family:var(--f-mono);font-size:1rem;font-weight:800;color:var(--gold)" id="conv-live-price">Loading…</div></div>'
+      +'<div style="text-align:right"><div style="font-size:.38rem;color:var(--t3)" id="conv-24h"></div><div style="font-size:.36rem;color:var(--t4)" id="conv-updated"></div></div>'
     +'</div>'
-    +'<div style="font-size:.4rem;color:var(--t4);text-align:center;margin-top:.6rem">Reference rates for illustration only</div>'
+    +'<div style="font-size:.58rem;font-weight:700;color:var(--t1);margin-bottom:.3rem">Pi Amount</div>'
+    +'<div class="finput-prefix" style="margin-bottom:.5rem"><span class="finput-sym">π</span><input class="finput mono" id="conv-pi" type="number" step="0.01" placeholder="1.00" value="1" oninput="updateConv(this.value)"></div>'
+    +'<div id="conv-results" style="display:grid;grid-template-columns:1fr 1fr;gap:.28rem"></div>'
+    +'<div style="font-size:.38rem;color:var(--t4);text-align:center;margin-top:.5rem">Powered by CoinGecko · Auto-refreshes every 60s</div>'
   );
+  fetchPiPrice();
 }
+
+function fetchPiPrice(){
+  var now=Date.now();
+  /* Use cache if less than 60 seconds old */
+  if(_piPrice && (now-_piPriceTs)<60000){ renderConvResults(); return; }
+  var el=document.getElementById('conv-live-price');
+  if(el) el.textContent='Fetching…';
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids=pi-network&vs_currencies=usd,eur,gbp,sar,aed,ngn&include_24hr_change=true')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var pi=d['pi-network'];
+      if(!pi||!pi.usd) throw new Error('No price data');
+      _piPrice = pi;
+      _piPriceTs = Date.now();
+      renderConvResults();
+      var lp=document.getElementById('conv-live-price');
+      var h24=document.getElementById('conv-24h');
+      var upd=document.getElementById('conv-updated');
+      if(lp) lp.textContent='$'+pi.usd.toFixed(4);
+      if(h24){
+        var chg=pi.usd_24h_change||0;
+        h24.textContent=(chg>=0?'▲+':'▼')+chg.toFixed(2)+'% 24h';
+        h24.style.color=chg>=0?'var(--green)':'var(--red)';
+      }
+      if(upd) upd.textContent='Updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      /* Update converter in home */
+      updateConv(document.getElementById('conv-pi')?.value||'1');
+    })
+    .catch(function(err){
+      console.warn('[FinPi] Price fetch error:',err.message);
+      /* Fallback to last known or hardcoded */
+      if(!_piPrice) _piPrice={usd:0.098,eur:0.090,gbp:0.077,sar:0.367,aed:0.360,ngn:151};
+      renderConvResults();
+      var lp=document.getElementById('conv-live-price');
+      if(lp) lp.textContent='~$'+_piPrice.usd.toFixed(4)+' (cached)';
+    });
+}
+
+function renderConvResults(){
+  var pi=parseFloat(document.getElementById('conv-pi')?.value||'1')||1;
+  var r=_piPrice||{usd:0.098,eur:0.090,gbp:0.077,sar:0.367,aed:0.360,ngn:151};
+  var currencies=[['USD','$',r.usd],['EUR','€',r.eur],['GBP','£',r.gbp],['SAR','﷼ ',r.sar],['AED','د.إ',r.aed],['NGN','₦',r.ngn]];
+  var el=document.getElementById('conv-results');
+  if(!el) return;
+  el.innerHTML=currencies.map(function(c){
+    var val=(pi*(c[2]||0));
+    var fmt=c[0]==='NGN'?val.toLocaleString('en',{maximumFractionDigits:0}):val.toFixed(4);
+    return '<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .6rem">'
+      +'<div style="font-size:.38rem;color:var(--t3);margin-bottom:.06rem">'+c[0]+'</div>'
+      +'<div style="font-family:var(--f-mono);font-size:.82rem;font-weight:800;color:var(--t1)">'+c[1]+fmt+'</div>'
+      +'<div style="font-size:.36rem;color:var(--t4)">1π = '+c[1]+(c[2]||0).toFixed(4)+'</div>'
+      +'</div>';
+  }).join('');
+}
+
 function updateConv(v){
-  var pi=parseFloat(v)||0;
-  var rates={usd:1.00,eur:0.92,gbp:0.79,sar:3.75,aed:3.67,ngn:1580};
-  var syms={usd:'$',eur:'€',gbp:'£',sar:'﷼ ',aed:'د.إ ',ngn:'₦'};
-  Object.keys(rates).forEach(function(cur){
-    var el=document.getElementById('conv-'+cur);
-    if(el) el.textContent=syms[cur]+(pi*rates[cur]).toFixed(2);
-  });
+  if(_piPrice) renderConvResults();
+  else fetchPiPrice();
 }
 
 function openBudget(){
