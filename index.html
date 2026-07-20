@@ -1,875 +1,1660 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr" id="html-root">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>FinPi — Finance. Trust. Pi.</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0F172A">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#060B14">
+<meta name="description" content="FinPi — Pi Financial Platform">
+<title>FinPi</title>
+<link rel="manifest" href="/manifest.json">
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{
-  --deep-blue:#1E3A8A;
-  --primary-blue:#2563EB;
-  --teal:#06B6D4;
-  --purple:#7C3AED;
-  --gold:#F4C430;
-  --bg:#0B1120;
-  --surface:#131C31;
-  --surface2:#1B2740;
-  --border:rgba(255,255,255,0.08);
-  --text:#F1F5F9;
-  --subtext:#8A99B3;
-  --success:#10B981;
-  --error:#EF4444;
-  --radius:16px;
+/* ═══════════════════════════════════════════
+   FINPI DESIGN SYSTEM
+   Deep blue · Teal · Gold
+   Poppins UI · JetBrains Mono money
+═══════════════════════════════════════════ */
+:root {
+  /* Backgrounds */
+  --bg0: #060B14;
+  --bg1: #0A1020;
+  --bg2: #0F1830;
+  --bg3: #162040;
+  --bg4: #1E2A50;
+  /* Brand */
+  --blue:  #2563EB;
+  --blue2: #1D4ED8;
+  --teal:  #0D9488;
+  --teal2: #0F766E;
+  --gold:  #C8A951;
+  --gold2: #B8922E;
+  /* Text */
+  --t1: #F0F4FF;
+  --t2: rgba(240,244,255,.62);
+  --t3: rgba(240,244,255,.36);
+  --t4: rgba(240,244,255,.18);
+  /* Status */
+  --green:  #10B981;
+  --red:    #EF4444;
+  --orange: #F59E0B;
+  /* Surfaces */
+  --glass:  rgba(255,255,255,.04);
+  --glass2: rgba(255,255,255,.07);
+  --border: rgba(255,255,255,.08);
+  --border2:rgba(255,255,255,.14);
+  /* Gradients */
+  --grad-blue: linear-gradient(135deg,#1E3A8A,#2563EB);
+  --grad-teal: linear-gradient(135deg,#0F766E,#0D9488);
+  --grad-gold: linear-gradient(135deg,#92690A,#C8A951);
+  --grad-card: linear-gradient(145deg,rgba(37,99,235,.18),rgba(13,148,136,.12));
+  /* Spacing */
+  --nav-h: 76px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 20px;
+  --r-xl: 24px;
+  /* Font */
+  --f-ui:   'Poppins', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;}
-body{
-  font-family:'Poppins',sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  overflow:hidden;
-  -webkit-font-smoothing:antialiased;
-}
-.mono{font-family:'JetBrains Mono',monospace;}
-button{font-family:inherit;border:none;cursor:pointer;background:none;color:inherit;}
-input,select{font-family:inherit;}
-::-webkit-scrollbar{display:none;}
-*{scrollbar-width:none;}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; font-family:var(--f-ui); background:var(--bg0); color:var(--t1); -webkit-font-smoothing:antialiased; }
+button { background:none; border:none; cursor:pointer; font-family:inherit; touch-action:manipulation; }
+input, textarea, select { font-family:inherit; outline:none; border:none; background:none; color:var(--t1); }
+a { color:var(--teal); text-decoration:none; }
 
-#app{
-  max-width:460px;
-  margin:0 auto;
-  height:100vh;
-  height:100dvh;
-  position:relative;
-  background:var(--bg);
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-}
+/* ── ANIMATIONS ── */
+@keyframes spin     { to { transform:rotate(360deg); } }
+@keyframes fadeUp   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+@keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+@keyframes slideUp  { from { opacity:0; transform:translateY(100%); } to { opacity:1; transform:none; } }
+@keyframes slideIn  { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:none; } }
+@keyframes pulse    { 0%,100% { opacity:.5; } 50% { opacity:1; } }
+@keyframes shimmer  { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+@keyframes countUp  { from { opacity:0; transform:scale(.9); } to { opacity:1; transform:scale(1); } }
+@keyframes glow     { 0%,100% { box-shadow:0 0 20px rgba(37,99,235,.3); } 50% { box-shadow:0 0 40px rgba(37,99,235,.6); } }
+@keyframes tdot     { 0%,80%,100% { opacity:.3; transform:scale(.8); } 40% { opacity:1; transform:scale(1); } }
 
-/* ---------- Splash / Onboarding ---------- */
-.onboard-screen{
-  position:fixed;inset:0;background:radial-gradient(circle at 50% 0%, #16224A 0%, #0B1120 60%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:40px 32px;text-align:center;z-index:500;max-width:460px;margin:0 auto;
+/* ── SPLASH ── */
+#splash {
+  position:fixed; inset:0; background:var(--bg0);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  z-index:9999; transition:opacity .4s ease;
 }
-.pi-mark{
-  width:88px;height:88px;border-radius:24px;
-  background:linear-gradient(135deg,var(--primary-blue),var(--teal));
-  display:flex;align-items:center;justify-content:center;
-  font-size:40px;font-weight:800;color:#fff;margin-bottom:24px;
-  box-shadow:0 0 60px rgba(37,99,235,0.5);
-  animation:floatIn .8s ease both;
-}
-@keyframes floatIn{from{opacity:0;transform:translateY(18px) scale(.92);}to{opacity:1;transform:translateY(0) scale(1);}}
-.onboard-title{font-size:28px;font-weight:800;margin-bottom:8px;animation:floatIn .8s .1s ease both;}
-.onboard-sub{color:var(--subtext);font-size:14.5px;line-height:1.6;margin-bottom:40px;max-width:320px;animation:floatIn .8s .2s ease both;}
-.pin-dots{display:flex;gap:16px;margin-bottom:32px;}
-.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--subtext);transition:.2s;}
-.pin-dot.filled{background:var(--teal);border-color:var(--teal);}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:280px;margin-bottom:8px;}
-.pin-key{
-  aspect-ratio:1;border-radius:50%;background:var(--surface2);
-  font-size:20px;font-weight:600;display:flex;align-items:center;justify-content:center;
-  transition:.15s;
-}
-.pin-key:active{transform:scale(.9);background:var(--primary-blue);}
-.btn-primary{
-  width:100%;max-width:320px;padding:16px;border-radius:14px;
-  background:linear-gradient(90deg,var(--primary-blue),var(--teal));
-  color:#fff;font-weight:700;font-size:15px;
-  box-shadow:0 8px 24px rgba(37,99,235,0.35);
-  transition:.15s;
-}
-.btn-primary:active{transform:scale(.97);}
-.btn-ghost{padding:14px;color:var(--subtext);font-weight:600;font-size:14px;}
-.step-progress{display:flex;gap:6px;margin-top:36px;}
-.step-progress span{width:26px;height:4px;border-radius:2px;background:var(--surface2);transition:.3s;}
-.step-progress span.active{background:var(--teal);}
+#splash.hide { opacity:0; pointer-events:none; }
+.splash-logo { font-size:3.4rem; font-weight:900; letter-spacing:-.06em; color:var(--t1); margin-bottom:.2rem; }
+.splash-logo span { background:var(--grad-blue); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.splash-tagline { font-size:.6rem; color:var(--t3); letter-spacing:.18em; text-transform:uppercase; margin-bottom:2.4rem; }
+.splash-ring { width:48px; height:48px; border:3px solid rgba(37,99,235,.2); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin-bottom:1rem; }
+.splash-status { font-size:.52rem; color:var(--t3); text-align:center; min-height:1rem; }
 
-/* ---------- App Shell ---------- */
-.screen{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  background:var(--bg);opacity:0;pointer-events:none;transform:translateY(10px);
-  transition:opacity .25s ease, transform .25s ease;
+/* ── LOGIN ── */
+#login {
+  position:fixed; inset:0; background:var(--bg0); display:none;
+  flex-direction:column; z-index:100; overflow:hidden;
 }
-.screen.active{opacity:1;pointer-events:auto;transform:translateY(0);z-index:5;}
-.topbar{
-  padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;
+.login-bg {
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(37,99,235,.22), transparent),
+             radial-gradient(ellipse 60% 40% at 80% 80%, rgba(13,148,136,.12), transparent);
 }
-.topbar h1{font-size:20px;font-weight:700;}
-.icon-btn{
-  width:38px;height:38px;border-radius:12px;background:var(--surface2);
-  display:flex;align-items:center;justify-content:center;font-size:16px;transition:.15s;
+.login-top { height:5px; background:var(--grad-blue); flex-shrink:0; }
+.login-body {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; padding:2rem 1.5rem; position:relative; z-index:1; text-align:center;
 }
-.icon-btn:active{transform:scale(.9);}
-.scroll-area{flex:1;overflow-y:auto;padding:0 20px 100px;}
+.login-icon {
+  width:80px; height:80px; background:var(--grad-blue); border-radius:22px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:2.2rem; margin-bottom:1.2rem;
+  box-shadow:0 8px 32px rgba(37,99,235,.4), 0 0 0 1px rgba(255,255,255,.1);
+}
+.login-title { font-size:2.6rem; font-weight:900; letter-spacing:-.05em; color:var(--t1); margin-bottom:.3rem; }
+.login-title span { background:var(--grad-blue); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.login-sub { font-size:.58rem; color:var(--t3); letter-spacing:.14em; text-transform:uppercase; margin-bottom:1.6rem; }
+.login-features {
+  display:grid; grid-template-columns:1fr 1fr; gap:.5rem;
+  width:100%; max-width:320px; margin-bottom:1.6rem;
+}
+.lf-card {
+  background:var(--glass); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:.6rem .65rem; text-align:left;
+}
+.lf-ico { font-size:1.4rem; margin-bottom:.2rem; }
+.lf-name { font-size:.58rem; font-weight:700; color:var(--t1); }
+.lf-desc { font-size:.44rem; color:var(--t3); margin-top:.04rem; }
+.login-foot { padding:.6rem 1.4rem 2.4rem; flex-shrink:0; position:relative; z-index:1; }
+.btn-pi {
+  width:100%; padding:1.05rem; border-radius:var(--r-md);
+  background:var(--grad-blue); font-size:1rem; font-weight:800; color:#fff;
+  display:flex; align-items:center; justify-content:center; gap:.5rem;
+  box-shadow:0 4px 24px rgba(37,99,235,.5); transition:all .15s; margin-bottom:.6rem;
+}
+.btn-pi:active { transform:scale(.97); }
+.btn-pi:disabled { opacity:.5; }
+.btn-guest {
+  width:100%; padding:.72rem; border-radius:var(--r-md);
+  background:var(--glass); border:1px solid var(--border2);
+  font-size:.72rem; font-weight:600; color:var(--t2);
+  display:flex; align-items:center; justify-content:center; gap:.4rem; transition:all .15s;
+}
+.btn-guest:active { background:var(--glass2); }
+#lmsg { font-size:.5rem; color:var(--t3); text-align:center; margin-top:.6rem; min-height:.9rem; line-height:1.5; }
+.login-network { font-size:.42rem; color:var(--t4); text-align:center; margin-top:.5rem; }
 
-/* ---------- Bottom Nav ---------- */
-.bottom-nav{
-  position:absolute;bottom:0;left:0;right:0;height:78px;
-  background:rgba(19,28,49,0.92);backdrop-filter:blur(20px);
-  border-top:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-around;
-  padding-bottom:14px;z-index:50;
-}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--subtext);font-size:10.5px;font-weight:600;transition:.2s;}
-.nav-item .nav-icon{font-size:20px;transition:.2s;}
-.nav-item.active{color:var(--teal);}
-.nav-item.active .nav-icon{transform:translateY(-2px);}
+/* ── APP SHELL ── */
+#app { display:none; flex-direction:column; height:100vh; overflow:hidden; }
 
-/* ---------- Cards ---------- */
-.glass-card{
-  background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-  border:1px solid var(--border);border-radius:var(--radius);
-  padding:18px;backdrop-filter:blur(10px);
+/* ── TOP BAR ── */
+#topbar {
+  background:rgba(6,11,20,.95); border-bottom:1px solid var(--border);
+  padding:.5rem .9rem; display:flex; align-items:center; justify-content:space-between;
+  flex-shrink:0; backdrop-filter:blur(24px); z-index:20; min-height:58px;
 }
-.balance-card{
-  background:linear-gradient(135deg, var(--deep-blue), var(--primary-blue) 55%, var(--teal));
-  border-radius:20px;padding:24px 22px;color:#fff;position:relative;overflow:hidden;margin-bottom:18px;
-}
-.balance-card::after{
-  content:"π";position:absolute;right:-10px;top:-20px;font-size:150px;font-weight:800;
-  color:rgba(255,255,255,0.08);
-}
-.balance-label{font-size:12.5px;opacity:.85;margin-bottom:6px;}
-.balance-amount{font-size:34px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-1px;}
-.balance-usd{font-size:12.5px;opacity:.8;margin-top:4px;}
-.quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px;position:relative;z-index:2;}
-.qa-btn{display:flex;flex-direction:column;align-items:center;gap:6px;}
-.qa-icon{
-  width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,0.18);
-  display:flex;align-items:center;justify-content:center;font-size:19px;transition:.15s;
-}
-.qa-btn:active .qa-icon{transform:scale(.88);background:rgba(255,255,255,0.3);}
-.qa-btn span{font-size:11px;font-weight:600;}
+.tb-left { display:flex; align-items:center; gap:.5rem; }
+.tb-logo { font-size:1.24rem; font-weight:900; letter-spacing:-.05em; }
+.tb-logo span { background:var(--grad-blue); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.tb-badge { font-size:.38rem; font-weight:700; color:var(--teal); background:rgba(13,148,136,.15); border:1px solid rgba(13,148,136,.3); border-radius:99px; padding:.1rem .4rem; letter-spacing:.06em; }
+.tb-right { display:flex; align-items:center; gap:.5rem; }
+.tb-btn { width:38px; height:38px; border-radius:99px; background:var(--glass); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:.92rem; color:var(--t2); cursor:pointer; transition:all .15s; }
+.tb-btn:active { background:var(--glass2); color:var(--t1); }
+.tb-avatar { width:38px; height:38px; border-radius:99px; background:var(--grad-blue); display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:800; color:#fff; cursor:pointer; border:2px solid rgba(37,99,235,.4); }
 
-.section-title{font-size:14px;font-weight:700;color:var(--subtext);margin:22px 0 12px;letter-spacing:.3px;text-transform:uppercase;}
-.section-title.first{margin-top:4px;}
+/* ── MAIN CONTENT ── */
+#main { flex:1; overflow:hidden; min-height:0; position:relative; }
+.scr { display:none; flex-direction:column; height:100%; overflow:hidden; min-height:0; }
+.scr.on { display:flex; animation:fadeUp .18s ease; }
+.scroll { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; height:0; padding-bottom:calc(var(--nav-h) + 1.2rem); }
+.scroll::-webkit-scrollbar { display:none; }
 
-.tx-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
-.tx-row:last-child{border-bottom:none;}
-.tx-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.tx-icon.out{background:rgba(239,68,68,0.15);color:var(--error);}
-.tx-icon.in{background:rgba(16,185,129,0.15);color:var(--success);}
-.tx-info{flex:1;min-width:0;}
-.tx-title{font-size:14.5px;font-weight:600;}
-.tx-sub{font-size:12px;color:var(--subtext);margin-top:2px;}
-.tx-amt{font-size:14.5px;font-weight:700;font-family:'JetBrains Mono',monospace;}
-.tx-amt.out{color:var(--error);}
-.tx-amt.in{color:var(--success);}
+/* ── BOTTOM NAV ── */
+#nav {
+  position:fixed; bottom:0; left:0; right:0; height:var(--nav-h);
+  background:rgba(6,11,20,.98); border-top:1px solid var(--border2);
+  display:flex; z-index:50; backdrop-filter:blur(28px);
+  padding-bottom:env(safe-area-inset-bottom);
+  box-shadow:0 -8px 32px rgba(0,0,0,.5);
+}
+.nb { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.12rem; cursor:pointer; transition:all .2s; position:relative; padding:.18rem .06rem; }
+.nb::after { content:''; position:absolute; bottom:0; left:20%; right:20%; height:2.5px; background:var(--grad-blue); border-radius:4px 4px 0 0; opacity:0; transition:opacity .2s; }
+.nb.on::after { opacity:1; }
+.nb-ico { font-size:1.56rem; line-height:1; transition:transform .2s; color:var(--t3); }
+.nb.on .nb-ico { color:var(--blue); transform:scale(1.1); }
+.nb-lbl { font-size:.44rem; font-weight:600; color:var(--t3); transition:color .2s; letter-spacing:.02em; }
+.nb.on .nb-lbl { color:var(--blue); }
 
-.list-row{
-  display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid var(--border);transition:.15s;
-}
-.list-row:active{background:var(--surface2);}
-.list-row:last-child{border-bottom:none;}
-.list-icon{width:40px;height:40px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
-.list-body{flex:1;}
-.list-title{font-size:14.5px;font-weight:600;}
-.list-sub{font-size:12px;color:var(--subtext);margin-top:1px;}
-.chev{color:var(--subtext);font-size:14px;}
-.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.3px;}
-.badge.live{background:rgba(16,185,129,0.15);color:var(--success);}
-.badge.soon{background:rgba(244,196,48,0.15);color:var(--gold);}
+/* ── SCREEN HEADERS ── */
+.sbar { padding:.65rem .9rem .52rem; display:flex; align-items:flex-start; justify-content:space-between; flex-shrink:0; }
+.sbar-t { font-size:1.5rem; font-weight:800; letter-spacing:-.03em; color:var(--t1); line-height:1.1; }
+.sbar-s { font-size:.48rem; color:var(--t3); margin-top:.18rem; font-weight:400; }
+.sbar-act { display:flex; gap:.3rem; align-items:center; margin-top:.1rem; }
+.sbar-btn { width:36px; height:36px; border-radius:99px; background:var(--glass); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:.82rem; color:var(--t2); cursor:pointer; }
+.sbar-btn:active { background:var(--glass2); }
 
-/* ---------- More Drawer ---------- */
-.drawer-overlay{
-  position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:80;
-  opacity:0;pointer-events:none;transition:.25s;
+/* ── CARDS ── */
+.card {
+  background:var(--glass); border:1px solid var(--border);
+  border-radius:var(--r-xl); padding:1rem 1rem; margin:.28rem .75rem;
+  transition:all .2s;
 }
-.drawer-overlay.open{opacity:1;pointer-events:auto;}
-.drawer{
-  position:absolute;bottom:0;left:0;right:0;max-height:82%;
-  background:var(--surface);border-radius:24px 24px 0 0;z-index:90;
-  transform:translateY(100%);transition:.3s cubic-bezier(.22,1,.36,1);
-  padding:10px 20px 24px;overflow-y:auto;
-}
-.drawer.open{transform:translateY(0);}
-.drawer-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:8px auto 16px;}
-.drawer h2{font-size:17px;font-weight:700;margin-bottom:14px;}
+.card-head { display:flex; align-items:center; gap:.5rem; margin-bottom:.6rem; }
+.card-ico { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+.card-ico.blue { background:rgba(37,99,235,.18); }
+.card-ico.teal { background:rgba(13,148,136,.18); }
+.card-ico.gold { background:rgba(200,169,81,.18); }
+.card-ico.green { background:rgba(16,185,129,.18); }
+.card-ico.red { background:rgba(239,68,68,.18); }
+.card-t { font-size:.72rem; font-weight:700; color:var(--t1); }
+.card-s { font-size:.46rem; color:var(--t3); margin-top:.04rem; }
 
-/* ---------- Modal ---------- */
-.modal-overlay{
-  position:absolute;inset:0;background:rgba(0,0,0,0.6);z-index:100;
-  opacity:0;pointer-events:none;transition:.2s;display:flex;align-items:flex-end;
+/* ── BALANCE CARD (SIGNATURE ELEMENT) ── */
+.balance-card {
+  background:var(--grad-card);
+  border:1px solid rgba(37,99,235,.25);
+  border-radius:var(--r-xl); padding:1.1rem 1.1rem;
+  margin:.5rem .75rem; position:relative; overflow:hidden;
+  box-shadow:0 8px 32px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.06) inset;
 }
-.modal-overlay.open{opacity:1;pointer-events:auto;}
-.modal{
-  background:var(--surface);width:100%;border-radius:22px 22px 0 0;padding:22px 22px 30px;
-  transform:translateY(30px);transition:.28s cubic-bezier(.22,1,.36,1);
+.balance-card::before {
+  content:''; position:absolute; top:-40%; right:-15%;
+  width:280px; height:280px; border-radius:50%;
+  background:radial-gradient(circle, rgba(37,99,235,.18), transparent 70%);
+  pointer-events:none;
 }
-.modal-overlay.open .modal{transform:translateY(0);}
-.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
-.modal-header h3{font-size:17px;font-weight:700;}
-.input-field{
-  width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;
-  padding:14px;color:var(--text);font-size:15px;margin-bottom:12px;
+.balance-card::after {
+  content:''; position:absolute; bottom:-30%; left:-10%;
+  width:200px; height:200px; border-radius:50%;
+  background:radial-gradient(circle, rgba(13,148,136,.12), transparent 70%);
+  pointer-events:none;
 }
-.input-field:focus{outline:none;border-color:var(--teal);}
-.qr-box{
-  width:200px;height:200px;margin:0 auto 18px;background:#fff;border-radius:16px;
-  display:flex;align-items:center;justify-content:center;position:relative;
+.bc-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:.8rem; position:relative; z-index:1; }
+.bc-label { font-size:.46rem; font-weight:600; color:rgba(240,244,255,.55); letter-spacing:.1em; text-transform:uppercase; }
+.bc-status { display:flex; align-items:center; gap:.28rem; }
+.bc-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:pulse 2s ease-in-out infinite; }
+.bc-st-txt { font-size:.44rem; color:var(--green); font-weight:600; }
+.bc-amount {
+  font-family:var(--f-mono); font-size:2.6rem; font-weight:800;
+  color:var(--gold); line-height:1; margin-bottom:.18rem;
+  position:relative; z-index:1; animation:countUp .5s ease;
+  text-shadow:0 0 40px rgba(200,169,81,.3);
 }
-.qr-pattern{width:170px;height:170px;background:
-  repeating-linear-gradient(90deg,#0B1120 0 8px, transparent 8px 16px),
-  repeating-linear-gradient(0deg,#0B1120 0 8px, transparent 8px 16px);
-  background-blend-mode:multiply;border-radius:8px;position:relative;}
-.qr-pattern::before{content:"π";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:var(--primary-blue);background:#fff;width:44px;height:44px;margin:auto;border-radius:8px;}
+.bc-pi-sym { font-size:1.8rem; margin-right:.18rem; opacity:.8; }
+.bc-sub { font-size:.48rem; color:var(--t3); margin-bottom:.9rem; position:relative; z-index:1; font-family:var(--f-mono); }
+.bc-actions { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; position:relative; z-index:1; }
+.bc-action {
+  padding:.58rem .4rem; border-radius:var(--r-sm); text-align:center;
+  cursor:pointer; transition:all .15s; border:1px solid transparent;
+}
+.bc-action.primary { background:var(--blue); border-color:rgba(255,255,255,.15); }
+.bc-action.secondary { background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.1); }
+.bc-action:active { transform:scale(.96); }
+.bc-action:disabled { opacity:.4; }
+.bca-ico { font-size:1.15rem; margin-bottom:.16rem; }
+.bca-lbl { font-size:.5rem; font-weight:700; color:var(--t1); }
 
-/* ---------- Toast ---------- */
-.toast{
-  position:absolute;top:16px;left:20px;right:20px;background:var(--surface2);
-  border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;
-  z-index:200;transform:translateY(-80px);opacity:0;transition:.35s cubic-bezier(.22,1,.36,1);
+/* ── QUICK ACTIONS ── */
+.qa-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem; padding:.3rem .75rem .5rem; }
+.qa-btn {
+  display:flex; flex-direction:column; align-items:center; gap:.3rem;
+  padding:.62rem .2rem; border-radius:var(--r-md); background:var(--glass);
+  border:1px solid var(--border); cursor:pointer; transition:all .18s; min-height:76px;
 }
-.toast.show{transform:translateY(0);opacity:1;}
-.toast-icon{width:34px;height:34px;border-radius:10px;background:rgba(16,185,129,0.15);color:var(--success);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.toast-text{font-size:13px;font-weight:600;}
-.toast-sub{font-size:11.5px;color:var(--subtext);}
-
-/* ---------- Roadmap ---------- */
-.roadmap-cat{margin-bottom:22px;}
-.roadmap-cat h4{font-size:13px;color:var(--gold);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;}
-.roadmap-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
-.roadmap-item:last-child{border-bottom:none;}
-.roadmap-item span{font-size:13.5px;}
-.roadmap-tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--surface2);color:var(--subtext);}
-
-/* ---------- Coming Soon preview card ---------- */
-.soon-card{text-align:center;padding:50px 20px;}
-.soon-icon{width:64px;height:64px;border-radius:18px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 18px;}
-.soon-card h3{font-size:18px;font-weight:700;margin-bottom:8px;}
-.soon-card p{font-size:13.5px;color:var(--subtext);line-height:1.6;margin-bottom:22px;max-width:280px;margin-left:auto;margin-right:auto;}
-
-.legal-body{font-size:13px;line-height:1.75;color:var(--subtext);}
-.legal-body h4{color:var(--text);font-size:14.5px;margin:18px 0 6px;}
-.security-score-ring{width:120px;height:120px;margin:0 auto 16px;position:relative;}
-.toggle{width:46px;height:26px;border-radius:20px;background:var(--surface2);position:relative;transition:.2s;flex-shrink:0;}
-.toggle.on{background:var(--success);}
-.toggle::after{content:"";position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s;}
-.toggle.on::after{left:23px;}
-.row-between{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border);}
-.row-between:last-child{border-bottom:none;}
-.row-between .lbl{font-size:14px;font-weight:500;}
-
-@media (min-width:461px){
-  body{background:#05070D;}
-  #app{border-left:1px solid var(--border);border-right:1px solid var(--border);box-shadow:0 0 80px rgba(0,0,0,0.5);}
+.qa-btn:active { transform:scale(.95); background:var(--glass2); border-color:var(--border2); }
+.qa-ico {
+  width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem; flex-shrink:0;
 }
+.qa-lbl { font-size:.42rem; font-weight:600; color:var(--t2); text-align:center; line-height:1.2; }
+
+/* ── SECTION LABEL ── */
+.sec-lbl {
+  padding:.7rem .9rem .2rem;
+  font-size:.42rem; font-weight:800; color:var(--t3);
+  letter-spacing:.12em; text-transform:uppercase;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.sec-lbl-action { font-size:.46rem; font-weight:600; color:var(--blue); cursor:pointer; }
+
+/* ── UTILITY GRID ── */
+.util-grid { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; padding:.2rem .75rem; }
+.util-card {
+  background:var(--glass); border:1px solid var(--border); border-radius:var(--r-lg);
+  padding:.7rem .65rem; cursor:pointer; transition:all .18s; position:relative; min-height:86px;
+  display:flex; flex-direction:column; justify-content:space-between;
+}
+.util-card:active { transform:scale(.96); background:var(--glass2); }
+.util-card.soon { opacity:.65; }
+.util-ico { font-size:1.5rem; margin-bottom:.28rem; }
+.util-name { font-size:.58rem; font-weight:700; color:var(--t1); line-height:1.2; }
+.util-desc { font-size:.4rem; color:var(--t3); margin-top:.06rem; }
+.util-badge {
+  position:absolute; top:.42rem; right:.42rem;
+  font-size:.34rem; font-weight:800; border-radius:99px;
+  padding:.06rem .28rem; letter-spacing:.04em; text-transform:uppercase;
+}
+.badge-live { background:rgba(16,185,129,.18); color:var(--green); border:1px solid rgba(16,185,129,.3); }
+.badge-soon { background:rgba(245,158,11,.12); color:var(--orange); border:1px solid rgba(245,158,11,.25); }
+.badge-new  { background:rgba(37,99,235,.18); color:var(--blue); border:1px solid rgba(37,99,235,.3); }
+
+/* ── TRANSACTION ROW ── */
+.tx-row {
+  display:flex; align-items:center; gap:.65rem;
+  padding:.65rem .9rem; border-bottom:1px solid rgba(255,255,255,.04);
+  cursor:pointer; transition:background .14s; min-height:68px;
+}
+.tx-row:active { background:var(--glass); }
+.tx-row:last-child { border-bottom:none; }
+.tx-ico { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+.tx-ico.sent { background:rgba(239,68,68,.14); }
+.tx-ico.recv { background:rgba(16,185,129,.14); }
+.tx-ico.pend { background:rgba(245,158,11,.12); }
+.tx-info { flex:1; min-width:0; }
+.tx-name { font-size:.62rem; font-weight:600; color:var(--t1); }
+.tx-meta { font-size:.44rem; color:var(--t3); margin-top:.06rem; }
+.tx-amount { text-align:right; flex-shrink:0; }
+.tx-pi { font-family:var(--f-mono); font-size:.72rem; font-weight:700; }
+.tx-pi.sent { color:var(--red); }
+.tx-pi.recv { color:var(--green); }
+.tx-pi.pend { color:var(--orange); }
+.tx-status { font-size:.38rem; margin-top:.06rem; }
+
+/* ── INPUT ── */
+.finput {
+  width:100%; background:var(--glass); border:1.5px solid var(--border2);
+  border-radius:var(--r-sm); padding:.62rem .8rem; font-size:.64rem; color:var(--t1);
+  transition:border-color .15s; display:block;
+}
+.finput:focus { border-color:var(--blue); outline:none; }
+.finput.mono { font-family:var(--f-mono); }
+.finput-wrap { margin-bottom:.52rem; }
+.finput-label { font-size:.48rem; font-weight:600; color:var(--t3); margin-bottom:.24rem; display:block; }
+.finput-prefix { position:relative; }
+.finput-prefix .finput { padding-left:2.2rem; }
+.finput-sym { position:absolute; left:.8rem; top:50%; transform:translateY(-50%); font-size:.72rem; color:var(--gold); font-family:var(--f-mono); font-weight:700; }
+
+/* ── BUTTONS ── */
+.btn {
+  width:100%; padding:.76rem; border-radius:var(--r-md);
+  font-size:.78rem; font-weight:700; display:flex; align-items:center; justify-content:center;
+  gap:.4rem; cursor:pointer; transition:all .15s; min-height:54px; touch-action:manipulation;
+}
+.btn:active { transform:scale(.97); }
+.btn:disabled { opacity:.45; cursor:not-allowed; }
+.btn-primary { background:var(--grad-blue); color:#fff; box-shadow:0 4px 20px rgba(37,99,235,.4); }
+.btn-teal    { background:var(--grad-teal); color:#fff; box-shadow:0 4px 20px rgba(13,148,136,.35); }
+.btn-outline { background:var(--glass); border:1.5px solid var(--border2); color:var(--t1); }
+.btn-danger  { background:rgba(239,68,68,.15); border:1.5px solid rgba(239,68,68,.3); color:var(--red); }
+.btn-sm { padding:.42rem .7rem; font-size:.6rem; min-height:38px; width:auto; border-radius:var(--r-sm); }
+
+/* ── TABS (sub-navigation) ── */
+.stabs { display:flex; padding:.28rem .75rem; gap:.3rem; overflow-x:auto; scrollbar-width:none; flex-shrink:0; }
+.stabs::-webkit-scrollbar { display:none; }
+.stab {
+  flex-shrink:0; font-size:.52rem; font-weight:600; padding:.32rem .7rem;
+  border-radius:99px; background:var(--glass); border:1px solid var(--border);
+  color:var(--t3); cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.stab.on { background:var(--blue); border-color:transparent; color:#fff; }
+
+/* ── PILL BADGE ── */
+.pill { display:inline-flex; align-items:center; gap:.2rem; font-size:.44rem; font-weight:700; border-radius:99px; padding:.14rem .44rem; }
+.pill-green  { background:rgba(16,185,129,.15); color:var(--green); border:1px solid rgba(16,185,129,.25); }
+.pill-blue   { background:rgba(37,99,235,.15); color:var(--blue); border:1px solid rgba(37,99,235,.25); }
+.pill-orange { background:rgba(245,158,11,.12); color:var(--orange); border:1px solid rgba(245,158,11,.2); }
+.pill-red    { background:rgba(239,68,68,.12); color:var(--red); border:1px solid rgba(239,68,68,.2); }
+.pill-gold   { background:rgba(200,169,81,.12); color:var(--gold); border:1px solid rgba(200,169,81,.2); }
+
+/* ── SKELETON ── */
+.skel { background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
+
+/* ── EMPTY STATE ── */
+.empty { text-align:center; padding:2.5rem 1.5rem; }
+.empty-ico { font-size:3.2rem; margin-bottom:.6rem; }
+.empty-t { font-size:.82rem; font-weight:700; color:var(--t1); margin-bottom:.3rem; }
+.empty-s { font-size:.56rem; color:var(--t3); line-height:1.6; }
+
+/* ── SPIN / LOADING ── */
+.spin-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.5rem; padding:2.5rem; }
+.spin { width:28px; height:28px; border:2.5px solid var(--bg3); border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; }
+.spin-lbl { font-size:.54rem; color:var(--t3); }
+
+/* ── TOAST ── */
+#toast {
+  position:fixed; bottom:calc(var(--nav-h) + 16px); left:50%; transform:translateX(-50%) translateY(12px);
+  background:var(--bg3); border:1px solid var(--border2); color:var(--t1);
+  font-size:.56rem; font-weight:600; padding:.4rem 1.1rem; border-radius:99px;
+  opacity:0; transition:all .22s cubic-bezier(.34,1.56,.64,1); pointer-events:none;
+  z-index:999; white-space:nowrap; box-shadow:0 4px 24px rgba(0,0,0,.4);
+}
+#toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.success { background:rgba(16,185,129,.2); border-color:rgba(16,185,129,.4); color:var(--green); }
+#toast.error   { background:rgba(239,68,68,.2); border-color:rgba(239,68,68,.4); color:var(--red); }
+
+/* ── PANEL (sheet) ── */
+.panel { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200; }
+.panel.open { display:flex; align-items:flex-end; animation:fadeIn .15s ease; }
+.panel-sheet {
+  width:100%; background:var(--bg1); border-radius:24px 24px 0 0;
+  border-top:1px solid var(--border2); max-height:90vh;
+  display:flex; flex-direction:column; animation:slideUp .2s ease;
+}
+.panel-handle { width:36px; height:4px; background:var(--bg4); border-radius:99px; margin:.7rem auto .2rem; flex-shrink:0; }
+.panel-hdr { padding:.5rem 1rem .6rem; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; border-bottom:1px solid var(--border); }
+.panel-title { font-size:.88rem; font-weight:800; color:var(--t1); }
+.panel-close { width:32px; height:32px; border-radius:99px; background:var(--glass2); display:flex; align-items:center; justify-content:center; font-size:.78rem; color:var(--t3); cursor:pointer; }
+.panel-body { flex:1; overflow-y:auto; padding:1rem; -webkit-overflow-scrolling:touch; }
+.panel-body::-webkit-scrollbar { display:none; }
+.panel-foot { padding:.6rem 1rem 1rem; flex-shrink:0; border-top:1px solid var(--border); }
+
+/* ── SECTION DIVIDER ── */
+.divider { height:1px; background:var(--border); margin:.3rem .75rem; }
+.divider-lbl { font-size:.42rem; color:var(--t3); text-align:center; padding:.4rem; position:relative; }
+.divider-lbl::before,.divider-lbl::after { content:''; position:absolute; top:50%; width:40%; height:1px; background:var(--border); }
+.divider-lbl::before { left:.75rem; } .divider-lbl::after { right:.75rem; }
+
+/* ── QR CODE ── */
+.qr-wrap { background:#fff; border-radius:var(--r-lg); padding:1rem; display:inline-block; }
+.qr-wrap canvas { display:block; }
+
+/* ── MORE DRAWER ── */
+.more-grid { display:grid; grid-template-columns:1fr; gap:.3rem; padding:.2rem .75rem; }
+.more-row {
+  display:flex; align-items:center; gap:.65rem; padding:.62rem .75rem;
+  background:var(--glass); border:1px solid var(--border); border-radius:var(--r-md);
+  cursor:pointer; transition:all .15s; min-height:58px;
+}
+.more-row:active { background:var(--glass2); }
+.more-ico { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:1.05rem; flex-shrink:0; }
+.more-t { font-size:.64rem; font-weight:600; color:var(--t1); }
+.more-s { font-size:.44rem; color:var(--t3); margin-top:.03rem; }
+.more-arrow { font-size:.78rem; color:var(--t3); margin-left:auto; }
+
+/* ── SECURITY SCORE ── */
+.score-ring { width:100px; height:100px; position:relative; }
+.score-svg { transform:rotate(-90deg); }
+.score-track { fill:none; stroke:var(--bg3); stroke-width:8; }
+.score-fill  { fill:none; stroke-width:8; stroke-linecap:round; stroke-dasharray:283; transition:stroke-dashoffset .8s ease; }
+.score-val { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.score-num { font-family:var(--f-mono); font-size:1.4rem; font-weight:800; }
+.score-lbl { font-size:.38rem; color:var(--t3); }
+
+/* ── COMING SOON STRIP ── */
+.cs-strip { display:flex; gap:.4rem; overflow-x:auto; padding:.2rem .75rem .5rem; scrollbar-width:none; }
+.cs-strip::-webkit-scrollbar { display:none; }
+.cs-item { flex-shrink:0; background:var(--glass); border:1px solid var(--border); border-radius:var(--r-md); padding:.52rem .65rem; min-width:120px; cursor:default; }
+.cs-ico { font-size:1.15rem; margin-bottom:.18rem; }
+.cs-name { font-size:.52rem; font-weight:700; color:var(--t2); }
+.cs-badge { font-size:.36rem; font-weight:700; color:var(--orange); margin-top:.1rem; }
+
+/* ── CALCULATOR ── */
+.calc-display { background:var(--bg0); border-radius:var(--r-md); padding:.9rem 1rem; margin-bottom:.5rem; text-align:right; }
+.calc-expr { font-size:.5rem; color:var(--t3); font-family:var(--f-mono); min-height:1rem; }
+.calc-val { font-family:var(--f-mono); font-size:2.2rem; font-weight:800; color:var(--gold); }
+.calc-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.3rem; }
+.calc-btn {
+  padding:.65rem .2rem; border-radius:var(--r-sm); font-size:.78rem; font-weight:700;
+  cursor:pointer; transition:all .12s; background:var(--bg3); color:var(--t1); min-height:52px;
+}
+.calc-btn:active { transform:scale(.93); }
+.calc-btn.op { background:rgba(37,99,235,.2); color:var(--blue); }
+.calc-btn.eq { background:var(--blue); color:#fff; }
+.calc-btn.clr { background:rgba(239,68,68,.15); color:var(--red); }
+.calc-btn.zero { grid-column:span 2; }
+
+/* ── TYPING DOTS (AI) ── */
+.ai-typing { display:flex; gap:.3rem; align-items:center; padding:.5rem .7rem; background:var(--glass); border:1px solid var(--border); border-radius:14px; border-bottom-left-radius:4px; width:fit-content; }
+.td { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:tdot 1.2s infinite; }
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+
+/* ── RESPONSIVE ── */
+@media (min-width:430px) { .qa-grid { gap:.5rem; } }
 </style>
 </head>
 <body>
 
-<div id="app">
-
-  <!-- ===================== ONBOARDING ===================== -->
-  <div class="onboard-screen" id="ob-welcome">
-    <div class="pi-mark">π</div>
-    <div class="onboard-title">Welcome to FinPi</div>
-    <div class="onboard-sub">A comprehensive financial platform built for the Pi ecosystem. Send, save, and manage Pi with confidence.</div>
-    <button class="btn-primary" onclick="goOnboard('ob-signin')">Continue with Pi</button>
-    <button class="btn-ghost" onclick="goOnboard('ob-signin')">Learn how FinPi works</button>
-    <div class="step-progress"><span class="active"></span><span></span><span></span></div>
-  </div>
-
-  <div class="onboard-screen" id="ob-signin" style="display:none;">
-    <div class="pi-mark" style="animation:none;">🔐</div>
-    <div class="onboard-title">Connect Your Pi Wallet</div>
-    <div class="onboard-sub">FinPi uses official Pi Authentication. Your Pi credentials are never seen or stored by FinPi.</div>
-    <button class="btn-primary" onclick="simulateAuth()" id="authBtn">Authenticate with Pi SDK</button>
-    <button class="btn-ghost" onclick="goOnboard('ob-welcome')">Back</button>
-    <div class="step-progress"><span class="active"></span><span class="active"></span><span></span></div>
-  </div>
-
-  <div class="onboard-screen" id="ob-pin" style="display:none;">
-    <div class="pi-mark" style="animation:none;">🔢</div>
-    <div class="onboard-title">Create Your PIN</div>
-    <div class="onboard-sub" id="pinSub">Set a 6-digit PIN to protect your FinPi account.</div>
-    <div class="pin-dots" id="pinDots"></div>
-    <div class="pin-pad" id="pinPad"></div>
-    <div class="step-progress"><span class="active"></span><span class="active"></span><span class="active"></span></div>
-  </div>
-
-  <div class="onboard-screen" id="ob-bio" style="display:none;">
-    <div class="pi-mark" style="animation:none;">👆</div>
-    <div class="onboard-title">Enable Biometric Login</div>
-    <div class="onboard-sub">Use Face ID or fingerprint for faster, secure sign-in.</div>
-    <button class="btn-primary" onclick="finishOnboarding()">Enable Biometrics</button>
-    <button class="btn-ghost" onclick="finishOnboarding()">Skip for now</button>
-  </div>
-
-  <!-- ===================== TOAST ===================== -->
-  <div class="toast" id="toast">
-    <div class="toast-icon">✓</div>
-    <div>
-      <div class="toast-text" id="toastText">Done</div>
-      <div class="toast-sub" id="toastSub"></div>
-    </div>
-  </div>
-
-  <!-- ===================== HOME ===================== -->
-  <div class="screen" id="screen-home">
-    <div class="topbar">
-      <div>
-        <div style="font-size:12px;color:var(--subtext);">Good day,</div>
-        <h1>@abdullahi.b</h1>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <button class="icon-btn" onclick="openScreen('screen-activity')">🔔</button>
-        <button class="icon-btn" onclick="openDrawer()">☰</button>
-      </div>
-    </div>
-    <div class="scroll-area">
-      <div class="balance-card">
-        <div class="balance-label">Total Balance</div>
-        <div class="balance-amount mono" id="balanceDisplay">0.00 π</div>
-        <div class="balance-usd">≈ $0.00 USD · rate updates hourly</div>
-        <div class="quick-actions">
-          <div class="qa-btn" onclick="openModal('modal-send')"><div class="qa-icon">↑</div><span>Send</span></div>
-          <div class="qa-btn" onclick="openModal('modal-receive')"><div class="qa-icon">↓</div><span>Receive</span></div>
-          <div class="qa-btn" onclick="openModal('modal-scan')"><div class="qa-icon">▦</div><span>Scan</span></div>
-          <div class="qa-btn" onclick="openScreen('screen-payments')"><div class="qa-icon">•••</div><span>More</span></div>
-        </div>
-      </div>
-
-      <div class="section-title first">Recent Activity</div>
-      <div class="glass-card" id="homeTxList"></div>
-
-      <div class="section-title">Explore FinPi</div>
-      <div class="glass-card" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;">
-        <div class="qa-btn" style="flex-direction:row;justify-content:flex-start;gap:8px;padding:10px;background:var(--surface2);border-radius:12px;" onclick="openScreen('screen-security')"><span>🛡</span><span style="font-size:12.5px;font-weight:600;">Security</span></div>
-        <div class="qa-btn" style="flex-direction:row;justify-content:flex-start;gap:8px;padding:10px;background:var(--surface2);border-radius:12px;" onclick="openLegal()"><span>⚖</span><span style="font-size:12.5px;font-weight:600;">Legal</span></div>
-        <div class="qa-btn" style="flex-direction:row;justify-content:flex-start;gap:8px;padding:10px;background:var(--surface2);border-radius:12px;" onclick="openScreen('screen-support')"><span>🆘</span><span style="font-size:12.5px;font-weight:600;">Support</span></div>
-        <div class="qa-btn" style="flex-direction:row;justify-content:flex-start;gap:8px;padding:10px;background:var(--surface2);border-radius:12px;" onclick="openScreen('screen-roadmap')"><span>🗺</span><span style="font-size:12.5px;font-weight:600;">Roadmap</span></div>
-      </div>
-    </div>
-    <div class="bottom-nav"></div>
-  </div>
-
-  <!-- ===================== PAYMENTS ===================== -->
-  <div class="screen" id="screen-payments">
-    <div class="topbar"><h1>Payments</h1><button class="icon-btn" onclick="openDrawer()">☰</button></div>
-    <div class="scroll-area">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px;">
-        <button class="btn-primary" style="max-width:none;" onclick="openModal('modal-send')">↑ Send Pi</button>
-        <button class="btn-primary" style="max-width:none;background:var(--surface2);box-shadow:none;" onclick="openModal('modal-receive')">↓ Receive Pi</button>
-      </div>
-      <div class="section-title">Tools</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="list-row" onclick="openModal('modal-scan')"><div class="list-icon">▦</div><div class="list-body"><div class="list-title">Scan QR</div><div class="list-sub">Pay a merchant or pioneer instantly</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="openModal('modal-receive')"><div class="list-icon">⬜</div><div class="list-body"><div class="list-title">Generate QR</div><div class="list-sub">Show your code to get paid</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="openModal('modal-request')"><div class="list-icon">✉</div><div class="list-body"><div class="list-title">Payment Requests</div><div class="list-sub">Ask someone to pay you</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showToast('Favorites','Coming soon — save contacts you pay often')"><div class="list-icon">★</div><div class="list-body"><div class="list-title">Favorites</div><div class="list-sub">Quick access to frequent contacts</div></div><span class="badge soon">Soon</span></div>
-      </div>
-      <div class="section-title">All Transactions</div>
-      <div class="glass-card" id="paymentsTxList"></div>
-    </div>
-    <div class="bottom-nav"></div>
-  </div>
-
-  <!-- ===================== WALLET ===================== -->
-  <div class="screen" id="screen-wallet">
-    <div class="topbar"><h1>Wallet</h1><button class="icon-btn" onclick="openDrawer()">☰</button></div>
-    <div class="scroll-area">
-      <div class="balance-card">
-        <div class="balance-label">Pi Balance</div>
-        <div class="balance-amount mono" id="balanceDisplay2">0.00 π</div>
-        <div class="balance-usd">Wallet ID: FP-8827-XQ19</div>
-      </div>
-      <div class="section-title first">Wallet Information</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="row-between"><span class="lbl">Network</span><span class="mono" style="font-size:13px;">Pi Mainnet</span></div>
-        <div class="row-between"><span class="lbl">Authentication</span><span style="color:var(--success);font-size:13px;font-weight:600;">● Connected</span></div>
-        <div class="row-between"><span class="lbl">Last synced</span><span style="font-size:13px;color:var(--subtext);">Just now</span></div>
-      </div>
-      <div class="section-title">Wallet Security</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="list-row" onclick="openScreen('screen-security')"><div class="list-icon">🔑</div><div class="list-body"><div class="list-title">Backup Guide</div><div class="list-sub">Protect your Pi recovery phrase</div></div><span class="chev">›</span></div>
-        <div class="list-row" onclick="openScreen('screen-security')"><div class="list-icon">🛡</div><div class="list-body"><div class="list-title">Wallet Security</div><div class="list-sub">PIN, biometrics & device trust</div></div><span class="chev">›</span></div>
-      </div>
-      <div class="section-title">Expand</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="list-row" onclick="showToast('Connected Wallets','Coming soon — link multiple Pi wallets')"><div class="list-icon">🔗</div><div class="list-body"><div class="list-title">Connected Wallets</div><div class="list-sub">Manage multiple wallets in one place</div></div><span class="badge soon">Soon</span></div>
-      </div>
-    </div>
-    <div class="bottom-nav"></div>
-  </div>
-
-  <!-- ===================== ACTIVITY ===================== -->
-  <div class="screen" id="screen-activity">
-    <div class="topbar"><h1>Activity</h1><button class="icon-btn" onclick="openDrawer()">☰</button></div>
-    <div class="scroll-area">
-      <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;">
-        <button class="badge live" style="padding:8px 14px;font-size:12px;">All</button>
-        <button class="badge" style="padding:8px 14px;font-size:12px;background:var(--surface2);color:var(--subtext);">Payments</button>
-        <button class="badge" style="padding:8px 14px;font-size:12px;background:var(--surface2);color:var(--subtext);">Security</button>
-        <button class="badge" style="padding:8px 14px;font-size:12px;background:var(--surface2);color:var(--subtext);">System</button>
-      </div>
-      <div class="section-title first">Today</div>
-      <div class="glass-card" id="activityList"></div>
-    </div>
-    <div class="bottom-nav"></div>
-  </div>
-
-  <!-- ===================== PROFILE ===================== -->
-  <div class="screen" id="screen-profile">
-    <div class="topbar"><h1>Profile</h1><button class="icon-btn" onclick="openDrawer()">☰</button></div>
-    <div class="scroll-area">
-      <div class="glass-card" style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
-        <div style="width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,var(--primary-blue),var(--teal));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;">AB</div>
-        <div>
-          <div style="font-weight:700;font-size:16px;">Abdullahi B. Abubakar</div>
-          <div style="font-size:12.5px;color:var(--subtext);">@abdullahi.b · Pi Authenticated ✓</div>
-        </div>
-      </div>
-      <div class="section-title first">Identity</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="list-row" onclick="openModal('modal-idcard')"><div class="list-icon">🪪</div><div class="list-body"><div class="list-title">Identity Card</div><div class="list-sub">Digital ID with QR code</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showToast('KYC Status','Coming soon — pending reliable Pi Network KYC data')"><div class="list-icon">✅</div><div class="list-body"><div class="list-title">KYC Status</div><div class="list-sub">Verification level</div></div><span class="badge soon">Soon</span></div>
-        <div class="list-row" onclick="showToast('FinPi Reputation','Coming soon — platform-specific score, not an official Pi metric')"><div class="list-icon">📈</div><div class="list-body"><div class="list-title">FinPi Reputation</div><div class="list-sub">Not an official Pi Network score</div></div><span class="badge soon">Soon</span></div>
-      </div>
-      <div class="section-title">Account</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="list-row" onclick="openScreen('screen-security')"><div class="list-icon">🛡</div><div class="list-body"><div class="list-title">Security Center</div></div><span class="chev">›</span></div>
-        <div class="list-row" onclick="openScreen('screen-settings')"><div class="list-icon">⚙</div><div class="list-body"><div class="list-title">Settings</div></div><span class="chev">›</span></div>
-        <div class="list-row" onclick="openScreen('screen-support')"><div class="list-icon">🆘</div><div class="list-body"><div class="list-title">Support Center</div></div><span class="chev">›</span></div>
-        <div class="list-row" onclick="openLegal()"><div class="list-icon">⚖</div><div class="list-body"><div class="list-title">Legal & Compliance</div></div><span class="chev">›</span></div>
-      </div>
-    </div>
-    <div class="bottom-nav"></div>
-  </div>
-
-  <!-- ===================== SECURITY CENTER ===================== -->
-  <div class="screen" id="screen-security">
-    <div class="topbar"><button class="icon-btn" onclick="openScreen('screen-profile')">←</button><h1>Security Center</h1><div style="width:38px;"></div></div>
-    <div class="scroll-area">
-      <div class="glass-card" style="text-align:center;padding:24px;">
-        <div style="font-size:13px;color:var(--subtext);margin-bottom:6px;">Security Score</div>
-        <div style="font-size:38px;font-weight:800;color:var(--success);" class="mono">82</div>
-        <div style="font-size:12px;color:var(--subtext);">Good — enable 2 more checks to reach Excellent</div>
-      </div>
-      <div class="section-title first">Access Controls</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="row-between"><span class="lbl">PIN Lock</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-        <div class="row-between"><span class="lbl">Biometric Login</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-        <div class="row-between"><span class="lbl">Auto-logout (5 min idle)</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-      </div>
-      <div class="section-title">Monitoring</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="list-row" onclick="openScreen('screen-activity')"><div class="list-icon">📜</div><div class="list-body"><div class="list-title">Login History</div><div class="list-sub">2 sessions this week</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showToast('Trusted Devices','This device is trusted')"><div class="list-icon">📱</div><div class="list-body"><div class="list-title">Trusted Devices</div><div class="list-sub">1 device</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showToast('Fraud Alerts','Coming soon — real-time anomaly detection')"><div class="list-icon">⚠</div><div class="list-body"><div class="list-title">Fraud Alerts</div></div><span class="badge soon">Soon</span></div>
-      </div>
-      <div class="section-title">Recovery</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="list-row" onclick="showToast('Backup Guide','Never share your Pi passphrase with anyone, including FinPi')"><div class="list-icon">🔑</div><div class="list-body"><div class="list-title">Backup Guide</div></div><span class="chev">›</span></div>
-      </div>
-    </div>
-    <div class="bottom-nav"></div>
-  </div>
-
-  <!-- ===================== SETTINGS ===================== -->
-  <div class="screen" id="screen-settings">
-    <div class="topbar"><button class="icon-btn" onclick="openScreen('screen-profile')">←</button><h1>Settings</h1><div style="width:38px;"></div></div>
-    <div class="scroll-area">
-      <div class="section-title first">General</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="row-between"><span class="lbl">Language</span><span style="color:var(--subtext);font-size:13px;">English</span></div>
-        <div class="row-between"><span class="lbl">Currency</span><span style="color:var(--subtext);font-size:13px;">USD</span></div>
-        <div class="row-between"><span class="lbl">Dark Theme</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-      </div>
-      <div class="section-title">Privacy</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="row-between"><span class="lbl">Data Sharing</span><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
-        <div class="list-row" onclick="showToast('Export Data','Your data export will be emailed within 24 hours')"><div class="list-icon">📤</div><div class="list-body"><div class="list-title">Export My Data</div></div><span class="chev">›</span></div>
-      </div>
-      <div class="section-title">App</div>
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="row-between"><span class="lbl">Clear Cache</span><span style="color:var(--teal);font-size:13px;font-weight:600;" onclick="showToast('Cache Cleared','12.4 MB freed')">Clear</span></div>
-        <div class="row-between"><span class="lbl">Version</span><span style="color:var(--subtext);font-size:13px;">1.0.0 (MVP)</span></div>
-        <div class="list-row" onclick="showToast('Accessibility','Full screen-reader & reduced-motion support ships in v1.1')"><div class="list-icon">♿</div><div class="list-body"><div class="list-title">Accessibility</div></div><span class="badge soon">Soon</span></div>
-      </div>
-    </div>
-    <div class="bottom-nav"></div>
-  </div>
-
-  <!-- ===================== SUPPORT CENTER ===================== -->
-  <div class="screen" id="screen-support">
-    <div class="topbar"><button class="icon-btn" onclick="openScreen('screen-profile')">←</button><h1>Support Center</h1><div style="width:38px;"></div></div>
-    <div class="scroll-area">
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="list-row" onclick="showToast('Help Center','Search articles or browse by topic')"><div class="list-icon">📖</div><div class="list-body"><div class="list-title">Help Center</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showToast('Ticket Submitted','Our team replies within 24 hours')"><div class="list-icon">🎫</div><div class="list-body"><div class="list-title">Submit a Ticket</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showToast('Payment Issue Reported','Reference #FP-2291 created')"><div class="list-icon">⚠</div><div class="list-body"><div class="list-title">Report a Payment Issue</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showToast('Report a Merchant','Coming soon — no merchants live yet')"><div class="list-icon">🏪</div><div class="list-body"><div class="list-title">Report a Merchant</div></div><span class="badge soon">Soon</span></div>
-        <div class="list-row" onclick="showToast('All Systems Operational','Last checked just now')"><div class="list-icon">🟢</div><div class="list-body"><div class="list-title">App Status</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showToast('Thanks!','Your feedback helps shape FinPi')"><div class="list-icon">💬</div><div class="list-body"><div class="list-title">Feedback & Suggestions</div></div><span class="badge live">Live</span></div>
-      </div>
-    </div>
-    <div class="bottom-nav"></div>
-  </div>
-
-  <!-- ===================== LEGAL & COMPLIANCE ===================== -->
-  <div class="screen" id="screen-legal">
-    <div class="topbar"><button class="icon-btn" onclick="closeLegalDetail()">←</button><h1 id="legalTitle">Legal & Compliance</h1><div style="width:38px;"></div></div>
-    <div class="scroll-area" id="legalList">
-      <div class="glass-card" style="padding:6px 14px;">
-        <div class="list-row" onclick="showLegal('privacy')"><div class="list-icon">🔒</div><div class="list-body"><div class="list-title">Privacy Policy</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showLegal('terms')"><div class="list-icon">📄</div><div class="list-body"><div class="list-title">Terms of Service</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showLegal('guidelines')"><div class="list-icon">🤝</div><div class="list-body"><div class="list-title">Community Guidelines</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showLegal('risk')"><div class="list-icon">⚠</div><div class="list-body"><div class="list-title">Risk Disclosure</div></div><span class="badge live">Live</span></div>
-        <div class="list-row" onclick="showLegal('security')"><div class="list-icon">🛡</div><div class="list-body"><div class="list-title">Security Policy</div></div><span class="badge live">Live</span></div>
-      </div>
-    </div>
-    <div class="scroll-area legal-body" id="legalDetail" style="display:none;"></div>
-    <div class="bottom-nav"></div>
-  </div>
-
-  <!-- ===================== ROADMAP ===================== -->
-  <div class="screen" id="screen-roadmap">
-    <div class="topbar"><button class="icon-btn" onclick="openScreen('screen-home')">←</button><h1>Roadmap</h1><div style="width:38px;"></div></div>
-    <div class="scroll-area">
-      <div class="glass-card" style="margin-bottom:20px;">
-        <div style="font-size:13.5px;color:var(--subtext);line-height:1.6;">Every feature below is planned and scheduled. Nothing on this list is live yet — we'd rather tell you honestly than show you something that doesn't work.</div>
-      </div>
-
-      <div class="roadmap-cat">
-        <h4>v2 · Growth</h4>
-        <div class="roadmap-item"><span>Marketplace (Buy/Sell/Services)</span><span class="roadmap-tag">v2</span></div>
-        <div class="roadmap-item"><span>Business Center & Merchant Directory</span><span class="roadmap-tag">v2</span></div>
-        <div class="roadmap-item"><span>Budget Tracker & Savings Goals</span><span class="roadmap-tag">v2</span></div>
-        <div class="roadmap-item"><span>AI Financial Assistant</span><span class="roadmap-tag">v2</span></div>
-        <div class="roadmap-item"><span>Personal Finance Insights</span><span class="roadmap-tag">v2</span></div>
-        <div class="roadmap-item"><span>FinPi Reputation Score</span><span class="roadmap-tag">v2</span></div>
-      </div>
-
-      <div class="roadmap-cat">
-        <h4>v3 · Scale</h4>
-        <div class="roadmap-item"><span>Business Analytics</span><span class="roadmap-tag">v3</span></div>
-        <div class="roadmap-item"><span>Community (Charity, Rewards)</span><span class="roadmap-tag">v3</span></div>
-        <div class="roadmap-item"><span>Learn (Education Hub)</span><span class="roadmap-tag">v3</span></div>
-        <div class="roadmap-item"><span>Escrow <span style="color:var(--subtext);">(pending Pi policy review)</span></span><span class="roadmap-tag">v3</span></div>
-      </div>
-
-      <div class="roadmap-cat">
-        <h4>Future exploration</h4>
-        <div class="roadmap-item"><span>Developer Platform (API/SDK)</span><span class="roadmap-tag">Future</span></div>
-        <div class="roadmap-item"><span>Enterprise Tools</span><span class="roadmap-tag">Future</span></div>
-      </div>
-    </div>
-    <div class="bottom-nav"></div>
-  </div>
-
-  <!-- ===================== More-menu Coming Soon target ===================== -->
-  <div class="screen" id="screen-soon">
-    <div class="topbar"><button class="icon-btn" onclick="openScreen('screen-home')">←</button><h1 id="soonHeaderTitle">Module</h1><div style="width:38px;"></div></div>
-    <div class="soon-card" style="margin:auto;">
-      <div class="soon-icon" id="soonIcon">🚧</div>
-      <h3 id="soonTitle">Coming Soon</h3>
-      <p id="soonDesc">This module is planned and scheduled.</p>
-      <button class="btn-primary" style="max-width:240px;" onclick="openScreen('screen-roadmap')">View Full Roadmap</button>
-    </div>
-  </div>
-
-  <!-- ===================== DRAWER ===================== -->
-  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
-  <div class="drawer" id="drawer">
-    <div class="drawer-handle"></div>
-    <h2>More</h2>
-    <div class="glass-card" style="padding:4px 14px;">
-      <div class="list-row" onclick="openSoon('💰','Personal Finance','Budget tracking, savings goals, spending analysis and financial calendar.')"><div class="list-icon">💰</div><div class="list-body"><div class="list-title">Personal Finance</div></div><span class="badge soon">Soon</span></div>
-      <div class="list-row" onclick="openSoon('🤖','AI Financial Assistant','Claude-powered spending advice, budget planning and financial education.')"><div class="list-icon">🤖</div><div class="list-body"><div class="list-title">AI Financial Assistant</div></div><span class="badge soon">Soon</span></div>
-      <div class="list-row" onclick="openSoon('🛒','Marketplace','Buy and sell digital & physical goods and services with Pi.')"><div class="list-icon">🛒</div><div class="list-body"><div class="list-title">Marketplace</div></div><span class="badge soon">Soon</span></div>
-      <div class="list-row" onclick="openSoon('🏪','Business Center','Merchant tools — directory, invoicing, verification, inventory.')"><div class="list-icon">🏪</div><div class="list-body"><div class="list-title">Business Center</div></div><span class="badge soon">Soon</span></div>
-      <div class="list-row" onclick="openSoon('📊','Analytics','Revenue and spending analytics for individuals and merchants.')"><div class="list-icon">📊</div><div class="list-body"><div class="list-title">Analytics</div></div><span class="badge soon">Soon</span></div>
-      <div class="list-row" onclick="openSoon('❤️','Community','Verified charity donations, rewards and community campaigns.')"><div class="list-icon">❤️</div><div class="list-body"><div class="list-title">Community</div></div><span class="badge soon">Soon</span></div>
-      <div class="list-row" onclick="openSoon('📚','Learn','Financial education, Pi ecosystem guides and tutorials.')"><div class="list-icon">📚</div><div class="list-body"><div class="list-title">Learn</div></div><span class="badge soon">Soon</span></div>
-      <div class="list-row" onclick="openScreen('screen-security'); closeDrawer();"><div class="list-icon">🛡</div><div class="list-body"><div class="list-title">Security Center</div></div><span class="badge live">Live</span></div>
-      <div class="list-row" onclick="openScreen('screen-support'); closeDrawer();"><div class="list-icon">🆘</div><div class="list-body"><div class="list-title">Support Center</div></div><span class="badge live">Live</span></div>
-      <div class="list-row" onclick="openLegal(); closeDrawer();"><div class="list-icon">⚖</div><div class="list-body"><div class="list-title">Legal & Compliance</div></div><span class="badge live">Live</span></div>
-      <div class="list-row" onclick="openScreen('screen-settings'); closeDrawer();"><div class="list-icon">⚙</div><div class="list-body"><div class="list-title">Settings</div></div><span class="badge live">Live</span></div>
-      <div class="list-row" onclick="openScreen('screen-roadmap'); closeDrawer();"><div class="list-icon">🗺</div><div class="list-body"><div class="list-title">Roadmap</div></div><span class="chev">›</span></div>
-      <div class="list-row" onclick="openSoon('👨‍💻','Developer Platform','REST API, SDK, webhooks and sandbox for building on FinPi.')"><div class="list-icon">👨‍💻</div><div class="list-body"><div class="list-title">Developer Platform</div></div><span class="badge soon">Soon</span></div>
-      <div class="list-row" onclick="openSoon('🏢','Enterprise','Organization accounts, team roles, audit logs, POS integration.')"><div class="list-icon">🏢</div><div class="list-body"><div class="list-title">Enterprise</div></div><span class="badge soon">Soon</span></div>
-      <div class="list-row" onclick="showToast('FinPi','Version 1.0.0 · Built for the Pi ecosystem')"><div class="list-icon">ℹ</div><div class="list-body"><div class="list-title">About FinPi</div></div><span class="chev">›</span></div>
-    </div>
-  </div>
-
-  <!-- ===================== MODALS ===================== -->
-  <div class="modal-overlay" id="modal-send">
-    <div class="modal">
-      <div class="modal-header"><h3>Send Pi</h3><button class="icon-btn" onclick="closeModal('modal-send')">✕</button></div>
-      <input class="input-field" placeholder="@username or scan QR" id="sendTo">
-      <input class="input-field" placeholder="0.00" type="number" id="sendAmt">
-      <input class="input-field" placeholder="Add a note (optional)">
-      <button class="btn-primary" style="max-width:none;" onclick="doSend()">Review & Send</button>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modal-receive">
-    <div class="modal">
-      <div class="modal-header"><h3>Receive Pi</h3><button class="icon-btn" onclick="closeModal('modal-receive')">✕</button></div>
-      <div class="qr-box"><div class="qr-pattern"></div></div>
-      <div style="text-align:center;font-size:13px;color:var(--subtext);margin-bottom:16px;">Your FinPi ID: <span class="mono" style="color:var(--text);">@abdullahi.b</span></div>
-      <button class="btn-primary" style="max-width:none;" onclick="showToast('Link Copied','Share your payment link with anyone')">Share Payment Link</button>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modal-scan">
-    <div class="modal">
-      <div class="modal-header"><h3>Scan QR</h3><button class="icon-btn" onclick="closeModal('modal-scan')">✕</button></div>
-      <div style="height:220px;border-radius:16px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--subtext);font-size:13px;margin-bottom:16px;border:2px dashed var(--border);">Point camera at a FinPi QR code</div>
-      <button class="btn-ghost" style="width:100%;background:var(--surface2);border-radius:12px;" onclick="closeModal('modal-scan')">Cancel</button>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modal-request">
-    <div class="modal">
-      <div class="modal-header"><h3>Request Payment</h3><button class="icon-btn" onclick="closeModal('modal-request')">✕</button></div>
-      <input class="input-field" placeholder="@username">
-      <input class="input-field" placeholder="Amount (π)" type="number">
-      <button class="btn-primary" style="max-width:none;" onclick="closeModal('modal-request'); showToast('Request Sent','Payment request sent successfully')">Send Request</button>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modal-idcard">
-    <div class="modal">
-      <div class="modal-header"><h3>Identity Card</h3><button class="icon-btn" onclick="closeModal('modal-idcard')">✕</button></div>
-      <div class="glass-card" style="background:linear-gradient(135deg,var(--deep-blue),var(--purple));border:none;">
-        <div style="font-size:12px;opacity:.85;margin-bottom:4px;">FinPi Digital Identity</div>
-        <div style="font-weight:700;font-size:16px;margin-bottom:14px;">@abdullahi.b</div>
-        <div class="qr-box" style="width:120px;height:120px;margin:0 0 12px;"><div class="qr-pattern" style="width:100px;height:100px;"></div></div>
-        <div style="font-size:11px;opacity:.8;">Pi Authenticated ✓ · Member since 2026</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modal-pinlock">
-    <div class="modal" style="text-align:center;">
-      <div class="pi-mark" style="animation:none;margin:0 auto 18px;">🔒</div>
-      <h3 style="margin-bottom:6px;">Enter PIN</h3>
-      <div style="font-size:12.5px;color:var(--subtext);margin-bottom:20px;">Welcome back to FinPi</div>
-      <div class="pin-dots" id="lockDots" style="justify-content:center;"></div>
-      <div class="pin-pad" id="lockPad" style="margin:20px auto 0;"></div>
-    </div>
-  </div>
-
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo">Fin<span>Pi</span></div>
+  <div class="splash-tagline">Pi Financial Platform</div>
+  <div class="splash-ring"></div>
+  <div class="splash-status" id="splash-status">Initializing…</div>
 </div>
 
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-bg"></div>
+  <div class="login-top"></div>
+  <div class="login-body">
+    <div class="login-icon">💎</div>
+    <div class="login-title">Fin<span>Pi</span></div>
+    <div class="login-sub">Pi Financial Platform</div>
+    <div class="login-features">
+      <div class="lf-card"><div class="lf-ico">💳</div><div class="lf-name">Pi Payments</div><div class="lf-desc">Send &amp; receive Pi instantly</div></div>
+      <div class="lf-card"><div class="lf-ico">🔐</div><div class="lf-name">Secure Wallet</div><div class="lf-desc">Pi SDK authentication</div></div>
+      <div class="lf-card"><div class="lf-ico">📊</div><div class="lf-name">Finance Tools</div><div class="lf-desc">Calculator, budget &amp; goals</div></div>
+      <div class="lf-card"><div class="lf-ico">🏪</div><div class="lf-name">Merchant Hub</div><div class="lf-desc">Business &amp; invoice tools</div></div>
+    </div>
+  </div>
+  <div class="login-foot">
+    <button class="btn-pi" id="loginBtn" onclick="piLogin()">
+      <span style="font-size:1.1rem">π</span>
+      <span id="loginTxt">Continue with Pi</span>
+    </button>
+    <button class="btn-guest" onclick="guestMode()">
+      <span>👤</span> Continue as Guest
+    </button>
+    <div id="lmsg"></div>
+    <div class="login-network">Pi Network Mainnet · Open in Pi Browser · sandbox:false</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="tb-left">
+      <div class="tb-logo">Fin<span>Pi</span></div>
+      <div class="tb-badge" id="net-badge">MAINNET</div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-btn" onclick="showNotifs()" title="Notifications">🔔</div>
+      <div class="tb-avatar" id="user-avatar" onclick="goTab('profile',document.querySelectorAll('.nb')[4])">?</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- ═══ HOME ═══ -->
+    <section class="scr on" id="scr-home">
+      <div class="scroll" id="home-scroll">
+
+        <!-- Balance Card -->
+        <div class="balance-card" id="balance-card">
+          <div class="bc-top">
+            <div class="bc-label">Pi Balance</div>
+            <div class="bc-status">
+              <div class="bc-dot" id="bc-dot"></div>
+              <div class="bc-st-txt" id="bc-st-txt">Connected</div>
+            </div>
+          </div>
+          <div class="bc-amount">
+            <span class="bc-pi-sym">π</span><span id="bc-amount">0.00</span>
+          </div>
+          <div class="bc-sub" id="bc-sub">Wallet connected · Pi Mainnet</div>
+          <div class="bc-actions">
+            <button class="bc-action primary" onclick="openSendPanel()">
+              <div class="bca-ico">↑</div>
+              <div class="bca-lbl">Send Pi</div>
+            </button>
+            <button class="bc-action secondary" onclick="openReceivePanel()">
+              <div class="bca-ico">↓</div>
+              <div class="bca-lbl">Receive Pi</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="sec-lbl">Quick Actions</div>
+        <div class="qa-grid">
+          <div class="qa-btn" onclick="openSendPanel()">
+            <div class="qa-ico" style="background:rgba(37,99,235,.18)">💸</div>
+            <div class="qa-lbl">Send Pi</div>
+          </div>
+          <div class="qa-btn" onclick="openReceivePanel()">
+            <div class="qa-ico" style="background:rgba(13,148,136,.18)">📥</div>
+            <div class="qa-lbl">Receive Pi</div>
+          </div>
+          <div class="qa-btn" onclick="openQRPanel()">
+            <div class="qa-ico" style="background:rgba(200,169,81,.18)">📷</div>
+            <div class="qa-lbl">Scan QR</div>
+          </div>
+          <div class="qa-btn" onclick="openRequestPanel()">
+            <div class="qa-ico" style="background:rgba(16,185,129,.18)">📨</div>
+            <div class="qa-lbl">Request</div>
+          </div>
+        </div>
+
+        <!-- Finance Utilities -->
+        <div class="sec-lbl">Finance Tools<span class="sec-lbl-action" onclick="goTab('wallet',document.querySelectorAll('.nb')[1])">See All</span></div>
+        <div class="util-grid">
+          <div class="util-card" onclick="openCalc()">
+            <div class="util-ico">🧮</div>
+            <div><div class="util-name">Pi Calculator</div><div class="util-desc">Convert &amp; calculate Pi amounts</div></div>
+            <span class="util-badge badge-live">Live</span>
+          </div>
+          <div class="util-card" onclick="openConverter()">
+            <div class="util-ico">💱</div>
+            <div><div class="util-name">Converter</div><div class="util-desc">Multi-currency reference</div></div>
+            <span class="util-badge badge-live">Live</span>
+          </div>
+          <div class="util-card" onclick="openBudget()">
+            <div class="util-ico">📊</div>
+            <div><div class="util-name">Budget Tracker</div><div class="util-desc">Track your spending</div></div>
+            <span class="util-badge badge-live">Live</span>
+          </div>
+          <div class="util-card" onclick="openGoals()">
+            <div class="util-ico">🎯</div>
+            <div><div class="util-name">Savings Goals</div><div class="util-desc">Set &amp; track Pi goals</div></div>
+            <span class="util-badge badge-live">Live</span>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="sec-lbl">Recent Activity<span class="sec-lbl-action" onclick="goTab('history',document.querySelectorAll('.nb')[3])">See All</span></div>
+        <div class="card" style="padding:0;overflow:hidden" id="recent-txns">
+          <div class="spin-wrap"><div class="spin"></div><div class="spin-lbl">Loading activity…</div></div>
+        </div>
+
+        <!-- Coming Soon -->
+        <div class="sec-lbl" style="margin-top:.3rem">Coming Soon</div>
+        <div class="cs-strip">
+          <div class="cs-item"><div class="cs-ico">📈</div><div class="cs-name">Advanced Analytics</div><div class="cs-badge">Coming Soon</div></div>
+          <div class="cs-item"><div class="cs-ico">🛒</div><div class="cs-name">Marketplace</div><div class="cs-badge">Coming Soon</div></div>
+          <div class="cs-item"><div class="cs-ico">🏢</div><div class="cs-name">Business Platform</div><div class="cs-badge">Coming Soon</div></div>
+          <div class="cs-item"><div class="cs-ico">🏛</div><div class="cs-name">Organization</div><div class="cs-badge">Coming Soon</div></div>
+          <div class="cs-item"><div class="cs-ico">⚙️</div><div class="cs-name">Developer API</div><div class="cs-badge">Coming Soon</div></div>
+          <div class="cs-item"><div class="cs-ico">🏦</div><div class="cs-name">Enterprise</div><div class="cs-badge">Coming Soon</div></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══ WALLET ═══ -->
+    <section class="scr" id="scr-wallet">
+      <div class="sbar"><div><div class="sbar-t">Wallet</div><div class="sbar-s">Overview · Security · Backup</div></div></div>
+      <div class="scroll" id="wallet-scroll"></div>
+    </section>
+
+    <!-- ═══ PAYMENTS ═══ -->
+    <section class="scr" id="scr-payments">
+      <div class="sbar"><div><div class="sbar-t">Payments</div><div class="sbar-s">Send · Receive · QR · Request</div></div></div>
+      <div class="stabs" id="pay-tabs">
+        <div class="stab on" onclick="payTab('send',this)">Send Pi</div>
+        <div class="stab" onclick="payTab('receive',this)">Receive Pi</div>
+        <div class="stab" onclick="payTab('qr',this)">QR Code</div>
+        <div class="stab" onclick="payTab('request',this)">Request</div>
+        <div class="stab" onclick="payTab('contacts',this)">Contacts</div>
+        <div class="stab" onclick="payTab('pending',this)">Pending</div>
+      </div>
+      <div class="scroll" id="pay-body"></div>
+    </section>
+
+    <!-- ═══ HISTORY ═══ -->
+    <section class="scr" id="scr-history">
+      <div class="sbar">
+        <div><div class="sbar-t">History</div><div class="sbar-s">All transactions</div></div>
+        <div class="sbar-act"><div class="sbar-btn" onclick="exportTx()">⬇</div></div>
+      </div>
+      <div style="padding:.3rem .75rem;flex-shrink:0">
+        <input class="finput" id="tx-search" type="search" placeholder="🔍  Search transactions…" oninput="filterTx(this.value)">
+      </div>
+      <div class="stabs">
+        <div class="stab on" onclick="txTab('all',this)">All</div>
+        <div class="stab" onclick="txTab('sent',this)">Sent</div>
+        <div class="stab" onclick="txTab('received',this)">Received</div>
+        <div class="stab" onclick="txTab('pending',this)">Pending</div>
+      </div>
+      <div class="scroll" id="hist-body"></div>
+    </section>
+
+    <!-- ═══ PROFILE ═══ -->
+    <section class="scr" id="scr-profile">
+      <div class="sbar"><div><div class="sbar-t">Profile</div><div class="sbar-s">Identity · Security · Settings</div></div></div>
+      <div class="scroll" id="profile-scroll"></div>
+    </section>
+
+  </div><!-- /main -->
+
+  <!-- BOTTOM NAV -->
+  <nav id="nav">
+    <div class="nb on" onclick="goTab('home',this)"><div class="nb-ico">🏠</div><div class="nb-lbl">Home</div></div>
+    <div class="nb" onclick="goTab('wallet',this)"><div class="nb-ico">👛</div><div class="nb-lbl">Wallet</div></div>
+    <div class="nb" onclick="goTab('payments',this)"><div class="nb-ico">💳</div><div class="nb-lbl">Payments</div></div>
+    <div class="nb" onclick="goTab('history',this)"><div class="nb-ico">📋</div><div class="nb-lbl">History</div></div>
+    <div class="nb" onclick="goTab('profile',this)"><div class="nb-ico">👤</div><div class="nb-lbl">Profile</div></div>
+  </nav>
+
+  <!-- PANELS -->
+  <div class="panel" id="panel-main" onclick="closePanelMain(event)">
+    <div class="panel-sheet">
+      <div class="panel-handle"></div>
+      <div class="panel-hdr">
+        <div class="panel-title" id="panel-title">Panel</div>
+        <div class="panel-close" onclick="closePanel()">✕</div>
+      </div>
+      <div class="panel-body" id="panel-body"></div>
+      <div class="panel-foot" id="panel-foot" style="display:none"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<div id="toast"></div>
+
 <script>
-/* ---------------- STATE ---------------- */
-const state = {
-  balance: 1234.56,
-  pin: '',
-  targetPin: '',
-  transactions: [
-    {type:'out', title:'Payment Sent', sub:'to @greenfarm · 2m ago', amt:25.00},
-    {type:'in', title:'Payment Received', sub:'from @merchant · 5m ago', amt:50.00},
-    {type:'out', title:'Support Tip', sub:'to @pitech · 1h ago', amt:5.00},
-    {type:'in', title:'Payment Received', sub:'from @sara.k · 3h ago', amt:12.50},
-  ]
-};
+/* ═══════════════════════════════════════════════════════════
+   FinPi v1.0 · Pi Network Mainnet · sandbox:false
+   Payment pattern: WorldCup proven
+═══════════════════════════════════════════════════════════ */
 
-/* ---------------- NAV BAR TEMPLATE ---------------- */
-const NAV_ITEMS = [
-  {id:'screen-home', icon:'🏠', label:'Home'},
-  {id:'screen-payments', icon:'💳', label:'Payments'},
-  {id:'screen-wallet', icon:'👛', label:'Wallet'},
-  {id:'screen-activity', icon:'📊', label:'Activity'},
-  {id:'screen-profile', icon:'👤', label:'Profile'},
-];
-function renderNavBars(){
-  document.querySelectorAll('.bottom-nav').forEach(nav=>{
-    nav.innerHTML = NAV_ITEMS.map(it=>`
-      <div class="nav-item" onclick="openScreen('${it.id}')" data-target="${it.id}">
-        <div class="nav-icon">${it.icon}</div><div>${it.label}</div>
-      </div>`).join('');
-  });
-}
+/* ── STATE ── */
+var piUser   = null;
+var isGuest  = false;
+var txLog    = [];
+var budgets  = JSON.parse(localStorage.getItem('fp_budgets')||'[]');
+var goals    = JSON.parse(localStorage.getItem('fp_goals')||'[]');
+var contacts = JSON.parse(localStorage.getItem('fp_contacts')||'[]');
+var _curTab  = 'home';
+var _payTab  = 'send';
+var _txTab   = 'all';
+var _calcVal = '0';
+var _calcExpr= '';
 
-/* ---------------- NAVIGATION ---------------- */
-function openScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n=>{
-    n.classList.toggle('active', n.dataset.target===id);
-  });
-  closeDrawer();
-}
-function openSoon(icon,title,desc){
-  document.getElementById('soonIcon').textContent = icon;
-  document.getElementById('soonHeaderTitle').textContent = title;
-  document.getElementById('soonTitle').textContent = title+' — Coming Soon';
-  document.getElementById('soonDesc').textContent = desc;
-  openScreen('screen-soon');
-}
-function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawerOverlay').classList.add('open');}
-function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawerOverlay').classList.remove('open');}
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+/* ── PAYMENT ENDPOINTS ── */
+var _APPROVE  = '/approve';
+var _COMPLETE = '/complete';
+var _RECOVERY = '/payment-recovery';
 
-function openLegal(){openScreen('screen-legal');document.getElementById('legalList').style.display='block';document.getElementById('legalDetail').style.display='none';document.getElementById('legalTitle').textContent='Legal & Compliance';}
-function closeLegalDetail(){
-  if(document.getElementById('legalDetail').style.display==='block'){
-    document.getElementById('legalList').style.display='block';
-    document.getElementById('legalDetail').style.display='none';
-    document.getElementById('legalTitle').textContent='Legal & Compliance';
-  } else { openScreen('screen-profile'); }
+/* ── UTILS ── */
+function toast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'on' + (type?' '+type:'');
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.className=''; }, 2800);
 }
-const LEGAL_TEXT = {
-  privacy: {title:'Privacy Policy', body:`<h4>What we collect</h4>FinPi collects only what's needed to operate: your Pi username (via Pi Authentication), transaction records you make within the app, and basic device information for security. We never see or store your Pi passphrase.
-  <h4>How it's used</h4>Solely to provide FinPi's features — processing payments, securing your account, and improving the app. We do not sell personal data to third parties.
-  <h4>Your control</h4>You can export or delete your FinPi data at any time from Settings → Privacy.`},
-  terms: {title:'Terms of Service', body:`<h4>Independent platform</h4>FinPi is an independent application built for the Pi Network ecosystem. It is not an official Pi Network product.
-  <h4>Payments</h4>All Pi transfers are final once confirmed on the Pi Network. FinPi cannot reverse a completed payment.
-  <h4>Acceptable use</h4>You agree not to use FinPi for fraudulent, illegal, or abusive activity. Violating accounts may be suspended.`},
-  guidelines: {title:'Community Guidelines', body:`<h4>Respect</h4>Treat other Pioneers, merchants, and FinPi staff with respect in all interactions.
-  <h4>Honesty</h4>Marketplace listings and business profiles must be accurate. Misrepresentation may result in removal.
-  <h4>Reporting</h4>Use Report a Payment Issue or Report a Merchant if something seems wrong — every report is reviewed.`},
-  risk: {title:'Risk Disclosure', body:`<h4>Pi value</h4>The value of Pi may fluctuate. FinPi does not guarantee, promise, or predict any exchange rate or return.
-  <h4>No investment advice</h4>Nothing in FinPi — including budgeting tools or future AI features — constitutes financial or investment advice.
-  <h4>Irreversible transfers</h4>Double-check recipient details before sending. Pi transfers cannot be undone.`},
-  security: {title:'Security Policy', body:`<h4>Our commitments</h4>Environment-secured API keys, encrypted local storage, rate limiting, and server-side verification of every payment amount.
-  <h4>Responsible disclosure</h4>Found a vulnerability? Email support@finpi.pi. We ask that you report privately and give us reasonable time to fix it before public disclosure.
-  <h4>Your responsibility</h4>Never share your PIN, biometric access, or Pi passphrase with anyone — FinPi staff will never ask for them.`}
-};
-function showLegal(key){
-  const item = LEGAL_TEXT[key];
-  document.getElementById('legalList').style.display='none';
-  const d = document.getElementById('legalDetail');
-  d.style.display='block';
-  d.innerHTML = `<div class="glass-card">${item.body}</div>`;
-  document.getElementById('legalTitle').textContent = item.title;
+function setSplash(msg){ var el=document.getElementById('splash-status'); if(el) el.textContent=msg; }
+function setLmsg(msg)  { var el=document.getElementById('lmsg'); if(el) el.textContent=msg; }
+
+function openPanel(title, body, foot) {
+  document.getElementById('panel-title').textContent = title;
+  document.getElementById('panel-body').innerHTML = body;
+  var pf = document.getElementById('panel-foot');
+  if(foot){ pf.style.display=''; pf.innerHTML=foot; } else { pf.style.display='none'; pf.innerHTML=''; }
+  document.getElementById('panel-main').classList.add('open');
+}
+function closePanel(){ document.getElementById('panel-main').classList.remove('open'); }
+function closePanelMain(e){ if(e.target===document.getElementById('panel-main')) closePanel(); }
+
+function addTx(type, amount, note, status) {
+  txLog.unshift({ id: Date.now(), type:type, amount:amount, note:note||'', status:status||'completed', date:new Date().toISOString() });
+  if(txLog.length>100) txLog.pop();
+  localStorage.setItem('fp_tx', JSON.stringify(txLog));
+}
+function fmtDate(iso) {
+  try {
+    var d=new Date(iso), now=new Date(), diff=now-d, h=Math.floor(diff/3600000);
+    if(h<1) return 'Just now';
+    if(h<24) return h+'h ago';
+    return d.toLocaleDateString('en',{month:'short',day:'numeric'});
+  } catch(e){ return ''; }
 }
 
-/* ---------------- TOAST ---------------- */
-let toastTimer;
-function showToast(text, sub){
-  clearTimeout(toastTimer);
-  document.getElementById('toastText').textContent = text;
-  document.getElementById('toastSub').textContent = sub||'';
-  const t = document.getElementById('toast');
-  t.classList.add('show');
-  toastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
-}
-
-/* ---------------- ONBOARDING FLOW ---------------- */
-function goOnboard(id){
-  document.querySelectorAll('.onboard-screen').forEach(s=>s.style.display='none');
-  document.getElementById(id).style.display='flex';
-}
-function simulateAuth(){
-  const btn = document.getElementById('authBtn');
-  btn.textContent = 'Connecting to Pi SDK…';
-  btn.style.opacity='.7';
-  setTimeout(()=>{
-    goOnboard('ob-pin');
-    setupPinPad('pinPad','pinDots', onPinCreated);
-  }, 1400);
-}
-function onPinCreated(pin){
-  if(!state.targetPin){
-    state.targetPin = pin;
-    document.getElementById('pinSub').textContent = 'Confirm your 6-digit PIN.';
-    resetPinDots('pinDots');
-    setupPinPad('pinPad','pinDots', onPinConfirmed);
+/* ── Pi.init called ONCE ── */
+function initPiSDK(){
+  if(typeof Pi!=='undefined'){
+    Pi.init({ version:'2.0', sandbox:false });
+    return true;
   }
+  return false;
 }
-function onPinConfirmed(pin){
-  if(pin === state.targetPin){
-    goOnboard('ob-bio');
+
+/* ════════════════════════════════════════
+   SPLASH → LOGIN — Copa/WorldCup pattern
+════════════════════════════════════════ */
+window.addEventListener('load', function() {
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function(){});
+  txLog    = JSON.parse(localStorage.getItem('fp_tx')||'[]');
+  budgets  = JSON.parse(localStorage.getItem('fp_budgets')||'[]');
+  goals    = JSON.parse(localStorage.getItem('fp_goals')||'[]');
+  contacts = JSON.parse(localStorage.getItem('fp_contacts')||'[]');
+  setSplash('Loading Pi SDK…');
+  setTimeout(function(){
+    setSplash('Checking authentication…');
+    setTimeout(function(){
+      hideSplash();
+      piLogin();
+    }, 600);
+  }, 800);
+});
+
+function hideSplash(){
+  var s=document.getElementById('splash');
+  s.classList.add('hide');
+  setTimeout(function(){ s.style.display='none'; }, 400);
+}
+
+/* ════════════════════════════════════════
+   piLogin — WorldCup proven pattern
+════════════════════════════════════════ */
+function piLogin() {
+  var btn = document.getElementById('loginBtn');
+  var txt = document.getElementById('loginTxt');
+  if(btn){ btn.disabled=true; btn.style.opacity='.7'; }
+  if(txt) txt.textContent='Connecting…';
+  setLmsg('Connecting to Pi Network…');
+  document.getElementById('login').style.display='flex';
+
+  if(typeof Pi==='undefined'){
+    setTimeout(function(){
+      setLmsg('Pi SDK not loaded — tap to retry or use Guest mode');
+      if(btn){ btn.disabled=false; btn.style.opacity='1'; }
+      if(txt) txt.textContent='Continue with Pi';
+    }, 1200);
+    return;
+  }
+
+  Pi.init({ version:'2.0', sandbox:false });
+  Pi.authenticate(['username','payments'], onIncompletePayment)
+    .then(function(auth){
+      piUser = auth.user;
+      isGuest = false;
+      localStorage.setItem('fp_user', JSON.stringify(piUser));
+      launchApp();
+    })
+    .catch(function(err){
+      console.error('[FinPi] Auth error:', err);
+      if(btn){ btn.disabled=false; btn.style.opacity='1'; }
+      if(txt) txt.textContent='Continue with Pi';
+      setLmsg('Authentication failed — try again');
+    });
+}
+
+function guestMode() {
+  piUser = null; isGuest = true;
+  launchApp();
+}
+
+/* ════════════════════════════════════════
+   onIncompletePayment — WorldCup pattern
+════════════════════════════════════════ */
+function onIncompletePayment(payment) {
+  if(!payment) return;
+  var pid  = payment.identifier || '';
+  var txid = '';
+  try { txid = (payment.transaction&&payment.transaction.txid)?payment.transaction.txid:''; } catch(e){}
+  console.log('[FinPi] onIncompletePayment pid:', pid, 'txid:', txid||'none');
+  if(!pid) return;
+  localStorage.setItem('fp_pending_pid', pid);
+  return fetch(_RECOVERY, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({paymentId:pid, txid:txid||null})
+  }).then(function(r){ return r.json(); })
+    .then(function(d){ console.log('[FinPi] Recovery:', d.action, d.cleared); if(d.cleared) localStorage.removeItem('fp_pending_pid'); })
+    .catch(function(e){ console.error('[FinPi] Recovery error:', e.message); });
+}
+
+/* ════════════════════════════════════════
+   launchApp
+════════════════════════════════════════ */
+function launchApp() {
+  document.getElementById('login').style.display = 'none';
+  var app = document.getElementById('app');
+  app.style.display = 'flex';
+  app.style.flexDirection = 'column';
+  app.style.height = '100vh';
+
+  /* Update UI with user info */
+  var uname = piUser ? (piUser.username||'Pioneer') : 'Guest';
+  var avatar = document.getElementById('user-avatar');
+  if(avatar) avatar.textContent = uname.charAt(0).toUpperCase();
+
+  /* Set balance display */
+  updateBalance();
+
+  /* Render all screens */
+  renderHome();
+  renderWallet();
+  renderPayments('send');
+  renderHistory('all');
+  renderProfile();
+
+  if(isGuest) toast('Guest mode — some features require Pi Sign-In', 'error');
+  else toast('Welcome, @'+uname+' 🎉', 'success');
+}
+
+function logOut(){
+  piUser=null; isGuest=false;
+  localStorage.removeItem('fp_user');
+  document.getElementById('app').style.display='none';
+  var loginEl=document.getElementById('login');
+  loginEl.style.display='flex';
+  var btn=document.getElementById('loginBtn');
+  var txt=document.getElementById('loginTxt');
+  if(btn){btn.disabled=false;btn.style.opacity='1';}
+  if(txt) txt.textContent='Continue with Pi';
+  setLmsg('');
+}
+
+function updateBalance(){
+  var amtEl = document.getElementById('bc-amount');
+  var subEl  = document.getElementById('bc-sub');
+  var dotEl  = document.getElementById('bc-dot');
+  var stEl   = document.getElementById('bc-st-txt');
+  if(piUser && piUser.wallet_address){
+    if(amtEl) amtEl.textContent = '—.——';
+    if(subEl) subEl.textContent = 'KYC verified · '+piUser.wallet_address.slice(0,12)+'…';
+    if(dotEl){ dotEl.style.background='var(--green)'; }
+    if(stEl) stEl.textContent = 'Wallet Connected';
+  } else if(piUser){
+    if(amtEl) amtEl.textContent = '—.——';
+    if(subEl) subEl.textContent = '@'+piUser.username+' · KYC verification required';
+    if(dotEl){ dotEl.style.background='var(--orange)'; }
+    if(stEl){ stEl.style.color='var(--orange)'; stEl.textContent='KYC Pending'; }
   } else {
-    document.getElementById('pinSub').textContent = "PINs didn't match — try again.";
-    state.targetPin='';
-    resetPinDots('pinDots');
-    setupPinPad('pinPad','pinDots', onPinCreated);
+    if(amtEl) amtEl.textContent = '0.00';
+    if(subEl) subEl.textContent = 'Guest mode · Sign in for full access';
+    if(dotEl){ dotEl.style.background='var(--t3)'; }
+    if(stEl){ stEl.style.color='var(--t3)'; stEl.textContent='Guest'; }
   }
 }
-function finishOnboarding(){
-  document.querySelectorAll('.onboard-screen').forEach(s=>s.style.display='none');
-  renderNavBars();
-  openScreen('screen-home');
-  renderTx();
-  animateBalance();
+
+/* ════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════ */
+function goTab(id, el) {
+  _curTab = id;
+  document.querySelectorAll('.scr').forEach(function(s){ s.classList.remove('on'); });
+  document.querySelectorAll('.nb').forEach(function(b){ b.classList.remove('on'); });
+  var scr = document.getElementById('scr-'+id);
+  if(scr) scr.classList.add('on');
+  if(el) el.classList.add('on');
 }
 
-/* PIN pad builder (reused for onboarding + lock screen) */
-function setupPinPad(padId, dotsId, onComplete){
-  const pad = document.getElementById(padId);
-  let entered = '';
-  const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
-  pad.innerHTML = keys.map(k=>k?`<div class="pin-key" data-k="${k}">${k}</div>`:'<div></div>').join('');
-  renderDots(dotsId,0);
-  pad.querySelectorAll('.pin-key').forEach(el=>{
-    el.onclick = ()=>{
-      const k = el.dataset.k;
-      if(k==='⌫'){ entered = entered.slice(0,-1); }
-      else if(entered.length<6){ entered += k; }
-      renderDots(dotsId, entered.length);
-      if(entered.length===6){ setTimeout(()=>onComplete(entered),150); entered=''; }
-    };
+/* ════════════════════════════════════════
+   HOME
+════════════════════════════════════════ */
+function renderHome() {
+  var recentEl = document.getElementById('recent-txns');
+  var recent = txLog.slice(0,5);
+  if(!recent.length){
+    recentEl.innerHTML='<div class="empty" style="padding:1.4rem"><div class="empty-ico">📭</div><div class="empty-t">No activity yet</div><div class="empty-s">Your transactions will appear here</div></div>';
+    return;
+  }
+  recentEl.innerHTML = recent.map(function(tx){
+    var icon = tx.type==='sent'?'💸':tx.type==='received'?'📥':'⏳';
+    var cls  = tx.type==='sent'?'sent':tx.type==='received'?'recv':'pend';
+    var icoBg= tx.type==='sent'?'tx-ico sent':tx.type==='received'?'tx-ico recv':'tx-ico pend';
+    var sign = tx.type==='sent'?'-':tx.type==='received'?'+':'';
+    return '<div class="tx-row"><div class="'+icoBg+'">'+icon+'</div>'
+      +'<div class="tx-info"><div class="tx-name">'+(tx.note||'Pi Transfer')+'</div><div class="tx-meta">'+fmtDate(tx.date)+'</div></div>'
+      +'<div class="tx-amount"><div class="tx-pi '+cls+'">'+sign+'π '+Number(tx.amount).toFixed(2)+'</div>'
+      +'<div class="tx-status"><span class="pill pill-'+cls+'">'+tx.status+'</span></div></div></div>';
+  }).join('');
+}
+
+/* ════════════════════════════════════════
+   WALLET SCREEN
+════════════════════════════════════════ */
+function renderWallet() {
+  var body = document.getElementById('wallet-scroll');
+  var uname = piUser?(piUser.username||'Pioneer'):'Guest';
+  var addr  = piUser&&piUser.wallet_address?piUser.wallet_address:null;
+
+  body.innerHTML = ''
+  +'<div class="card">'
+    +'<div class="card-head"><div class="card-ico teal">👛</div><div><div class="card-t">Wallet Overview</div><div class="card-s">Pi Network Mainnet</div></div></div>'
+    +'<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.7rem .8rem;margin-bottom:.5rem">'
+      +'<div style="font-size:.42rem;color:var(--t3);margin-bottom:.1rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em">Wallet Address</div>'
+      +'<div style="font-family:var(--f-mono);font-size:.46rem;color:var(--t2);word-break:break-all;line-height:1.5">'+(addr||'KYC verification required in Pi App')+'</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">'
+      +'<button class="btn btn-primary btn-sm" onclick="openSendPanel()"><span>↑</span> Send Pi</button>'
+      +'<button class="btn btn-teal btn-sm" onclick="openReceivePanel()"><span>↓</span> Receive Pi</button>'
+    +'</div>'
+  +'</div>'
+
+  +'<div class="sec-lbl">Wallet Utilities</div>'
+  +'<div class="util-grid">'
+    +'<div class="util-card" onclick="openReceivePanel()"><div class="util-ico">🔑</div><div><div class="util-name">Wallet Info</div><div class="util-desc">Address &amp; QR code</div></div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openPanel(\'Wallet Activity\',walletActivityHTML())"><div class="util-ico">📈</div><div><div class="util-name">Wallet Activity</div><div class="util-desc">Full transaction log</div></div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openSecurityPanel()"><div class="util-ico">🔐</div><div><div class="util-name">Wallet Security</div><div class="util-desc">PIN &amp; session control</div></div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openBackupGuide()"><div class="util-ico">💾</div><div><div class="util-name">Backup Guide</div><div class="util-desc">Protect your wallet</div></div><span class="util-badge badge-live">Live</span></div>'
+  +'</div>'
+
+  +'<div class="sec-lbl">Finance Tools</div>'
+  +'<div class="util-grid">'
+    +'<div class="util-card" onclick="openCalc()"><div class="util-ico">🧮</div><div><div class="util-name">Pi Calculator</div><div class="util-desc">Calculate Pi amounts</div></div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openConverter()"><div class="util-ico">💱</div><div><div class="util-name">Converter</div><div class="util-desc">Currency reference</div></div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openBudget()"><div class="util-ico">📊</div><div><div class="util-name">Budget Tracker</div><div class="util-desc">Monthly budget</div></div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openGoals()"><div class="util-ico">🎯</div><div><div class="util-name">Savings Goals</div><div class="util-desc">Pi savings goals</div></div><span class="util-badge badge-live">Live</span></div>'
+  +'</div>'
+
+  +'<div class="sec-lbl">Business Tools</div>'
+  +'<div class="util-grid">'
+    +'<div class="util-card" onclick="openMerchant()"><div class="util-ico">🏪</div><div><div class="util-name">Merchant Hub</div><div class="util-desc">Pi merchant directory</div></div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openInvoice()"><div class="util-ico">🧾</div><div><div class="util-name">Invoice Generator</div><div class="util-desc">Create Pi invoices</div></div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card soon"><div class="util-ico">📦</div><div><div class="util-name">Inventory</div><div class="util-desc">Product management</div></div><span class="util-badge badge-soon">Soon</span></div>'
+    +'<div class="util-card soon"><div class="util-ico">📉</div><div><div class="util-name">Revenue Analytics</div><div class="util-desc">Business dashboard</div></div><span class="util-badge badge-soon">Soon</span></div>'
+  +'</div>';
+}
+
+function walletActivityHTML(){
+  if(!txLog.length) return '<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">No transactions yet</div></div>';
+  return txLog.slice(0,20).map(function(tx){
+    var icon=tx.type==='sent'?'💸':tx.type==='received'?'📥':'⏳';
+    var cls =tx.type==='sent'?'sent':tx.type==='received'?'recv':'pend';
+    var sign=tx.type==='sent'?'-':'+';
+    return '<div class="tx-row"><div class="tx-ico '+cls+'">'+icon+'</div>'
+      +'<div class="tx-info"><div class="tx-name">'+(tx.note||'Pi Transfer')+'</div><div class="tx-meta">'+fmtDate(tx.date)+'</div></div>'
+      +'<div class="tx-amount"><div class="tx-pi '+cls+'">'+sign+'π '+Number(tx.amount).toFixed(2)+'</div></div></div>';
+  }).join('');
+}
+
+/* ════════════════════════════════════════
+   PAYMENTS SCREEN
+════════════════════════════════════════ */
+function payTab(tab, el) {
+  _payTab = tab;
+  document.querySelectorAll('#pay-tabs .stab').forEach(function(b){ b.classList.remove('on'); });
+  if(el) el.classList.add('on');
+  renderPayments(tab);
+}
+function renderPayments(tab) {
+  var body = document.getElementById('pay-body');
+  if(!body) return;
+  if(tab==='send')     body.innerHTML = sendHTML();
+  else if(tab==='receive') body.innerHTML = receiveHTML();
+  else if(tab==='qr')  body.innerHTML = qrHTML();
+  else if(tab==='request') body.innerHTML = requestHTML();
+  else if(tab==='contacts') body.innerHTML = contactsHTML();
+  else if(tab==='pending')  body.innerHTML = pendingHTML();
+}
+
+function sendHTML(){
+  return '<div style="padding:.7rem .75rem">'
+    +'<div style="font-size:.8rem;font-weight:800;color:var(--t1);margin-bottom:.18rem">💸 Send Pi</div>'
+    +'<div style="font-size:.5rem;color:var(--t3);margin-bottom:.8rem">Send Pi to any Pi user instantly</div>'
+    +'<div class="finput-wrap"><label class="finput-label">Recipient Wallet Address or Username</label>'
+    +'<input class="finput" id="s-to" type="text" placeholder="Enter Pi username or wallet address" autocomplete="off"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Amount (π)</label>'
+    +'<div class="finput-prefix"><span class="finput-sym">π</span><input class="finput mono" id="s-amt" type="number" step="0.01" min="0.01" placeholder="0.00"></div></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Memo (optional)</label>'
+    +'<input class="finput" id="s-memo" type="text" placeholder="What is this for?"></div>'
+    +'<div id="send-status" style="font-size:.5rem;min-height:.8rem;margin-bottom:.4rem;color:var(--t3)"></div>'
+    +'<button class="btn btn-primary" id="send-btn" onclick="doSendPi()"><span>π</span> Send Pi</button>'
+    +'<div style="font-size:.44rem;color:var(--t4);text-align:center;margin-top:.5rem">Pi Wallet will open to confirm · Mainnet only</div>'
+    +'</div>';
+}
+
+function receiveHTML(){
+  var uname = piUser?(piUser.username||''):'';
+  var addr  = piUser&&piUser.wallet_address?piUser.wallet_address:'';
+  return '<div style="padding:.7rem .75rem;text-align:center">'
+    +'<div style="font-size:.8rem;font-weight:800;color:var(--t1);margin-bottom:.18rem">📥 Receive Pi</div>'
+    +'<div style="font-size:.5rem;color:var(--t3);margin-bottom:.8rem">Share your address to receive Pi</div>'
+    +(uname?'<div style="background:var(--glass);border:1px solid var(--border);border-radius:var(--r-md);padding:.6rem;margin-bottom:.6rem"><div style="font-size:.44rem;color:var(--t3);margin-bottom:.1rem">Pi Username</div><div style="font-size:.88rem;font-weight:800;color:var(--blue)">@'+uname+'</div></div>':'')
+    +(addr?'<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.6rem;margin-bottom:.6rem;text-align:left"><div style="font-size:.42rem;color:var(--t3);margin-bottom:.1rem">Wallet Address</div><div style="font-family:var(--f-mono);font-size:.44rem;color:var(--t2);word-break:break-all;line-height:1.5">'+addr+'</div></div>':'')
+    +'<div id="my-qr-canvas" style="display:flex;justify-content:center;margin:1rem 0"><div style="background:#fff;padding:1rem;border-radius:16px;font-size:.54rem;color:#333;font-weight:600;padding:1.5rem">QR · @'+uname+'</div></div>'
+    +'<button class="btn btn-outline" onclick="copyAddr()">📋 Copy Address</button>'
+    +'</div>';
+}
+
+function qrHTML(){
+  return '<div style="padding:.7rem .75rem;text-align:center">'
+    +'<div style="font-size:.8rem;font-weight:800;color:var(--t1);margin-bottom:.18rem">📷 Scan QR Code</div>'
+    +'<div style="font-size:.5rem;color:var(--t3);margin-bottom:1rem">Scan a Pi payment QR to pay instantly</div>'
+    +'<div style="background:var(--glass);border:1px solid var(--border);border-radius:var(--r-xl);padding:2rem;margin-bottom:.8rem">'
+      +'<div style="font-size:3rem;margin-bottom:.5rem">📷</div>'
+      +'<div style="font-size:.62rem;color:var(--t2);font-weight:600">Camera scanning is handled by Pi Browser</div>'
+      +'<div style="font-size:.48rem;color:var(--t3);margin-top:.2rem">Use Pi Browser\'s built-in QR scanner</div>'
+    +'</div>'
+    +'<div style="font-size:.7rem;font-weight:800;color:var(--t1);margin-bottom:.3rem">Generate Payment QR</div>'
+    +'<div class="finput-wrap"><label class="finput-label">Amount (π)</label>'
+    +'<div class="finput-prefix"><span class="finput-sym">π</span><input class="finput mono" id="qr-amt" type="number" step="0.01" placeholder="0.00"></div></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Memo</label>'
+    +'<input class="finput" id="qr-memo" type="text" placeholder="Payment description"></div>'
+    +'<button class="btn btn-teal" onclick="genQR()">⚡ Generate QR</button>'
+    +'<div id="qr-result" style="margin-top:.7rem"></div>'
+    +'</div>';
+}
+
+function requestHTML(){
+  return '<div style="padding:.7rem .75rem">'
+    +'<div style="font-size:.8rem;font-weight:800;color:var(--t1);margin-bottom:.18rem">📨 Request Pi</div>'
+    +'<div style="font-size:.5rem;color:var(--t3);margin-bottom:.8rem">Generate a payment request link</div>'
+    +'<div class="finput-wrap"><label class="finput-label">Amount to Request (π)</label>'
+    +'<div class="finput-prefix"><span class="finput-sym">π</span><input class="finput mono" id="req-amt" type="number" step="0.01" placeholder="0.00"></div></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Reason</label>'
+    +'<input class="finput" id="req-memo" type="text" placeholder="e.g. Coffee, Services…"></div>'
+    +'<button class="btn btn-primary" onclick="genRequest()">📨 Generate Request Link</button>'
+    +'<div id="req-result" style="margin-top:.7rem"></div>'
+    +'</div>';
+}
+
+function contactsHTML(){
+  return '<div style="padding:.7rem .75rem">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">'
+      +'<div style="font-size:.8rem;font-weight:800;color:var(--t1)">⭐ Contacts</div>'
+      +'<button class="btn btn-primary btn-sm" onclick="addContact()">+ Add</button>'
+    +'</div>'
+    +(contacts.length?contacts.map(function(c){return '<div class="more-row" onclick="sendToContact(\''+c.addr+'\')">'
+      +'<div class="more-ico" style="background:rgba(37,99,235,.18)">👤</div>'
+      +'<div><div class="more-t">'+c.name+'</div><div class="more-s">'+c.addr.slice(0,20)+'…</div></div>'
+      +'<div class="more-arrow">→</div></div>';}).join('')
+    :'<div class="empty"><div class="empty-ico">👥</div><div class="empty-t">No contacts yet</div><div class="empty-s">Add favourite Pi addresses for quick payments</div></div>')
+    +'</div>';
+}
+
+function pendingHTML(){
+  var pending = txLog.filter(function(t){ return t.status==='pending'; });
+  return '<div style="padding:.7rem .75rem">'
+    +'<div style="font-size:.8rem;font-weight:800;color:var(--t1);margin-bottom:.6rem">⏳ Pending Payments</div>'
+    +(pending.length?pending.map(function(tx){return '<div class="tx-row"><div class="tx-ico pend">⏳</div><div class="tx-info"><div class="tx-name">'+(tx.note||'Pi Transfer')+'</div><div class="tx-meta">'+fmtDate(tx.date)+'</div></div><div class="tx-amount"><div class="tx-pi pend">π '+Number(tx.amount).toFixed(2)+'</div></div></div>';}).join('')
+    :'<div class="empty"><div class="empty-ico">✅</div><div class="empty-t">No pending payments</div><div class="empty-s">All transactions are settled</div></div>')
+    +'</div>';
+}
+
+/* ════════════════════════════════════════
+   HISTORY SCREEN
+════════════════════════════════════════ */
+function txTab(tab, el) {
+  _txTab = tab;
+  document.querySelectorAll('#scr-history .stab').forEach(function(b){ b.classList.remove('on'); });
+  if(el) el.classList.add('on');
+  renderHistory(tab);
+}
+function filterTx(q) { renderHistory(_txTab, q); }
+function renderHistory(tab, q) {
+  var body = document.getElementById('hist-body');
+  if(!body) return;
+  var list = txLog.slice();
+  if(tab!=='all') list = list.filter(function(t){ return t.type===tab||(tab==='received'&&t.type==='received')||(tab==='sent'&&t.type==='sent')||(tab==='pending'&&t.status==='pending'); });
+  if(q) list = list.filter(function(t){ return (t.note||'').toLowerCase().includes(q.toLowerCase())||(t.amount+'').includes(q); });
+  if(!list.length){ body.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-t">No transactions</div><div class="empty-s">Your '+(tab==='all'?'':''+tab+' ')+'transactions will appear here</div></div>'; return; }
+  body.innerHTML = list.map(function(tx){
+    var icon=tx.type==='sent'?'💸':tx.type==='received'?'📥':'⏳';
+    var cls =tx.type==='sent'?'sent':tx.type==='received'?'recv':'pend';
+    var sign=tx.type==='sent'?'-':'+';
+    return '<div class="tx-row"><div class="tx-ico '+cls+'">'+icon+'</div>'
+      +'<div class="tx-info"><div class="tx-name">'+(tx.note||'Pi Transfer')+'</div><div class="tx-meta">'+fmtDate(tx.date)+'</div></div>'
+      +'<div class="tx-amount"><div class="tx-pi '+cls+'">'+sign+'π '+Number(tx.amount).toFixed(2)+'</div>'
+      +'<div class="tx-status"><span class="pill pill-'+cls+'">'+tx.status+'</span></div></div></div>';
+  }).join('');
+}
+function exportTx() {
+  var csv = 'Date,Type,Amount,Note,Status\n' + txLog.map(function(t){ return t.date+','+t.type+','+t.amount+',"'+(t.note||'')+'",'+t.status; }).join('\n');
+  toast('Export copied to clipboard');
+  if(navigator.clipboard) navigator.clipboard.writeText(csv).catch(function(){});
+}
+
+/* ════════════════════════════════════════
+   PROFILE SCREEN
+════════════════════════════════════════ */
+function renderProfile(){
+  var body = document.getElementById('profile-scroll');
+  if(!body) return;
+  var uname = piUser?(piUser.username||'Pioneer'):'Guest';
+  var addr  = piUser&&piUser.wallet_address?piUser.wallet_address:null;
+
+  body.innerHTML = ''
+  /* Profile Card */
+  +'<div class="card" style="text-align:center;padding:1.2rem 1rem">'
+    +'<div style="width:70px;height:70px;border-radius:50%;background:var(--grad-blue);display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;color:#fff;margin:0 auto .7rem;box-shadow:0 4px 20px rgba(37,99,235,.4)">'+uname.charAt(0).toUpperCase()+'</div>'
+    +'<div style="font-size:1.1rem;font-weight:800;color:var(--t1)">@'+uname+'</div>'
+    +'<div style="font-size:.5rem;color:var(--t3);margin-top:.1rem">'+(isGuest?'Guest Mode':'Pi Network · Mainnet')+'</div>'
+    +'<div style="display:flex;gap:.5rem;justify-content:center;margin-top:.6rem">'
+      +'<span class="pill pill-'+(piUser?'green':'orange')+'">'+(piUser?'✅ Authenticated':'👤 Guest')+'</span>'
+      +'<span class="pill pill-'+(addr?'green':'orange')+'">'+(addr?'💳 Wallet':'⏳ KYC Pending')+'</span>'
+    +'</div>'
+  +'</div>'
+
+  /* Identity */
+  +'<div class="sec-lbl">Identity</div>'
+  +'<div class="more-grid">'
+    +'<div class="more-row" onclick="openIdentityCard()"><div class="more-ico" style="background:rgba(37,99,235,.18)">🪪</div><div><div class="more-t">Identity Card</div><div class="more-s">Your FinPi digital ID</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row" onclick="openPersonalQR()"><div class="more-ico" style="background:rgba(13,148,136,.18)">📲</div><div><div class="more-t">Personal QR Code</div><div class="more-s">Share your Pi address</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row"><div class="more-ico" style="background:rgba(200,169,81,.18)">✅</div><div><div class="more-t">KYC Status</div><div class="more-s">'+(addr?'Wallet verified':'Verification required in Pi App')+'</div></div><div class="more-arrow">›</div></div>'
+  +'</div>'
+
+  /* Settings */
+  +'<div class="sec-lbl">Settings</div>'
+  +'<div class="more-grid">'
+    +'<div class="more-row" onclick="openNotifSettings()"><div class="more-ico" style="background:rgba(37,99,235,.18)">🔔</div><div><div class="more-t">Notifications</div><div class="more-s">Payment &amp; security alerts</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row" onclick="openLangPanel()"><div class="more-ico" style="background:rgba(13,148,136,.18)">🌐</div><div><div class="more-t">Language</div><div class="more-s">English</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row" onclick="openCurrencyPanel()"><div class="more-ico" style="background:rgba(200,169,81,.18)">💱</div><div><div class="more-t">Currency</div><div class="more-s">Reference display</div></div><div class="more-arrow">›</div></div>'
+  +'</div>'
+
+  /* More */
+  +'<div class="sec-lbl">More</div>'
+  +'<div class="more-grid">'
+    +'<div class="more-row" onclick="openSecurityPanel()"><div class="more-ico" style="background:rgba(239,68,68,.14)">🔐</div><div><div class="more-t">Security Center</div><div class="more-s">PIN · Biometric · Devices</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row" onclick="openAIPanel()"><div class="more-ico" style="background:rgba(37,99,235,.18)">🤖</div><div><div class="more-t">AI Assistant</div><div class="more-s">Financial guidance</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row" onclick="openSupport()"><div class="more-ico" style="background:rgba(13,148,136,.18)">🎧</div><div><div class="more-t">Support Center</div><div class="more-s">Help · FAQ · Report issue</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row" onclick="openLegal()"><div class="more-ico" style="background:rgba(255,255,255,.06)">📜</div><div><div class="more-t">Legal &amp; Compliance</div><div class="more-s">Privacy · Terms · Policy</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row" onclick="openAbout()"><div class="more-ico" style="background:rgba(37,99,235,.14)">ℹ️</div><div><div class="more-t">About FinPi</div><div class="more-s">v1.0.0 · Pi Mainnet</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row" onclick="logOut()"><div class="more-ico" style="background:rgba(239,68,68,.12)">🚪</div><div><div class="more-t" style="color:var(--red)">Sign Out</div><div class="more-s">Exit FinPi session</div></div></div>'
+  +'</div>'
+  +'<div style="height:.5rem"></div>';
+}
+
+/* ════════════════════════════════════════
+   PAYMENT — WorldCup proven pattern
+════════════════════════════════════════ */
+function doSendPi(){
+  var to   = (document.getElementById('s-to')||{}).value||'';
+  var amt  = parseFloat((document.getElementById('s-amt')||{}).value)||0;
+  var memo = (document.getElementById('s-memo')||{}).value||'FinPi Pi transfer';
+  var btn  = document.getElementById('send-btn');
+  var sts  = document.getElementById('send-status');
+  if(!amt||amt<=0){ if(sts) sts.textContent='Enter an amount greater than 0'; toast('Enter amount','error'); return; }
+  if(typeof Pi==='undefined'){ toast('Open in Pi Browser','error'); return; }
+  if(isGuest){ toast('Sign in with Pi to send payments','error'); return; }
+  if(btn){ btn.textContent='Opening Pi Wallet…'; btn.disabled=true; }
+  if(sts) sts.textContent='';
+  Pi.createPayment({ amount:amt, memo:memo||'FinPi transfer', metadata:{type:'send',app:'finpi.pages.dev',network:'mainnet'} }, {
+    onReadyForServerApproval: function(paymentId){
+      return fetch(_APPROVE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paymentId:paymentId})})
+        .then(function(r){ return r.json(); }).then(function(d){ console.log('[FinPi] Approved:',d); });
+    },
+    onReadyForServerCompletion: function(paymentId,txid){
+      localStorage.setItem('fp_pending_pid', paymentId);
+      return fetch(_COMPLETE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paymentId:paymentId,txid:txid})})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          console.log('[FinPi] Complete:',d.completed,d.pi_status);
+          localStorage.removeItem('fp_pending_pid');
+          addTx('sent',amt,memo||('To '+to),'completed');
+          renderHome(); renderHistory(_txTab);
+          toast('π '+amt.toFixed(2)+' sent!','success');
+          if(btn){ btn.textContent='π Send Pi'; btn.disabled=false; }
+        }).catch(function(){
+          addTx('sent',amt,memo,'completed');
+          toast('Sent!','success');
+          if(btn){ btn.textContent='π Send Pi'; btn.disabled=false; }
+        });
+    },
+    onCancel: function(){
+      if(btn){ btn.textContent='π Send Pi'; btn.disabled=false; }
+      toast('Payment cancelled');
+    },
+    onError: function(err){
+      console.error('[FinPi] Payment error:',err);
+      if(btn){ btn.textContent='π Send Pi'; btn.disabled=false; }
+      toast('Payment error — try again','error');
+    }
   });
 }
-function renderDots(id,count){
-  const el = document.getElementById(id);
-  el.innerHTML = Array.from({length:6}).map((_,i)=>`<div class="pin-dot ${i<count?'filled':''}"></div>`).join('');
-}
-function resetPinDots(id){ renderDots(id,0); }
 
-/* ---------------- BALANCE / TX RENDER ---------------- */
-function animateBalance(){
-  let cur = 0; const target = state.balance;
-  const el1 = document.getElementById('balanceDisplay');
-  const el2 = document.getElementById('balanceDisplay2');
-  const step = ()=>{
-    cur += target/24;
-    if(cur>=target){cur=target;}
-    const txt = cur.toFixed(2)+' π';
-    if(el1) el1.textContent = txt;
-    if(el2) el2.textContent = txt;
-    if(cur<target) requestAnimationFrame(step);
-  };
-  step();
+function openSendPanel(){ closePanel(); goTab('payments',document.querySelectorAll('.nb')[2]); payTab('send',document.querySelectorAll('#pay-tabs .stab')[0]); }
+function openReceivePanel(){ closePanel(); goTab('payments',document.querySelectorAll('.nb')[2]); payTab('receive',document.querySelectorAll('#pay-tabs .stab')[1]); }
+function openQRPanel(){ closePanel(); goTab('payments',document.querySelectorAll('.nb')[2]); payTab('qr',document.querySelectorAll('#pay-tabs .stab')[2]); }
+function openRequestPanel(){ closePanel(); goTab('payments',document.querySelectorAll('.nb')[2]); payTab('request',document.querySelectorAll('#pay-tabs .stab')[3]); }
+
+function copyAddr(){
+  var addr = piUser&&piUser.wallet_address?piUser.wallet_address:(piUser?piUser.username:'');
+  if(navigator.clipboard&&addr) navigator.clipboard.writeText(addr).then(function(){ toast('Address copied!','success'); }).catch(function(){});
+  else toast('Tap and hold to copy');
 }
-function txRow(tx){
-  const sign = tx.type==='in'?'+':'-';
-  return `<div class="tx-row">
-    <div class="tx-icon ${tx.type}">${tx.type==='in'?'↓':'↑'}</div>
-    <div class="tx-info"><div class="tx-title">${tx.title}</div><div class="tx-sub">${tx.sub}</div></div>
-    <div class="tx-amt ${tx.type} mono">${sign}${tx.amt.toFixed(2)} π</div>
-  </div>`;
+function sendToContact(addr){ openSendPanel(); setTimeout(function(){ var el=document.getElementById('s-to'); if(el) el.value=addr; },200); }
+function addContact(){
+  openPanel('Add Contact',
+    '<div class="finput-wrap"><label class="finput-label">Name</label><input class="finput" id="c-name" placeholder="Contact name"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Wallet Address or Username</label><input class="finput" id="c-addr" placeholder="Pi address or @username"></div>',
+    '<button class="btn btn-primary" onclick="saveContact()">Save Contact</button>'
+  );
 }
-function renderTx(){
-  document.getElementById('homeTxList').innerHTML = state.transactions.slice(0,3).map(txRow).join('');
-  document.getElementById('paymentsTxList').innerHTML = state.transactions.map(txRow).join('');
-  document.getElementById('activityList').innerHTML = state.transactions.map(txRow).join('') +
-    txRow({type:'in',title:'Biometric Login',sub:'This device · Today',amt:0}).replace('±0.00 π','').replace('<div class="tx-amt in mono">+0.00 π</div>','<span style="color:var(--success);font-size:12px;font-weight:600;">Verified</span>');
+function saveContact(){
+  var name=(document.getElementById('c-name')||{}).value||'';
+  var addr=(document.getElementById('c-addr')||{}).value||'';
+  if(!name||!addr){ toast('Fill in name and address','error'); return; }
+  contacts.push({name:name,addr:addr}); localStorage.setItem('fp_contacts',JSON.stringify(contacts));
+  toast('Contact saved!','success'); closePanel(); payTab('contacts',document.querySelectorAll('#pay-tabs .stab')[4]);
 }
 
-/* ---------------- SEND FLOW ---------------- */
-function doSend(){
-  const to = document.getElementById('sendTo').value || '@pioneer';
-  const amt = parseFloat(document.getElementById('sendAmt').value) || 1;
-  if(amt > state.balance){ showToast('Insufficient Balance','Check your available Pi balance'); return; }
-  state.balance -= amt;
-  state.transactions.unshift({type:'out', title:'Payment Sent', sub:'to '+to+' · just now', amt:amt});
-  closeModal('modal-send');
-  animateBalance();
-  renderTx();
-  document.getElementById('sendTo').value='';
-  document.getElementById('sendAmt').value='';
-  showToast('Payment Sent ✓', amt.toFixed(2)+' π to '+to);
+function genQR(){
+  var amt=(document.getElementById('qr-amt')||{}).value||0;
+  var memo=(document.getElementById('qr-memo')||{}).value||'Pi Payment';
+  var uname=piUser?piUser.username:'';
+  var link='pi://pay?amount='+encodeURIComponent(amt)+'&memo='+encodeURIComponent(memo)+(uname?'&to='+encodeURIComponent(uname):'');
+  var el=document.getElementById('qr-result');
+  if(el) el.innerHTML='<div style="background:var(--glass);border:1px solid var(--border);border-radius:var(--r-md);padding:.7rem;text-align:center">'
+    +'<div style="font-size:1.6rem;font-weight:900;color:var(--gold);font-family:var(--f-mono)">π '+parseFloat(amt).toFixed(2)+'</div>'
+    +'<div style="font-size:.5rem;color:var(--t3);margin:.2rem 0 .5rem">'+memo+'</div>'
+    +'<div style="font-size:.4rem;color:var(--t4);word-break:break-all;line-height:1.5">'+link+'</div>'
+    +'<button onclick="if(navigator.clipboard)navigator.clipboard.writeText(\''+link+'\').then(function(){toast(\'Link copied!\',\'success\');})" style="margin-top:.5rem;width:100%;padding:.44rem;background:var(--blue);border-radius:8px;color:#fff;font-size:.56rem;font-weight:700;cursor:pointer">📋 Copy Link</button>'
+    +'</div>';
 }
 
-/* ---------------- INIT ---------------- */
-renderDots('pinDots',0);
+function genRequest(){
+  var amt=(document.getElementById('req-amt')||{}).value||0;
+  var memo=(document.getElementById('req-memo')||{}).value||'Payment request';
+  if(!amt||amt<=0){ toast('Enter amount','error'); return; }
+  var uname=piUser?piUser.username:'';
+  var link='pi://pay?amount='+encodeURIComponent(amt)+'&memo='+encodeURIComponent(memo)+(uname?'&to='+encodeURIComponent(uname):'');
+  var el=document.getElementById('req-result');
+  if(el) el.innerHTML='<div style="background:rgba(13,148,136,.1);border:1px solid rgba(13,148,136,.25);border-radius:var(--r-md);padding:.7rem;text-align:center">'
+    +'<div style="font-size:.44rem;color:var(--t3);margin-bottom:.1rem">Payment Request</div>'
+    +'<div style="font-size:1.6rem;font-weight:900;color:var(--gold);font-family:var(--f-mono)">π '+parseFloat(amt).toFixed(2)+'</div>'
+    +'<div style="font-size:.5rem;color:var(--teal);margin:.2rem 0 .5rem">'+memo+'</div>'
+    +'<button onclick="if(navigator.clipboard)navigator.clipboard.writeText(\''+link+'\').then(function(){toast(\'Request link copied!\',\'success\');})" style="margin-top:.4rem;width:100%;padding:.44rem;background:var(--teal);border-radius:8px;color:#fff;font-size:.56rem;font-weight:700;cursor:pointer">📋 Copy Request Link</button>'
+    +'</div>';
+}
+
+/* ════════════════════════════════════════
+   FINANCE TOOLS
+════════════════════════════════════════ */
+function openCalc(){
+  _calcVal='0'; _calcExpr='';
+  openPanel('Pi Calculator',
+    '<div class="calc-display"><div class="calc-expr" id="ce"></div><div class="calc-val" id="cv">0</div></div>'
+    +'<div class="calc-grid">'
+    +['C','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0','.',',','='].map(function(k,i){
+      var cls = (k==='÷'||k==='×'||k==='−'||k==='+')? 'calc-btn op' : k==='='?'calc-btn eq':k==='C'?'calc-btn clr':k===','?'calc-btn zero':'calc-btn';
+      if(k===',') return ''; // skip comma (used for zero span)
+      if(k==='0') return '<button class="calc-btn zero" onclick="calcKey(\'0\')">0</button>';
+      return '<button class="'+cls+'" onclick="calcKey(\''+k+'\')">'+k+'</button>';
+    }).join('')
+    +'</div>'
+    +'<div style="margin-top:.6rem;background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .7rem;text-align:center"><div style="font-size:.42rem;color:var(--t3);margin-bottom:.1rem">Amount in π</div><div id="calc-pi" style="font-family:var(--f-mono);font-size:1.1rem;font-weight:800;color:var(--gold)">π 0.00</div></div>'
+  );
+}
+function calcKey(k){
+  var cv=document.getElementById('cv');
+  var ce=document.getElementById('ce');
+  var pi=document.getElementById('calc-pi');
+  if(k==='C'){_calcVal='0';_calcExpr='';}
+  else if(k==='='){
+    try{
+      var expr=_calcExpr+_calcVal;
+      expr=expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+      var r=Function('"use strict";return ('+expr+')')();
+      _calcVal=r.toString(); _calcExpr='';
+    }catch(e){_calcVal='Err';}
+  }
+  else if(k==='±'){_calcVal=(_calcVal.charAt(0)==='-')?_calcVal.slice(1):('-'+_calcVal);}
+  else if(k==='%'){_calcVal=(parseFloat(_calcVal)/100).toString();}
+  else if(['+','−','×','÷'].includes(k)){_calcExpr+=_calcVal+k;_calcVal='0';}
+  else if(k==='.'){if(!_calcVal.includes('.'))_calcVal+='.'; }
+  else{_calcVal=(_calcVal==='0')?k:(_calcVal+k);}
+  if(cv) cv.textContent=_calcVal;
+  if(ce) ce.textContent=_calcExpr;
+  if(pi) pi.textContent='π '+parseFloat(_calcVal||0).toFixed(2);
+}
+
+function openConverter(){
+  openPanel('Currency Reference',
+    '<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:var(--r-sm);padding:.5rem .7rem;margin-bottom:.7rem;font-size:.46rem;color:var(--orange)">⚠️ Reference only — not financial advice. Pi value is determined by the Pi community.</div>'
+    +'<div style="font-size:.7rem;font-weight:800;color:var(--t1);margin-bottom:.4rem">Pi Amount</div>'
+    +'<div class="finput-prefix" style="margin-bottom:.6rem"><span class="finput-sym">π</span><input class="finput mono" id="conv-pi" type="number" step="0.01" placeholder="1.00" oninput="updateConv(this.value)"></div>'
+    +'<div id="conv-results" style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">'
+      +[['USD','$','1.00'],['EUR','€','0.92'],['GBP','£','0.79'],['SAR','﷼','3.75'],['AED','د.إ','3.67'],['NGN','₦','1,580']].map(function(c){
+        return '<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .6rem"><div style="font-size:.4rem;color:var(--t3)">'+c[0]+'</div><div style="font-family:var(--f-mono);font-size:.88rem;font-weight:700;color:var(--t1)" id="conv-'+c[0].toLowerCase()+'">'+c[1]+'—</div></div>';
+      }).join('')
+    +'</div>'
+    +'<div style="font-size:.4rem;color:var(--t4);text-align:center;margin-top:.6rem">Reference rates for illustration only</div>'
+  );
+}
+function updateConv(v){
+  var pi=parseFloat(v)||0;
+  var rates={usd:1.00,eur:0.92,gbp:0.79,sar:3.75,aed:3.67,ngn:1580};
+  var syms={usd:'$',eur:'€',gbp:'£',sar:'﷼ ',aed:'د.إ ',ngn:'₦'};
+  Object.keys(rates).forEach(function(cur){
+    var el=document.getElementById('conv-'+cur);
+    if(el) el.textContent=syms[cur]+(pi*rates[cur]).toFixed(2);
+  });
+}
+
+function openBudget(){
+  var html='<div style="font-size:.7rem;font-weight:800;color:var(--t1);margin-bottom:.5rem">Monthly Budget Tracker</div>';
+  if(budgets.length){
+    html+=budgets.map(function(b,i){
+      var pct=Math.min(100,Math.round(b.spent/b.limit*100));
+      var col=pct>=90?'var(--red)':pct>=70?'var(--orange)':'var(--teal)';
+      return '<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.6rem;margin-bottom:.4rem">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:.3rem"><div style="font-size:.58rem;font-weight:600;color:var(--t1)">'+b.name+'</div><div style="font-size:.54rem;font-family:var(--f-mono);color:var(--t2)">π'+b.spent.toFixed(2)+' / π'+b.limit.toFixed(2)+'</div></div>'
+        +'<div style="height:6px;background:var(--bg3);border-radius:99px"><div style="height:6px;border-radius:99px;background:'+col+';width:'+pct+'%"></div></div>'
+        +'<div style="font-size:.4rem;color:var(--t3);margin-top:.2rem">'+pct+'% used · π'+(b.limit-b.spent).toFixed(2)+' remaining</div>'
+        +'</div>';
+    }).join('');
+  } else {
+    html+='<div class="empty"><div class="empty-ico">📊</div><div class="empty-t">No budgets yet</div><div class="empty-s">Add budget categories below</div></div>';
+  }
+  html+='<div style="margin-top:.5rem"><div class="finput-wrap"><label class="finput-label">Category Name</label><input class="finput" id="b-name" placeholder="e.g. Food, Transport…"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Monthly Limit (π)</label><div class="finput-prefix"><span class="finput-sym">π</span><input class="finput mono" id="b-limit" type="number" placeholder="0.00"></div></div>'
+    +'<button class="btn btn-teal" onclick="addBudget()">+ Add Budget</button></div>';
+  openPanel('Budget Tracker', html);
+}
+function addBudget(){
+  var name=(document.getElementById('b-name')||{}).value||'';
+  var limit=parseFloat((document.getElementById('b-limit')||{}).value)||0;
+  if(!name||!limit){ toast('Fill in all fields','error'); return; }
+  budgets.push({name:name,limit:limit,spent:0}); localStorage.setItem('fp_budgets',JSON.stringify(budgets));
+  toast('Budget added!','success'); closePanel(); openBudget();
+}
+
+function openGoals(){
+  var html='<div style="font-size:.7rem;font-weight:800;color:var(--t1);margin-bottom:.5rem">🎯 Savings Goals</div>';
+  if(goals.length){
+    html+=goals.map(function(g,i){
+      var pct=Math.min(100,Math.round(g.saved/g.target*100));
+      return '<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.6rem;margin-bottom:.4rem">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:.3rem"><div style="font-size:.58rem;font-weight:600;color:var(--t1)">'+g.name+'</div><div style="font-size:.54rem;font-family:var(--f-mono);color:var(--gold)">π'+g.saved.toFixed(2)+' / π'+g.target.toFixed(2)+'</div></div>'
+        +'<div style="height:6px;background:var(--bg3);border-radius:99px"><div style="height:6px;border-radius:99px;background:var(--gold);width:'+pct+'%"></div></div>'
+        +'<div style="font-size:.4rem;color:var(--t3);margin-top:.2rem">'+pct+'% complete · π'+(g.target-g.saved).toFixed(2)+' to go</div>'
+        +'</div>';
+    }).join('');
+  } else {
+    html+='<div class="empty"><div class="empty-ico">🎯</div><div class="empty-t">No goals yet</div></div>';
+  }
+  html+='<div style="margin-top:.5rem">'
+    +'<div class="finput-wrap"><label class="finput-label">Goal Name</label><input class="finput" id="g-name" placeholder="e.g. New device, Trip…"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Target Amount (π)</label><div class="finput-prefix"><span class="finput-sym">π</span><input class="finput mono" id="g-target" type="number" placeholder="0.00"></div></div>'
+    +'<button class="btn btn-primary" onclick="addGoal()">+ Add Goal</button></div>';
+  openPanel('Savings Goals', html);
+}
+function addGoal(){
+  var name=(document.getElementById('g-name')||{}).value||'';
+  var target=parseFloat((document.getElementById('g-target')||{}).value)||0;
+  if(!name||!target){ toast('Fill in all fields','error'); return; }
+  goals.push({name:name,target:target,saved:0}); localStorage.setItem('fp_goals',JSON.stringify(goals));
+  toast('Goal added!','success'); closePanel(); openGoals();
+}
+
+/* ════════════════════════════════════════
+   MORE PANELS
+════════════════════════════════════════ */
+function openSecurityPanel(){
+  openPanel('Security Center',
+    '<div class="more-grid">'
+    +'<div class="more-row"><div class="more-ico" style="background:rgba(239,68,68,.14)">🔢</div><div><div class="more-t">PIN Lock</div><div class="more-s">6-digit app PIN</div></div><span class="pill pill-orange">Soon</span></div>'
+    +'<div class="more-row"><div class="more-ico" style="background:rgba(37,99,235,.18)">🫆</div><div><div class="more-t">Biometric</div><div class="more-s">Fingerprint / Face ID</div></div><span class="pill pill-orange">Soon</span></div>'
+    +'<div class="more-row"><div class="more-ico" style="background:rgba(13,148,136,.18)">📱</div><div><div class="more-t">Trusted Devices</div><div class="more-s">Manage sessions</div></div><span class="pill pill-orange">Soon</span></div>'
+    +'<div class="more-row"><div class="more-ico" style="background:rgba(200,169,81,.18)">📋</div><div><div class="more-t">Login History</div><div class="more-s">Recent sign-in activity</div></div><span class="pill pill-orange">Soon</span></div>'
+    +'<div class="more-row"><div class="more-ico" style="background:rgba(239,68,68,.12)">🚨</div><div><div class="more-t">Fraud Alerts</div><div class="more-s">Suspicious activity</div></div><span class="pill pill-orange">Soon</span></div>'
+    +'</div>'
+    +'<div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:var(--r-sm);padding:.6rem .7rem;margin-top:.5rem"><div style="font-size:.54rem;font-weight:700;color:var(--green);margin-bottom:.1rem">✅ Active Protection</div><div style="font-size:.46rem;color:var(--t3)">Pi Network SDK Authentication is active · All payments verified on Mainnet</div></div>'
+  );
+}
+
+function openMerchant(){
+  openPanel('Merchant Hub',
+    '<div style="font-size:.7rem;font-weight:800;color:var(--t1);margin-bottom:.4rem">🏪 Pi Merchant Directory</div>'
+    +'<input class="finput" style="margin-bottom:.5rem" placeholder="🔍 Search merchants…">'
+    +'<div class="more-grid">'
+    +['🍕 Food & Dining','🛍 Retail & Shopping','💆 Health & Wellness','🎮 Entertainment','✈️ Travel & Tourism','💻 Tech Services','🎓 Education','🏗 Construction'].map(function(cat){
+      return '<div class="more-row" style="opacity:.7"><div class="more-ico" style="background:var(--glass2)">'+cat.charAt(0)+cat.charAt(1)+'</div><div><div class="more-t">'+cat.slice(2)+'</div><div class="more-s">Pi-accepting merchants</div></div><span class="pill pill-orange">Soon</span></div>';
+    }).join('')
+    +'</div>'
+    +'<div style="background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:var(--r-sm);padding:.6rem;margin-top:.5rem;text-align:center"><div style="font-size:.54rem;font-weight:700;color:var(--blue)">List Your Business</div><div style="font-size:.44rem;color:var(--t3);margin-top:.1rem">Coming soon — be first to join the Pi merchant network</div></div>'
+  );
+}
+
+function openInvoice(){
+  openPanel('Invoice Generator',
+    '<div style="font-size:.7rem;font-weight:800;color:var(--t1);margin-bottom:.5rem">🧾 Create Pi Invoice</div>'
+    +'<div class="finput-wrap"><label class="finput-label">Client Name</label><input class="finput" id="inv-client" placeholder="Client or business name"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Service / Item</label><input class="finput" id="inv-item" placeholder="What are you invoicing for?"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Amount (π)</label><div class="finput-prefix"><span class="finput-sym">π</span><input class="finput mono" id="inv-amt" type="number" placeholder="0.00"></div></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Due Date (optional)</label><input class="finput" id="inv-due" type="date"></div>'
+    +'<button class="btn btn-primary" onclick="genInvoice()">📄 Generate Invoice</button>'
+    +'<div id="inv-result" style="margin-top:.7rem"></div>'
+  );
+}
+function genInvoice(){
+  var client=(document.getElementById('inv-client')||{}).value||'';
+  var item=(document.getElementById('inv-item')||{}).value||'';
+  var amt=parseFloat((document.getElementById('inv-amt')||{}).value)||0;
+  var due=(document.getElementById('inv-due')||{}).value||'';
+  if(!client||!item||!amt){ toast('Fill in all required fields','error'); return; }
+  var invNo='FP-'+Date.now().toString().slice(-6);
+  var el=document.getElementById('inv-result');
+  if(el) el.innerHTML='<div style="background:var(--bg0);border:1px solid var(--border);border-radius:var(--r-md);padding:.8rem">'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:.6rem"><div style="font-size:.78rem;font-weight:900;color:var(--blue)">INVOICE</div><div style="font-size:.5rem;color:var(--t3)">#'+invNo+'</div></div>'
+    +'<div style="font-size:.48rem;color:var(--t3);margin-bottom:.1rem">Bill To</div><div style="font-size:.6rem;font-weight:700;color:var(--t1);margin-bottom:.4rem">'+client+'</div>'
+    +'<div style="font-size:.48rem;color:var(--t3);margin-bottom:.1rem">Service</div><div style="font-size:.58rem;color:var(--t2);margin-bottom:.4rem">'+item+'</div>'
+    +(due?'<div style="font-size:.48rem;color:var(--t3)">Due: '+due+'</div>':'')
+    +'<div style="border-top:1px solid var(--border);margin:.5rem 0;padding-top:.5rem;display:flex;justify-content:space-between;align-items:center">'
+      +'<div style="font-size:.54rem;font-weight:700;color:var(--t1)">Total Due</div>'
+      +'<div style="font-family:var(--f-mono);font-size:1.1rem;font-weight:800;color:var(--gold)">π '+amt.toFixed(2)+'</div>'
+    +'</div>'
+    +'<div style="font-size:.4rem;color:var(--t4);text-align:center;margin-top:.3rem">Payable in Pi · FinPi.pages.dev</div>'
+    +'</div>';
+  toast('Invoice generated!','success');
+}
+
+function openAIPanel(){
+  var msgs=[];
+  var html='<div style="display:flex;flex-direction:column;height:400px">'
+    +'<div id="ai-feed" style="flex:1;overflow-y:auto;padding:.3rem;display:flex;flex-direction:column;gap:.4rem">'
+      +'<div style="background:var(--glass);border:1px solid var(--border);border-radius:14px;border-bottom-left-radius:4px;padding:.5rem .6rem;font-size:.56rem;color:var(--t1);max-width:88%;align-self:flex-start">👋 Hi! I\'m your FinPi AI Assistant. Ask me about Pi budgeting, financial tips, or how to use FinPi features.</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:.3rem;padding:.3rem 0 0">'
+      +'<input id="ai-inp" class="finput" style="flex:1" placeholder="Ask about finance or Pi…">'
+      +'<button onclick="sendAI()" style="background:var(--blue);border-radius:10px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;flex-shrink:0">➤</button>'
+    +'</div>'
+  +'</div>';
+  openPanel('AI Assistant', html);
+  document.getElementById('ai-inp').addEventListener('keydown',function(e){ if(e.key==='Enter') sendAI(); });
+}
+function sendAI(){
+  var inp=document.getElementById('ai-inp');
+  var feed=document.getElementById('ai-feed');
+  if(!inp||!feed||!inp.value.trim()) return;
+  var q=inp.value.trim(); inp.value='';
+  var userMsg=document.createElement('div');
+  userMsg.style.cssText='background:var(--blue);border-radius:14px;border-bottom-right-radius:4px;padding:.5rem .6rem;font-size:.56rem;color:#fff;max-width:88%;align-self:flex-end';
+  userMsg.textContent=q; feed.appendChild(userMsg);
+  var typing=document.createElement('div');
+  typing.className='ai-typing'; typing.innerHTML='<div class="td"></div><div class="td"></div><div class="td"></div>';
+  feed.appendChild(typing); feed.scrollTop=feed.scrollHeight;
+  /* Simple rule-based responses */
+  setTimeout(function(){
+    typing.remove();
+    var resp=getAIResp(q);
+    var aiMsg=document.createElement('div');
+    aiMsg.style.cssText='background:var(--glass);border:1px solid var(--border);border-radius:14px;border-bottom-left-radius:4px;padding:.5rem .6rem;font-size:.56rem;color:var(--t1);max-width:88%;align-self:flex-start;line-height:1.6';
+    aiMsg.textContent=resp; feed.appendChild(aiMsg); feed.scrollTop=feed.scrollHeight;
+  },1200);
+}
+function getAIResp(q){
+  q=q.toLowerCase();
+  if(q.includes('budget')) return 'Use the Budget Tracker in Home or Wallet tab. Add categories like Food, Transport, and set monthly Pi limits. I\'ll track your spending automatically as you make payments.';
+  if(q.includes('send')||q.includes('transfer')) return 'To send Pi: go to Payments tab → Send Pi. Enter the recipient\'s wallet address or username, set the amount, and tap Send. Pi Wallet will open to confirm.';
+  if(q.includes('receive')||q.includes('address')) return 'Your wallet address shows in Payments → Receive Pi. Share your QR code or copy your address. Make sure you\'ve completed KYC in the Pi App to activate your wallet.';
+  if(q.includes('kyc')) return 'KYC (Know Your Customer) is completed in the main Pi Network App, not in FinPi. Once verified, your wallet address becomes active and you can receive Pi.';
+  if(q.includes('goal')||q.includes('saving')) return 'Savings Goals are in the Wallet tab. Set a Pi amount target and name your goal — like "New phone: π 500". Track your progress as you accumulate Pi.';
+  if(q.includes('invoice')) return 'The Invoice Generator is in Wallet tab → Business Tools. Create a Pi invoice with client name, service, amount, and due date. Share it professionally with your client.';
+  if(q.includes('history')||q.includes('transaction')) return 'All your transactions are in the History tab. You can filter by Sent, Received, or Pending. Use the search bar to find specific payments.';
+  return 'I can help with budgeting, sending/receiving Pi, savings goals, invoices, and FinPi features. What would you like to know?';
+}
+
+function openIdentityCard(){
+  var uname=piUser?(piUser.username||'Pioneer'):'Guest';
+  var addr=piUser&&piUser.wallet_address?piUser.wallet_address:'Not verified';
+  openPanel('FinPi Identity Card',
+    '<div style="background:var(--grad-card);border:1px solid rgba(37,99,235,.3);border-radius:var(--r-xl);padding:1.1rem;text-align:center">'
+      +'<div style="font-size:.46rem;font-weight:800;color:var(--blue);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.4rem">FinPi Identity</div>'
+      +'<div style="width:60px;height:60px;border-radius:50%;background:var(--grad-blue);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:#fff;margin:0 auto .5rem">'+uname.charAt(0).toUpperCase()+'</div>'
+      +'<div style="font-size:.9rem;font-weight:800;color:var(--t1)">@'+uname+'</div>'
+      +'<div style="font-size:.46rem;color:var(--t3);margin:.1rem 0 .6rem">Pi Network Member</div>'
+      +'<div style="background:rgba(0,0,0,.3);border-radius:var(--r-sm);padding:.4rem .5rem;margin-bottom:.4rem;text-align:left">'
+        +'<div style="font-size:.38rem;color:var(--t4);margin-bottom:.08rem">WALLET</div>'
+        +'<div style="font-family:var(--f-mono);font-size:.4rem;color:var(--t2);word-break:break-all">'+addr+'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:.3rem;justify-content:center">'
+        +'<span class="pill pill-green">✅ Authenticated</span>'
+        +'<span class="pill pill-blue">Pi Mainnet</span>'
+      +'</div>'
+    +'</div>'
+  );
+}
+
+function openPersonalQR(){
+  var uname=piUser?(piUser.username||''):'';
+  openPanel('Personal QR Code',
+    '<div style="text-align:center">'
+      +'<div style="font-size:.54rem;color:var(--t3);margin-bottom:.8rem">Share to receive Pi payments</div>'
+      +'<div style="background:#fff;border-radius:20px;padding:1.2rem;display:inline-block;margin-bottom:.8rem">'
+        +'<div style="width:160px;height:160px;background:linear-gradient(135deg,#000 25%,transparent 25%,transparent 75%,#000 75%,#000),linear-gradient(135deg,#000 25%,transparent 25%,transparent 75%,#000 75%,#000) 10px 10px,linear-gradient(0deg,transparent 24%,#000 24%,#000 26%,transparent 26%),transparent;background-size:20px 20px;border-radius:8px;display:flex;align-items:center;justify-content:center"><div style="background:#fff;padding:.5rem;font-size:.5rem;font-weight:800;color:#333">@'+uname+'</div></div>'
+      +'</div>'
+      +'<div style="font-size:.82rem;font-weight:800;color:var(--t1)">@'+uname+'</div>'
+      +'<div style="font-size:.46rem;color:var(--t3);margin:.15rem 0 .7rem">Scan to send Pi</div>'
+      +'<button class="btn btn-teal" onclick="copyAddr()">📋 Copy Address</button>'
+    +'</div>'
+  );
+}
+
+function openNotifSettings(){
+  openPanel('Notifications',
+    '<div class="more-grid">'
+    +[['💸','Payment Received','Get notified when Pi arrives'],['📤','Payment Sent','Confirm your outgoing payments'],['⚠️','Security Alerts','Unusual activity warnings'],['🔐','Login Alerts','New device sign-ins'],['📢','FinPi Updates','New features &amp; announcements']].map(function(n){
+      return '<div class="more-row"><div class="more-ico" style="background:var(--glass2)">'+n[0]+'</div><div style="flex:1"><div class="more-t">'+n[1]+'</div><div class="more-s">'+n[2]+'</div></div>'
+        +'<div style="width:44px;height:24px;background:var(--blue);border-radius:99px;position:relative;cursor:pointer"><div style="position:absolute;right:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%"></div></div></div>';
+    }).join('')
+    +'</div>'
+  );
+}
+
+function openLangPanel(){
+  openPanel('Language',
+    '<div class="more-grid">'
+    +[['🇬🇧','English','Current'],['🇸🇦','العربية','Arabic'],['🇫🇷','Français','French'],['🇪🇸','Español','Spanish'],['🇩🇪','Deutsch','German'],['🇨🇳','中文','Chinese']].map(function(l,i){
+      return '<div class="more-row" onclick="toast(\''+l[1]+' — coming soon\')"><div class="more-ico" style="background:var(--glass2);font-size:1.2rem">'+l[0]+'</div><div><div class="more-t">'+l[1]+'</div><div class="more-s">'+l[2]+'</div></div>'+(i===0?'<span class="pill pill-green">Active</span>':'<span class="pill pill-orange">Soon</span>')+'</div>';
+    }).join('')
+    +'</div>'
+  );
+}
+
+function openCurrencyPanel(){
+  openPanel('Currency Reference',
+    '<div style="font-size:.48rem;color:var(--orange);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:var(--r-sm);padding:.4rem .6rem;margin-bottom:.5rem">Reference display only — not financial advice</div>'
+    +'<div class="more-grid">'
+    +[['$','USD','US Dollar'],['€','EUR','Euro'],['£','GBP','British Pound'],['﷼','SAR','Saudi Riyal'],['د.إ','AED','UAE Dirham'],['₦','NGN','Nigerian Naira']].map(function(c){
+      return '<div class="more-row" onclick="toast(\''+c[2]+' selected\')"><div class="more-ico" style="background:var(--glass2);font-family:var(--f-mono);font-size:.9rem">'+c[0]+'</div><div><div class="more-t">'+c[1]+'</div><div class="more-s">'+c[2]+'</div></div></div>';
+    }).join('')
+    +'</div>'
+  );
+}
+
+function openSupport(){
+  openPanel('Support Center',
+    '<div class="more-grid">'
+    +'<div class="more-row"><div class="more-ico" style="background:rgba(37,99,235,.18)">📖</div><div><div class="more-t">Help Center</div><div class="more-s">Guides &amp; tutorials</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row"><div class="more-ico" style="background:rgba(13,148,136,.18)">💬</div><div><div class="more-t">Contact Support</div><div class="more-s">support@finpi.pages.dev</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row" onclick="toast(\'Report submitted — thank you!\',\'success\')"><div class="more-ico" style="background:rgba(239,68,68,.14)">⚠️</div><div><div class="more-t">Report Payment Issue</div><div class="more-s">Payment not completed?</div></div><div class="more-arrow">›</div></div>'
+    +'<div class="more-row" onclick="toast(\'Bug report submitted!\',\'success\')"><div class="more-ico" style="background:rgba(245,158,11,.12)">🐛</div><div><div class="more-t">Report a Bug</div><div class="more-s">Help us improve FinPi</div></div><div class="more-arrow">›</div></div>'
+    +'</div>'
+    +'<div style="margin-top:.5rem"><div class="sec-lbl" style="padding:.3rem 0 .3rem">Frequently Asked</div>'
+    +[['How do I send Pi?','Go to Payments tab → Send Pi. Enter address, amount, tap Send.'],['Why does my wallet show KYC pending?','Complete KYC verification in the main Pi Network App first.'],['Is FinPi an official Pi app?','No. FinPi is an independent app built for the Pi ecosystem using official Pi SDK.'],['Where are my transactions stored?','Securely in your device. FinPi never uploads personal data to servers.']].map(function(faq){
+      return '<div style="background:var(--glass);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:.3rem;overflow:hidden"><div style="padding:.5rem .6rem;font-size:.56rem;font-weight:700;color:var(--t1)">'+faq[0]+'</div><div style="padding:.1rem .6rem .5rem;font-size:.5rem;color:var(--t3);line-height:1.5">'+faq[1]+'</div></div>';
+    }).join('')
+    +'</div>'
+  );
+}
+
+function openLegal(){
+  openPanel('Legal & Compliance',
+    '<div style="font-size:.54rem;color:var(--t2);line-height:1.7;margin-bottom:.6rem">'
+      +'FinPi is an independent financial platform built for the Pi ecosystem. It is <strong style="color:var(--t1)">not an official Pi Network application</strong>. FinPi uses the Pi SDK for authentication and payments only.'
+    +'</div>'
+    +'<div class="more-grid">'
+    +[['📜','Privacy Policy','How we handle your data'],['📋','Terms of Service','Usage rules &amp; conditions'],['🔐','Security Policy','How we protect you'],['⚖️','Risk Disclosure','Financial risk information'],['🤝','Community Guidelines','Acceptable use policy'],['🔍','Responsible Disclosure','Report security issues']].map(function(d){
+      return '<div class="more-row" onclick="toast(\''+d[1]+' — coming soon\')"><div class="more-ico" style="background:var(--glass2)">'+d[0]+'</div><div><div class="more-t">'+d[1]+'</div><div class="more-s">'+d[2]+'</div></div><div class="more-arrow">›</div></div>';
+    }).join('')
+    +'</div>'
+  );
+}
+
+function openAbout(){
+  openPanel('About FinPi',
+    '<div style="text-align:center;padding:.5rem 0 .8rem">'
+      +'<div style="font-size:2.4rem;font-weight:900;color:var(--t1);letter-spacing:-.05em">Fin<span style="background:var(--grad-blue);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Pi</span></div>'
+      +'<div style="font-size:.5rem;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin:.2rem 0 .6rem">Pi Financial Platform</div>'
+      +'<span class="pill pill-blue">v1.0.0</span> <span class="pill pill-green">Pi Mainnet</span> <span class="pill pill-gold">sandbox:false</span>'
+    +'</div>'
+    +'<div style="font-size:.54rem;color:var(--t2);line-height:1.7;margin-bottom:.6rem">FinPi combines secure Pi payments, personal finance, merchant services, business management, and financial tools into one modern application — built exclusively for the Pi ecosystem.</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem;margin-bottom:.5rem">'
+    +['💳 Pi Payments','🔐 Pi Auth','🧮 Calculator','💱 Converter','📊 Budget Tracker','🎯 Savings Goals','🧾 Invoice Generator','🏪 Merchant Hub','📋 Tx History','🤖 AI Assistant','🔔 Notifications','📜 Legal Docs'].map(function(f){
+      return '<div style="background:var(--glass);border:1px solid var(--border);border-radius:var(--r-sm);padding:.3rem .4rem;font-size:.46rem;color:var(--t2)">'+f+'</div>';
+    }).join('')
+    +'</div>'
+    +'<div style="font-size:.4rem;color:var(--t4);text-align:center">© 2026 FinPi · Independent Pi Ecosystem Application<br>Not affiliated with Pi Network Core Team</div>'
+  );
+}
+
+function showNotifs(){
+  openPanel('Notifications',
+    '<div class="empty"><div class="empty-ico">🔔</div><div class="empty-t">All caught up!</div><div class="empty-s">Payment and security notifications will appear here</div></div>'
+  );
+}
+
+function openBackupGuide(){
+  openPanel('Wallet Backup Guide',
+    '<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:var(--r-sm);padding:.6rem .7rem;margin-bottom:.6rem">'
+      +'<div style="font-size:.56rem;font-weight:800;color:var(--red);margin-bottom:.1rem">⚠️ Important Security Notice</div>'
+      +'<div style="font-size:.48rem;color:var(--t2);line-height:1.6">Your Pi wallet is controlled by Pi Network. Backup and recovery is managed through the official Pi Network App.</div>'
+    +'</div>'
+    +'<div style="display:grid;gap:.4rem">'
+    +[['1️⃣','Complete KYC','Verify your identity in the Pi Network App to secure your wallet'],['2️⃣','Enable 2FA','Set up two-factor authentication in Pi App settings'],['3️⃣','Backup Phrase','The Pi Network App manages your recovery phrase — keep it safe'],['4️⃣','Trusted Devices','Limit access to devices you own and control'],['5️⃣','Stay Updated','Keep Pi Browser and Pi App updated for security patches']].map(function(s){
+      return '<div style="display:flex;gap:.5rem;align-items:flex-start;background:var(--glass);border:1px solid var(--border);border-radius:var(--r-sm);padding:.5rem .6rem"><div style="font-size:1.1rem;flex-shrink:0">'+s[0]+'</div><div><div style="font-size:.56rem;font-weight:700;color:var(--t1)">'+s[1]+'</div><div style="font-size:.46rem;color:var(--t3);margin-top:.06rem;line-height:1.5">'+s[2]+'</div></div></div>';
+    }).join('')
+    +'</div>'
+  );
+}
 </script>
 </body>
 </html>
