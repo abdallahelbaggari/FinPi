@@ -551,7 +551,7 @@ html[dir="rtl"] .sbar { flex-direction:row-reverse; }
 </div>
 
 <!-- LOGIN -->
-<div id="login">
+<div id="login" style="display:none">
   <div class="login-bg"></div>
   <div class="login-top"></div>
   <div class="login-body">
@@ -579,7 +579,7 @@ html[dir="rtl"] .sbar { flex-direction:row-reverse; }
 </div>
 
 <!-- APP -->
-<div id="app">
+<div id="app" style="display:none">
   <!-- TOP BAR -->
   <div id="topbar">
     <div class="tb-left">
@@ -907,40 +907,47 @@ window.addEventListener('offline', function(){ document.getElementById('offline-
 if(!navigator.onLine){ document.getElementById('offline-banner').style.display='block'; }
 
 window.addEventListener('load', function() {
+  /* Service worker */
   if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function(){});
-  txLog    = JSON.parse(localStorage.getItem('fp_tx')||'[]');
-  budgets  = JSON.parse(localStorage.getItem('fp_budgets')||'[]');
-  goals    = JSON.parse(localStorage.getItem('fp_goals')||'[]');
-  contacts = JSON.parse(localStorage.getItem('fp_contacts')||'[]');
+  /* Restore saved data */
+  txLog        = JSON.parse(localStorage.getItem('fp_tx')||'[]');
+  budgets      = JSON.parse(localStorage.getItem('fp_budgets')||'[]');
+  goals        = JSON.parse(localStorage.getItem('fp_goals')||'[]');
+  contacts     = JSON.parse(localStorage.getItem('fp_contacts')||'[]');
   trustedAddrs = JSON.parse(localStorage.getItem('fp_trusted')||'[]');
-  products = JSON.parse(localStorage.getItem('fp_products')||'[]');
-  applyUserPreferences();
-  setSplash('Loading Pi SDK…');
+  products     = JSON.parse(localStorage.getItem('fp_products')||'[]');
+  recurringList= JSON.parse(localStorage.getItem('fp_recurring')||'[]');
+  /* Apply preferences silently */
+  try { applyUserPreferences(); } catch(e) { console.warn('[FinPi] prefs error:', e.message); }
+  /* Copa pattern: short splash then straight to piLogin */
+  setSplash('Loading…');
   setTimeout(function(){
-    setSplash('Checking authentication…');
-    setTimeout(function(){
-      hideSplash();
-      piLogin();
-    }, 600);
-  }, 800);
+    hideSplash();
+    piLogin();
+  }, 500);
 });
 
 function hideSplash(){
-  var s=document.getElementById('splash');
-  s.classList.add('hide');
-  setTimeout(function(){ s.style.display='none'; }, 400);
+  var s = document.getElementById('splash');
+  if(!s) return;
+  s.style.opacity = '0';
+  s.style.transition = 'opacity .3s ease';
+  setTimeout(function(){ s.style.display = 'none'; }, 350);
 }
 
 /* ════════════════════════════════════════
    piLogin — WorldCup proven pattern
 ════════════════════════════════════════ */
 function piLogin() {
+  applyTheme(); /* Apply theme after splash is hidden */
   var btn = document.getElementById('loginBtn');
   var txt = document.getElementById('loginTxt');
   if(btn){ btn.disabled=true; btn.style.opacity='.7'; }
   if(txt) txt.textContent='Connecting…';
   setLmsg('Connecting to Pi Network…');
-  document.getElementById('login').style.display='flex';
+  var loginEl = document.getElementById('login');
+  loginEl.style.display = 'flex';
+  loginEl.style.flexDirection = 'column';
 
   if(typeof Pi==='undefined'){
     setTimeout(function(){
@@ -997,6 +1004,7 @@ function onIncompletePayment(payment) {
 ════════════════════════════════════════ */
 function launchApp() {
   document.getElementById('login').style.display = 'none';
+  document.getElementById('login').style.display = 'none';
   var app = document.getElementById('app');
   app.style.display = 'flex';
   app.style.flexDirection = 'column';
@@ -1017,6 +1025,7 @@ function launchApp() {
   renderHistory('all');
   renderProfile();
 
+  registerSessionListeners();
   /* Init pull-to-refresh */
   setTimeout(function(){
     initPullToRefresh(document.getElementById('home-scroll'), function(){renderHome(); toast('Refreshed','success');});
@@ -2760,9 +2769,7 @@ function applyUserPreferences(){
   applyLargeText();
   applyHighContrast();
   applyRTL();
-  applyBalancePrivacy();
-  applyTheme();
-  resetSessionTimer();
+  /* applyTheme and resetSessionTimer run after login */
 }
 
 
@@ -2860,9 +2867,11 @@ function setSessionTimeout(mins){
   toast('Session timeout: '+(mins==='0'?'Never':mins+' min'),'success');
   closePanel(); openSessionSettings();
 }
-/* Touch/click resets timer */
-document.addEventListener('touchstart', resetSessionTimer, {passive:true});
-document.addEventListener('click', resetSessionTimer);
+/* Touch/click resets timer — registered after app loads */
+function registerSessionListeners(){
+  document.addEventListener('touchstart', resetSessionTimer, {passive:true});
+  document.addEventListener('click', resetSessionTimer);
+}
 
 /* ── 3. TRANSACTION PIN ── */
 var _txPinEnabled = localStorage.getItem('fp_pin_enabled')==='1';
