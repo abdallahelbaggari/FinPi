@@ -907,24 +907,22 @@ window.addEventListener('offline', function(){ document.getElementById('offline-
 if(!navigator.onLine){ document.getElementById('offline-banner').style.display='block'; }
 
 window.addEventListener('load', function() {
-  /* Service worker */
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function(){});
-  /* Restore saved data */
-  txLog        = JSON.parse(localStorage.getItem('fp_tx')||'[]');
-  budgets      = JSON.parse(localStorage.getItem('fp_budgets')||'[]');
-  goals        = JSON.parse(localStorage.getItem('fp_goals')||'[]');
-  contacts     = JSON.parse(localStorage.getItem('fp_contacts')||'[]');
-  trustedAddrs = JSON.parse(localStorage.getItem('fp_trusted')||'[]');
-  products     = JSON.parse(localStorage.getItem('fp_products')||'[]');
-  recurringList= JSON.parse(localStorage.getItem('fp_recurring')||'[]');
-  /* Apply preferences silently */
-  try { applyUserPreferences(); } catch(e) { console.warn('[FinPi] prefs error:', e.message); }
-  /* Copa pattern: short splash then straight to piLogin */
-  setSplash('Loading…');
-  setTimeout(function(){
-    hideSplash();
-    piLogin();
-  }, 500);
+  /* COPA EXACT PATTERN — nothing before piLogin */
+  try {
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function(){});
+  } catch(e) {}
+  /* Safe data restore — each wrapped individually */
+  try { txLog         = JSON.parse(localStorage.getItem('fp_tx')||'[]'); } catch(e){ txLog=[]; }
+  try { budgets       = JSON.parse(localStorage.getItem('fp_budgets')||'[]'); } catch(e){ budgets=[]; }
+  try { goals         = JSON.parse(localStorage.getItem('fp_goals')||'[]'); } catch(e){ goals=[]; }
+  try { contacts      = JSON.parse(localStorage.getItem('fp_contacts')||'[]'); } catch(e){ contacts=[]; }
+  try { trustedAddrs  = JSON.parse(localStorage.getItem('fp_trusted')||'[]'); } catch(e){ trustedAddrs=[]; }
+  try { products      = JSON.parse(localStorage.getItem('fp_products')||'[]'); } catch(e){ products=[]; }
+  try { recurringList = JSON.parse(localStorage.getItem('fp_recurring')||'[]'); } catch(e){ recurringList=[]; }
+  /* Silent preferences */
+  try { applyUserPreferences(); } catch(e) {}
+  /* Copa: straight to piLogin */
+  piLogin();
 });
 
 function hideSplash(){
@@ -939,15 +937,16 @@ function hideSplash(){
    piLogin — WorldCup proven pattern
 ════════════════════════════════════════ */
 function piLogin() {
-  applyTheme(); /* Apply theme after splash is hidden */
+  /* Hide splash first — always */
+  hideSplash();
+  try { applyTheme(); } catch(e) {}
   var btn = document.getElementById('loginBtn');
   var txt = document.getElementById('loginTxt');
   if(btn){ btn.disabled=true; btn.style.opacity='.7'; }
   if(txt) txt.textContent='Connecting…';
   setLmsg('Connecting to Pi Network…');
   var loginEl = document.getElementById('login');
-  loginEl.style.display = 'flex';
-  loginEl.style.flexDirection = 'column';
+  if(loginEl){ loginEl.style.display='flex'; loginEl.style.flexDirection='column'; }
 
   if(typeof Pi==='undefined'){
     setTimeout(function(){
