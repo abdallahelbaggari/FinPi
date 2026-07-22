@@ -120,6 +120,7 @@ a { color:var(--teal); text-decoration:none; }
   box-shadow:0 4px 24px rgba(37,99,235,.5); transition:all .15s; margin-bottom:.6rem;
 }
 .btn-pi:active { transform:scale(.97); }
+.btn-pi:disabled { opacity:.6; }
 .btn-pi:disabled { opacity:.5; }
 .btn-guest {
   width:100%; padding:.72rem; border-radius:var(--r-md);
@@ -547,12 +548,12 @@ html[dir="rtl"] .sbar { flex-direction:row-reverse; }
     </div>
   </div>
   <div class="login-foot">
-    <button class="btn-pi" id="loginBtn" onclick="piLogin()">
-      <span style="font-size:1.1rem">π</span>
-      <span id="loginTxt">Continue with Pi</span>
+    <button class="btn-pi" id="loginBtn" onclick="piLogin()" style="touch-action:manipulation;cursor:pointer">
+      <span style="font-size:1.1rem">&#x03C0;</span>
+      <span id="signin-txt">Continue with Pi</span>
     </button>
-    <button class="btn-guest" onclick="guestMode()">
-      <span>👤</span> Continue as Guest
+    <button class="btn-guest" onclick="guestMode()" style="touch-action:manipulation;cursor:pointer">
+      <span>&#x1F464;</span> Continue as Guest
     </button>
     <div id="lmsg"></div>
     <div class="login-network">Pi Network Mainnet · Pi Browser</div>
@@ -887,7 +888,7 @@ window.addEventListener('offline', function(){ document.getElementById('offline-
 if(!navigator.onLine){ document.getElementById('offline-banner').style.display='block'; }
 
 window.addEventListener('load', function() {
-  /* COPA EXACT PATTERN */
+  /* COPA EXACT — restore data then piLogin */
   try { if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function(){}); } catch(e){}
   try { txLog         = JSON.parse(localStorage.getItem('fp_tx')||'[]'); } catch(e){ txLog=[]; }
   try { budgets       = JSON.parse(localStorage.getItem('fp_budgets')||'[]'); } catch(e){ budgets=[]; }
@@ -905,36 +906,34 @@ window.addEventListener('load', function() {
    piLogin — WorldCup proven pattern
 ════════════════════════════════════════ */
 function piLogin() {
-  /* Copa pattern — login already visible, just init SDK */
-  try { applyTheme(); } catch(e){}
-  var btn = document.getElementById('loginBtn');
-  var txt = document.getElementById('loginTxt');
-  if(btn){ btn.disabled=true; btn.style.opacity='.7'; }
-  if(txt) txt.textContent='Connecting…';
-  setLmsg('Connecting to Pi Network…');
-
-  if(typeof Pi==='undefined'){
-    setTimeout(function(){
-      setLmsg('Pi SDK not loaded — tap to retry or use Guest mode');
-      if(btn){ btn.disabled=false; btn.style.opacity='1'; }
-      if(txt) txt.textContent='Continue with Pi';
-    }, 1200);
+  var btn     = document.getElementById('loginBtn');
+  var btnText = document.getElementById('signin-txt');
+  var lmsg    = document.getElementById('lmsg');
+  if (btn)     { btn.disabled = true; btn.style.opacity = '0.7'; }
+  if (btnText) btnText.textContent = 'Authenticating...';
+  if (lmsg)    lmsg.textContent = 'Connecting to Pi Network...';
+  if (typeof Pi === 'undefined') {
+    setTimeout(function() {
+      piUser = { username: 'Pioneer' };
+      localStorage.setItem('fp_user', JSON.stringify(piUser));
+      launchApp();
+      toast('Demo mode — open in Pi Browser!');
+    }, 500);
     return;
   }
-
-  Pi.init({ version:'2.0', sandbox:false });
-  Pi.authenticate(['username','payments'], onIncompletePayment)
-    .then(function(auth){
+  Pi.init({ version: '2.0', sandbox: false });
+  Pi.authenticate(['username', 'payments'], onIncompletePayment)
+    .then(function(auth) {
       piUser = auth.user;
       isGuest = false;
       localStorage.setItem('fp_user', JSON.stringify(piUser));
       launchApp();
     })
-    .catch(function(err){
+    .catch(function(err) {
       console.error('[FinPi] Auth error:', err);
-      if(btn){ btn.disabled=false; btn.style.opacity='1'; }
-      if(txt) txt.textContent='Continue with Pi';
-      setLmsg('Authentication failed — try again');
+      if (btn)     { btn.disabled = false; btn.style.opacity = '1'; }
+      if (btnText) btnText.textContent = 'Continue with Pi';
+      if (lmsg)    lmsg.textContent = 'Authentication failed — try again';
     });
 }
 
@@ -968,11 +967,10 @@ function onIncompletePayment(payment) {
 ════════════════════════════════════════ */
 function launchApp() {
   document.getElementById('login').style.display = 'none';
-  document.getElementById('login').style.display = 'none';
-  var app = document.getElementById('app');
-  app.style.display = 'flex';
-  app.style.flexDirection = 'column';
-  app.style.height = '100vh';
+  var loginEl = document.getElementById('login');
+  var appEl   = document.getElementById('app');
+  if (loginEl) loginEl.style.display = 'none';
+  if (appEl)   { appEl.style.display = 'flex'; appEl.style.flexDirection = 'column'; appEl.style.height = '100vh'; }
 
   /* Update UI with user info */
   var uname = piUser ? (piUser.username||'Pioneer') : 'Guest';
