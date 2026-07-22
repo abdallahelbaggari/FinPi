@@ -78,59 +78,37 @@ a { color:var(--teal); text-decoration:none; }
 
 
 /* ── LOGIN ── */
-#login {
-  position:fixed; inset:0; background:var(--bg0); display:flex;
-  flex-direction:column; z-index:100; overflow:hidden;
-}
-.login-bg {
-  position:absolute; inset:0;
-  background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(37,99,235,.22), transparent),
-             radial-gradient(ellipse 60% 40% at 80% 80%, rgba(13,148,136,.12), transparent);
-}
-.login-top { height:5px; background:var(--grad-blue); flex-shrink:0; }
-.login-body {
-  flex:1; display:flex; flex-direction:column; align-items:center;
-  justify-content:center; padding:2rem 1.5rem; position:relative; z-index:1; text-align:center;
-}
-.login-icon {
-  width:80px; height:80px; background:var(--grad-blue); border-radius:22px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:2.2rem; margin-bottom:1.2rem;
-  box-shadow:0 8px 32px rgba(37,99,235,.4), 0 0 0 1px rgba(255,255,255,.1);
-}
-.login-title { font-size:2.6rem; font-weight:900; letter-spacing:-.05em; color:var(--t1); margin-bottom:.3rem; }
-.login-title span { background:var(--grad-blue); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-.login-sub { font-size:.58rem; color:var(--t3); letter-spacing:.14em; text-transform:uppercase; margin-bottom:1.6rem; }
-.login-features {
-  display:grid; grid-template-columns:1fr 1fr; gap:.5rem;
-  width:100%; max-width:320px; margin-bottom:1.6rem;
-}
-.lf-card {
-  background:var(--glass); border:1px solid var(--border); border-radius:var(--r-md);
-  padding:.6rem .65rem; text-align:left;
-}
-.lf-ico { font-size:1.4rem; margin-bottom:.2rem; }
-.lf-name { font-size:.58rem; font-weight:700; color:var(--t1); }
-.lf-desc { font-size:.44rem; color:var(--t3); margin-top:.04rem; }
-.login-foot { padding:.6rem 1.4rem 2.4rem; flex-shrink:0; position:relative; z-index:1; }
-.btn-pi {
-  width:100%; padding:1.05rem; border-radius:var(--r-md);
-  background:var(--grad-blue); font-size:1rem; font-weight:800; color:#fff;
-  display:flex; align-items:center; justify-content:center; gap:.5rem;
-  box-shadow:0 4px 24px rgba(37,99,235,.5); transition:all .15s; margin-bottom:.6rem;
-}
-.btn-pi:active { transform:scale(.97); }
-.btn-pi:disabled { opacity:.6; }
-.btn-pi:disabled { opacity:.5; }
-.btn-guest {
-  width:100%; padding:.72rem; border-radius:var(--r-md);
-  background:var(--glass); border:1px solid var(--border2);
-  font-size:.72rem; font-weight:600; color:var(--t2);
-  display:flex; align-items:center; justify-content:center; gap:.4rem; transition:all .15s;
-}
-.btn-guest:active { background:var(--glass2); }
-#lmsg { font-size:.5rem; color:var(--t3); text-align:center; margin-top:.6rem; min-height:.9rem; line-height:1.5; }
-.login-network { font-size:.42rem; color:var(--t4); text-align:center; margin-top:.5rem; }
+#login{display:flex;flex-direction:column;min-height:100vh;background:var(--bg0)}
+.login-stripe{height:4px;background:linear-gradient(90deg,var(--blue),var(--teal),var(--gold))}
+.login-hero{flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:2rem 1.5rem;text-align:center}
+.login-icon{font-size:4rem;margin-bottom:.5rem}
+.login-title{font-size:2.6rem;font-weight:900;color:var(--t1);letter-spacing:-.05em;margin-bottom:.2rem}
+.login-title span{background:var(--grad-blue);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.login-sub{font-size:.72rem;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:1.2rem}
+.login-features{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;width:100%;max-width:320px;margin-bottom:1.2rem}
+.lf-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r-md);padding:.6rem .65rem;text-align:left}
+.lf-ico{font-size:1.4rem;margin-bottom:.2rem}
+.lf-name{font-size:.58rem;font-weight:700;color:var(--t1)}
+.lf-desc{font-size:.44rem;color:var(--t3);margin-top:.04rem}
+.login-cta{padding:1rem 1.5rem 2.5rem}
+.btn-signin{width:100%;padding:.9rem;background:var(--blue);border:none;
+  border-radius:14px;font-family:var(--f-ui);font-size:1.05rem;font-weight:900;
+  color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  gap:.5rem;touch-action:manipulation;transition:all .15s;
+  box-shadow:0 4px 24px rgba(37,99,235,.5)}
+.btn-signin:active{transform:scale(.97);opacity:.9}
+.btn-signin:disabled{opacity:.65;cursor:not-allowed}
+.btn-signin-guest{width:100%;padding:.72rem;background:var(--glass);border:1px solid var(--border2);
+  border-radius:14px;font-family:var(--f-ui);font-size:.82rem;font-weight:600;
+  color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  gap:.4rem;touch-action:manipulation;margin-top:.5rem}
+.btn-signin-guest:active{background:var(--glass2)}
+#lmsg{font-family:var(--f-ui);font-size:.52rem;color:var(--t3);text-align:center;margin-top:.6rem;min-height:.9rem}
+.login-legal{font-size:.44rem;color:var(--t3);text-align:center;margin-top:.75rem;line-height:1.6}
+.login-links{display:flex;gap:.6rem;justify-content:center;margin-top:.6rem;flex-wrap:wrap}
+.login-links a{font-size:.52rem;color:var(--teal);text-decoration:underline;text-underline-offset:3px}
+
 
 /* ── APP SHELL ── */
 #app { display:none; flex-direction:column; height:100vh; overflow:hidden; }
@@ -534,9 +512,8 @@ html[dir="rtl"] .sbar { flex-direction:row-reverse; }
 
 <!-- LOGIN -->
 <div id="login">
-  <div class="login-bg"></div>
-  <div class="login-top"></div>
-  <div class="login-body">
+  <div class="login-stripe"></div>
+  <div class="login-hero">
     <div class="login-icon">💎</div>
     <div class="login-title">Fin<span>Pi</span></div>
     <div class="login-sub">Pi Financial Platform</div>
@@ -547,16 +524,21 @@ html[dir="rtl"] .sbar { flex-direction:row-reverse; }
       <div class="lf-card"><div class="lf-ico">🏪</div><div class="lf-name">Merchant Hub</div><div class="lf-desc">Business &amp; invoice tools</div></div>
     </div>
   </div>
-  <div class="login-foot">
-    <button class="btn-pi" id="loginBtn" style="touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:1.1rem">&#x03C0;</span>
-      <span id="signin-txt">Continue with Pi</span>
+  <div class="login-cta">
+    <button class="btn-signin" id="loginBtn" onclick="piLogin()">
+      <span style="font-size:1.2rem">&#x03C0;</span>
+      <span id="signin-txt">Sign In with Pi</span>
     </button>
-    <button class="btn-guest" id="guestBtn" style="touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent">
+    <button class="btn-signin-guest" id="guestBtn" onclick="guestMode()">
       <span>&#x1F464;</span> Continue as Guest
     </button>
     <div id="lmsg"></div>
-    <div class="login-network">Pi Network Mainnet · Pi Browser</div>
+    <div class="login-legal">Pi SDK Exclusive &middot; Secure Authentication &middot; Mainnet</div>
+    <div class="login-links">
+      <a href="/legal/privacy-policy.html">Privacy Policy</a>
+      <span style="color:var(--t3)">&middot;</span>
+      <a href="/legal/terms-of-service.html">Terms of Service</a>
+    </div>
   </div>
 </div>
 
@@ -898,17 +880,6 @@ window.addEventListener('load', function() {
   try { products      = JSON.parse(localStorage.getItem('fp_products')||'[]'); } catch(e){ products=[]; }
   try { recurringList = JSON.parse(localStorage.getItem('fp_recurring')||'[]'); } catch(e){ recurringList=[]; }
   try { applyUserPreferences(); } catch(e){}
-  /* Bind buttons via addEventListener — most reliable in Pi Browser */
-  var lb = document.getElementById('loginBtn');
-  var gb = document.getElementById('guestBtn');
-  if (lb) {
-    lb.addEventListener('touchend', function(e){ e.preventDefault(); piLogin(); });
-    lb.addEventListener('click', function(){ piLogin(); });
-  }
-  if (gb) {
-    gb.addEventListener('touchend', function(e){ e.preventDefault(); guestMode(); });
-    gb.addEventListener('click', function(){ guestMode(); });
-  }
   piLogin();
 });
 
@@ -943,8 +914,8 @@ function piLogin() {
     .catch(function(err) {
       console.error('[FinPi] Auth error:', err);
       if (btn)     { btn.disabled = false; btn.style.opacity = '1'; }
-      if (btnText) btnText.textContent = 'Continue with Pi';
-      if (lmsg)    lmsg.textContent = 'Authentication failed — try again';
+      if (btnText) btnText.textContent = 'Sign In with Pi';
+      if (lmsg)    lmsg.textContent = 'Authentication failed — tap to try again';
     });
 }
 
