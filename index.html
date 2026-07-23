@@ -773,10 +773,18 @@ function piLogin(){
       launchApp();
     })
     .catch(function(err) {
-      console.error('[FinPi] Authentication failed', err);
+      console.error('[FinPi] Auth error:', err);
+      var msg = err ? (err.message || String(err)) : 'Unknown error';
+      console.error('[FinPi] Auth error message:', msg);
       if(btn)     { btn.disabled = false; btn.style.opacity = '1'; }
       if(btnText) btnText.textContent = 'Sign In with Pi';
-      if(lmsg)    lmsg.textContent = 'Failed — tap to try again';
+      var ml = msg.toLowerCase();
+      var reason = ml.includes('domain') ? 'Domain not verified in develop.pi'
+        : ml.includes('network') ? 'Network error - check connection'
+        : ml.includes('cancel') ? 'Cancelled - tap to try again'
+        : ml.includes('scope') ? 'Permission denied - check App Checklist'
+        : msg ? ('Error: ' + msg.slice(0,60)) : 'Failed - tap to try again';
+      if(lmsg) lmsg.textContent = reason;
     });
 }
 
