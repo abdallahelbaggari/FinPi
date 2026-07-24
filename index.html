@@ -311,45 +311,26 @@ var _balanceHidden=false,_sessionTimeout=1800000,_sessionTimer=null,_locked=fals
 var _pendingPayment=null;
 var _APPROVE='/approve',_COMPLETE='/complete';
 
-/* piLogin — FIXED. Only runs on button tap. Never auto-called. */
-var _piInitDone = false;
-function piLogin(){
-  console.log('[FinPi] Login button clicked');
+/* ══ COPA EXACT piLogin ══ */
+function piLogin() {
   var btn     = document.getElementById('loginBtn');
   var btnText = document.getElementById('signin-txt');
   var lmsg    = document.getElementById('lmsg');
-  /* Check Pi SDK FIRST — before disabling button */
-  console.log('[FinPi] Checking Pi SDK... window.Pi =', window.Pi);
-  if (!window.Pi) {
-    console.error('[FinPi] Pi SDK not loaded — open in Pi Browser');
-    if(lmsg) lmsg.textContent = 'Open FinPi in Pi Browser to sign in';
+  if (btn)     { btn.disabled = true; btn.style.opacity = '0.7'; }
+  if (btnText) btnText.textContent = 'Authenticating...';
+  if (lmsg)    lmsg.textContent = 'Connecting to Pi Network...';
+  if (typeof Pi === 'undefined') {
+    setTimeout(function() {
+      piUser = { username: 'Pioneer', uid: 'demo' };
+      localStorage.setItem('fp_user', JSON.stringify(piUser));
+      launchApp();
+      toast('Demo mode — open in Pi Browser!');
+    }, 500);
     return;
   }
-  /* SDK confirmed — disable button NOW */
-  console.log('[FinPi] Pi SDK confirmed. Starting authentication.');
-  if(btn)     { btn.disabled = true; btn.style.opacity = '0.7'; }
-  if(btnText) btnText.textContent = 'Authenticating...';
-  if(lmsg)    lmsg.textContent = 'Connecting to Pi Network...';
-  /* Pi.init() only once */
-  if (!_piInitDone) {
-    try {
-      console.log('[FinPi] Calling Pi.init()');
-      Pi.init({ version: '2.0', sandbox: false });
-      _piInitDone = true;
-      console.log('[FinPi] Pi.init() done');
-    } catch(e) {
-      console.error('[FinPi] Pi.init() error:', e);
-      if(btn)     { btn.disabled = false; btn.style.opacity = '1'; }
-      if(btnText) btnText.textContent = 'Sign In with Pi';
-      if(lmsg)    lmsg.textContent = 'Init error — tap to retry';
-      return;
-    }
-  }
-  /* Authenticate */
-  console.log('[FinPi] Calling Pi.authenticate()');
+  Pi.init({ version: '2.0', sandbox: false });
   Pi.authenticate(['username', 'payments'], onIncompletePayment)
     .then(function(auth) {
-      console.log('[FinPi] Authentication successful', auth);
       piUser  = auth.user;
       isGuest = false;
       localStorage.setItem('fp_user', JSON.stringify(piUser));
@@ -357,19 +338,12 @@ function piLogin(){
     })
     .catch(function(err) {
       console.error('[FinPi] Auth error:', err);
-      var msg = err ? (err.message || String(err)) : 'Unknown error';
-      console.error('[FinPi] Auth error message:', msg);
-      if(btn)     { btn.disabled = false; btn.style.opacity = '1'; }
-      if(btnText) btnText.textContent = 'Sign In with Pi';
-      var ml = msg.toLowerCase();
-      var reason = ml.includes('domain') ? 'Domain not verified in develop.pi'
-        : ml.includes('network') ? 'Network error - check connection'
-        : ml.includes('cancel') ? 'Cancelled - tap to try again'
-        : ml.includes('scope') ? 'Permission denied - check App Checklist'
-        : msg ? ('Error: ' + msg.slice(0,60)) : 'Failed - tap to try again';
-      if(lmsg) lmsg.textContent = reason;
+      if (btn)     { btn.disabled = false; btn.style.opacity = '1'; }
+      if (btnText) btnText.textContent = 'Sign In with Pi';
+      if (lmsg)    lmsg.textContent = 'Try again';
     });
 }
+
 
 function onIncompletePayment(payment){
   if(!payment)return;
@@ -422,12 +396,13 @@ function launchApp(){
 }
 
 /* ══ COPA EXACT window.load ══ */
-window.addEventListener('load',function(){
-  try{if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(function(){});}catch(e){}
-  window.addEventListener('online',function(){document.getElementById('offline-banner').style.display='none';});
-  window.addEventListener('offline',function(){document.getElementById('offline-banner').style.display='block';});
-  /* FIXED: Do NOT auto-call piLogin() */
+window.addEventListener('load', function() {
+  try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function() {}); } catch(e) {}
+  window.addEventListener('online',  function() { document.getElementById('offline-banner').style.display = 'none'; });
+  window.addEventListener('offline', function() { document.getElementById('offline-banner').style.display = 'block'; });
+  piLogin();
 });
+
 
 function dismissFirstLaunch(){localStorage.setItem('fp_launched','1');document.getElementById('first-launch').classList.remove('open');}
 
@@ -824,13 +799,18 @@ function genInvoice(){
   var text='FinPi Invoice\nInv No: '+invNo+'\nClient: '+c+'\nService: '+s+'\nAmount: \u03C0 '+a.toFixed(2)+(d?'\nDue: '+d:'')+'\nPayment: Pi Network Mainnet';
   var el=document.getElementById('inv-result');
   if(!el)return;
-  var btn='<button class="btn btn-outline btn-sm" style="margin-top:.4rem" onclick="(function(){if(navigator.clipboard)navigator.clipboard.writeText(document.getElementById('inv-text').textContent).then(function(){toast('Copied','success')})})()">&#x1F4CB; Copy Invoice</button>';
   el.innerHTML='<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.6rem">'
-    +'<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem;padding-bottom:.3rem;border-bottom:1px solid var(--border2)">'
+    +'<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem;padding-bottom:.3rem;border-bottom:1px solid var(--border2);">'
     +'<span style="font-size:1rem;font-weight:900;background:linear-gradient(135deg,#1565C0,#1DE9B6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">FinPi</span>'
-    +'<span style="font-size:.38rem;color:var(--teal)">Invoice</span></div>'
+    +'<span style="font-size:.38rem;color:var(--teal)"> Invoice</span></div>'
     +'<pre id="inv-text" style="font-family:var(--f-mono);font-size:.5rem;color:var(--t2);line-height:1.8;white-space:pre-wrap">'+text+'</pre>'
-    +btn+'</div>';
+    +'<button class="btn btn-outline btn-sm" id="inv-copy-btn" style="margin-top:.4rem">&#x1F4CB; Copy Invoice</button>'
+    +'</div>';
+  var copyBtn=document.getElementById('inv-copy-btn');
+  if(copyBtn){copyBtn.onclick=function(){
+    var t=document.getElementById('inv-text');
+    if(t&&navigator.clipboard)navigator.clipboard.writeText(t.textContent).then(function(){toast('Copied','success');});
+  };}
 }
 
 /* AI */
@@ -1190,37 +1170,63 @@ function openAppearance(){
     {id:'light',label:'Light',desc:'Clean white interface',colors:['#f0f4ff','#2563EB','#C8A951']},
   ];
   var cur=localStorage.getItem('fp_theme')||'dark';
-  openPanel('Appearance',
-    '<div style="font-size:.6rem;font-weight:700;color:var(--t1);margin-bottom:.35rem">Theme</div>'
-    +'<div style="display:grid;gap:.3rem;margin-bottom:.6rem">'
-    +themes.map(function(t){
-      var active=cur===t.id;
-      return '<div onclick="applyThemeId(\''+t.id+'\')" style="background:var(--glass);border:1.5px solid '+(active?'var(--blue)':'var(--border)')+';border-radius:var(--r-md);padding:.6rem .75rem;cursor:pointer;display:flex;align-items:center;gap:.6rem;transition:all .15s">'
-        +'<div style="display:flex;gap:4px">'
-          +t.colors.map(function(c){return '<div style="width:18px;height:18px;border-radius:50%;background:'+c+';border:1px solid rgba(255,255,255,.2)"></div>';}).join('')
-        +'</div>'
-        +'<div style="flex:1"><div style="font-size:.6rem;font-weight:700;color:var(--t1)">'+t.label+'</div>'
-          +'<div style="font-size:.44rem;color:var(--t3)">'+t.desc+'</div></div>'
-        +(active?'<span class="pill pill-blue">Active</span>':'')
-        +'</div>';
-    }).join('')
-    +'</div>'
+  var sizes=[['small','Small','90%'],['normal','Normal','100%'],['large','Large','112%']];
+  var cur2=localStorage.getItem('fp_textsize')||'normal';
+  var dir=localStorage.getItem('fp_dir')||'ltr';
+
+  var themeRows=themes.map(function(t){
+    var active=cur===t.id;
+    var colorDots=t.colors.map(function(c){
+      return '<div style="width:18px;height:18px;border-radius:50%;background:'+c+';border:1px solid rgba(255,255,255,.2)"></div>';
+    }).join('');
+    return '<div data-theme="'+t.id+'" class="theme-row" style="background:var(--glass);border:1.5px solid '+(active?'var(--blue)':'var(--border)')+';border-radius:var(--r-md);padding:.6rem .75rem;cursor:pointer;display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem">'
+      +'<div style="display:flex;gap:4px">'+colorDots+'</div>'
+      +'<div style="flex:1"><div style="font-size:.6rem;font-weight:700;color:var(--t1)">'+t.label+'</div>'
+      +'<div style="font-size:.44rem;color:var(--t3)">'+t.desc+'</div></div>'
+      +(active?'<span class="pill pill-blue">Active</span>':'')
+      +'</div>';
+  }).join('');
+
+  var sizeRows=sizes.map(function(s){
+    var active2=cur2===s[0];
+    return '<div data-size="'+s[0]+'" class="size-row" style="background:var(--glass);border:1.5px solid '+(active2?'var(--blue)':'var(--border)')+';border-radius:var(--r-sm);padding:.5rem;text-align:center;cursor:pointer">'
+      +'<div style="font-size:'+s[2]+';font-weight:700;color:var(--t1)">Aa</div>'
+      +'<div style="font-size:.44rem;color:var(--t3);margin-top:.1rem">'+s[1]+'</div></div>';
+  }).join('');
+
+  var html='<div style="font-size:.6rem;font-weight:700;color:var(--t1);margin-bottom:.35rem">Theme</div>'
+    +'<div style="margin-bottom:.6rem">'+themeRows+'</div>'
     +'<div style="font-size:.6rem;font-weight:700;color:var(--t1);margin-bottom:.35rem">Text Size</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.3rem;margin-bottom:.6rem">'
-      +[['small','Small','90%'],['normal','Normal','100%'],['large','Large','112%']].map(function(s){
-        var cur2=localStorage.getItem('fp_textsize')||'normal';
-        return '<div onclick="applyTextSize(\''+s[0]+'\')" style="background:var(--glass);border:1.5px solid '+(cur2===s[0]?'var(--blue)':'var(--border)')+';border-radius:var(--r-sm);padding:.5rem;text-align:center;cursor:pointer">'
-          +'<div style="font-size:'+s[2]+';font-weight:700;color:var(--t1)">Aa</div>'
-          +'<div style="font-size:.44rem;color:var(--t3);margin-top:.1rem">'+s[1]+'</div></div>';
-      }).join('')
-    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.3rem;margin-bottom:.6rem">'+sizeRows+'</div>'
     +'<div style="font-size:.6rem;font-weight:700;color:var(--t1);margin-bottom:.35rem">Direction</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">'
-      +'<div onclick="document.documentElement.removeAttribute(\'dir\');localStorage.setItem(\'fp_dir\',\'ltr\');toast(\'Left to right\');openAppearance()" style="background:var(--glass);border:1.5px solid '+(localStorage.getItem('fp_dir')!=='rtl'?'var(--blue)':'var(--border)')+';border-radius:var(--r-sm);padding:.5rem;text-align:center;cursor:pointer"><div style="font-size:.6rem;font-weight:700;color:var(--t1)">&#x2B05; LTR</div><div style="font-size:.42rem;color:var(--t3)">Left to Right</div></div>'
-      +'<div onclick="document.documentElement.setAttribute(\'dir\',\'rtl\');localStorage.setItem(\'fp_dir\',\'rtl\');toast(\'Right to left\');openAppearance()" style="background:var(--glass);border:1.5px solid '+(localStorage.getItem('fp_dir')==='rtl'?'var(--blue)':'var(--border)')+';border-radius:var(--r-sm);padding:.5rem;text-align:center;cursor:pointer"><div style="font-size:.6rem;font-weight:700;color:var(--t1)">RTL &#x27A1;</div><div style="font-size:.42rem;color:var(--t3)">Right to Left</div></div>'
-    +'</div>'
-  );
+    +'<div data-dir="ltr" class="dir-row" style="background:var(--glass);border:1.5px solid '+(dir!=='rtl'?'var(--blue)':'var(--border)')+';border-radius:var(--r-sm);padding:.5rem;text-align:center;cursor:pointer"><div style="font-size:.6rem;font-weight:700;color:var(--t1)">&#x2B05; LTR</div><div style="font-size:.42rem;color:var(--t3)">Left to Right</div></div>'
+    +'<div data-dir="rtl" class="dir-row" style="background:var(--glass);border:1.5px solid '+(dir==='rtl'?'var(--blue)':'var(--border)')+';border-radius:var(--r-sm);padding:.5rem;text-align:center;cursor:pointer"><div style="font-size:.6rem;font-weight:700;color:var(--t1)">RTL &#x27A1;</div><div style="font-size:.42rem;color:var(--t3)">Right to Left</div></div>'
+    +'</div>';
+
+  openPanel('Appearance', html);
+
+  /* Attach event listeners after panel renders */
+  setTimeout(function(){
+    document.querySelectorAll('.theme-row').forEach(function(el){
+      el.onclick=function(){applyThemeId(this.dataset.theme);};
+    });
+    document.querySelectorAll('.size-row').forEach(function(el){
+      el.onclick=function(){applyTextSize(this.dataset.size);};
+    });
+    document.querySelectorAll('.dir-row').forEach(function(el){
+      el.onclick=function(){
+        var d=this.dataset.dir;
+        if(d==='rtl'){document.documentElement.setAttribute('dir','rtl');}
+        else{document.documentElement.removeAttribute('dir');}
+        localStorage.setItem('fp_dir',d);
+        toast(d==='rtl'?'Right to left':'Left to right');
+        openAppearance();
+      };
+    });
+  },50);
 }
+
 function applyThemeId(id){
   localStorage.setItem('fp_theme',id);
   var root=document.documentElement;
