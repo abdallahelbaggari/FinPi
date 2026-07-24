@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#060B14">
+<meta name="description" content="FinPi — Pi Financial Platform">
+<title>FinPi</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/finpi-logo.svg">
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg0:#060B14;--bg1:#0A1020;--bg2:#0F1830;--bg3:#162040;--bg4:#1E2A50;--blue:#2563EB;--teal:#0D9488;--gold:#C8A951;--green:#10B981;--red:#EF4444;--orange:#F59E0B;--t1:#F0F4FF;--t2:rgba(240,244,255,.62);--t3:rgba(240,244,255,.36);--t4:rgba(240,244,255,.18);--glass:rgba(255,255,255,.04);--glass2:rgba(255,255,255,.07);--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);--grad-blue:linear-gradient(135deg,#1E3A8A,#2563EB);--grad-teal:linear-gradient(135deg,#0F766E,#0D9488);--grad-gold:linear-gradient(135deg,#92690A,#C8A951);--grad-card:linear-gradient(145deg,rgba(37,99,235,.18),rgba(13,148,136,.12));--nav-h:76px;--r-sm:12px;--r-md:16px;--r-lg:20px;--r-xl:24px;--f-ui:'Poppins',system-ui,sans-serif;--f-mono:'JetBrains Mono','Courier New',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:var(--f-ui);background:var(--bg0);color:var(--t1);-webkit-font-smoothing:antialiased}
+button{background:none;border:none;cursor:pointer;font-family:inherit;touch-action:manipulation}
+input,textarea,select{font-family:inherit;outline:none;border:none;background:none;color:var(--t1)}
+a{color:var(--teal);text-decoration:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes slideUp{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
+#login{display:flex;flex-direction:column;min-height:100vh;background:var(--bg0)}
+.login-stripe{height:4px;background:linear-gradient(90deg,var(--blue),var(--teal),var(--gold))}
+.login-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;text-align:center}
+.login-title{font-size:3rem;font-weight:900;letter-spacing:-.05em;margin-bottom:.2rem}
+.login-title span{background:var(--grad-blue);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.login-sub{font-size:.65rem;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:1.2rem}
+.login-tags{display:flex;flex-wrap:wrap;gap:.35rem;justify-content:center;margin-bottom:1.2rem}
+.login-tag{font-size:.46rem;color:var(--t2);background:var(--glass);border:1px solid var(--border);border-radius:99px;padding:.2rem .55rem}
+.login-cta{padding:1rem 1.5rem 2.5rem}
+.btn-signin{width:100%;padding:.9rem;background:var(--blue);border:none;border-radius:14px;font-family:var(--f-ui);font-size:1.05rem;font-weight:900;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;touch-action:manipulation;transition:opacity .15s;box-shadow:0 4px 24px rgba(37,99,235,.5)}
+.btn-signin:active{opacity:.85}
+.btn-signin:disabled{opacity:.55;cursor:not-allowed}
+.btn-signin-guest{width:100%;padding:.72rem;background:var(--glass);border:1px solid var(--border2);border-radius:14px;font-family:var(--f-ui);font-size:.82rem;font-weight:600;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.4rem;touch-action:manipulation;margin-top:.5rem}
+#lmsg{font-size:.52rem;color:var(--t3);text-align:center;margin-top:.6rem;min-height:.9rem}
+.login-foot{font-size:.44rem;color:var(--t3);text-align:center;margin-top:.75rem;line-height:1.7}
+.login-foot a{color:var(--teal);text-decoration:underline}
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden}
+#topbar{background:rgba(6,11,20,.95);border-bottom:1px solid var(--border);padding:.5rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;backdrop-filter:blur(24px);z-index:20;min-height:58px}
+.tb-logo{font-size:1.24rem;font-weight:900;letter-spacing:-.05em}
+.tb-logo span{background:var(--grad-blue);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tb-right{display:flex;align-items:center;gap:.5rem}
+.tb-btn{width:38px;height:38px;border-radius:99px;background:var(--glass);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.92rem;color:var(--t2);cursor:pointer;position:relative}
+.tb-avatar{width:38px;height:38px;border-radius:99px;background:var(--grad-blue);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;cursor:pointer}
+#main{flex:1;overflow:hidden;min-height:0;position:relative}
+.scr{display:none;flex-direction:column;height:100%;overflow:hidden;min-height:0}
+.scr.on{display:flex;animation:fadeUp .18s ease}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;min-height:0;height:0;padding-bottom:calc(var(--nav-h) + 1.2rem)}
+.scroll::-webkit-scrollbar{display:none}
+#nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:rgba(6,11,20,.98);border-top:1px solid var(--border2);display:flex;z-index:50;backdrop-filter:blur(28px);padding-bottom:env(safe-area-inset-bottom)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.12rem;cursor:pointer;transition:all .2s;position:relative;padding:.18rem .06rem}
+.nb::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2.5px;background:var(--grad-blue);border-radius:4px 4px 0 0;opacity:0;transition:opacity .2s}
+.nb.on::after{opacity:1}
+.nb-ico{font-size:1.56rem;line-height:1;color:var(--t3);transition:all .2s}
+.nb.on .nb-ico{color:var(--blue);transform:scale(1.1)}
+.nb-lbl{font-size:.44rem;font-weight:600;color:var(--t3);letter-spacing:.02em}
+.nb.on .nb-lbl{color:var(--blue)}
+.sbar{padding:.65rem .9rem .52rem;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.sbar-t{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;color:var(--t1);line-height:1.1}
+.sbar-s{font-size:.48rem;color:var(--t3);margin-top:.18rem}
+.sbar-act{display:flex;gap:.3rem;align-items:center;margin-top:.1rem}
+.sbar-btn{width:36px;height:36px;border-radius:99px;background:var(--glass);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.82rem;color:var(--t2);cursor:pointer}
+.card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r-xl);padding:1rem;margin:.28rem .75rem}
+.balance-card{background:var(--grad-card);border:1px solid rgba(37,99,235,.25);border-radius:var(--r-xl);padding:1.1rem;margin:.5rem .75rem;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.bc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;position:relative;z-index:1}
+.bc-label{font-size:.46rem;font-weight:600;color:rgba(240,244,255,.55);letter-spacing:.1em;text-transform:uppercase}
+.bc-status{display:flex;align-items:center;gap:.28rem}
+.bc-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.bc-st-txt{font-size:.44rem;color:var(--green);font-weight:600}
+.bc-amount{font-family:var(--f-mono);font-size:2.6rem;font-weight:800;color:var(--gold);line-height:1;margin-bottom:.18rem;position:relative;z-index:1}
+.bc-sub{font-size:.48rem;color:var(--t3);margin-bottom:.9rem;position:relative;z-index:1;font-family:var(--f-mono)}
+.bc-actions{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;position:relative;z-index:1}
+.bc-action{padding:.58rem .4rem;border-radius:var(--r-sm);text-align:center;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.bc-action.primary{background:var(--blue);border-color:rgba(255,255,255,.15)}
+.bc-action.secondary{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.1)}
+.bc-action:active{transform:scale(.96)}
+.bca-ico{font-size:1.15rem;margin-bottom:.16rem}
+.bca-lbl{font-size:.5rem;font-weight:700;color:var(--t1)}
+.qa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;padding:.3rem .75rem .5rem}
+.qa-btn{display:flex;flex-direction:column;align-items:center;gap:.3rem;padding:.62rem .2rem;border-radius:var(--r-md);background:var(--glass);border:1px solid var(--border);cursor:pointer;transition:all .18s;min-height:76px}
+.qa-btn:active{transform:scale(.95);background:var(--glass2)}
+.qa-ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.qa-lbl{font-size:.42rem;font-weight:600;color:var(--t2);text-align:center;line-height:1.2}
+.sec-lbl{padding:.7rem .9rem .2rem;font-size:.42rem;font-weight:800;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+.sec-lbl-action{font-size:.46rem;font-weight:600;color:var(--blue);cursor:pointer}
+.util-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;padding:.2rem .75rem}
+.util-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r-lg);padding:.7rem .65rem;cursor:pointer;transition:all .18s;position:relative;min-height:86px;display:flex;flex-direction:column;justify-content:space-between}
+.util-card:active{transform:scale(.96);background:var(--glass2)}
+.util-ico{font-size:1.5rem;margin-bottom:.28rem}
+.util-name{font-size:.58rem;font-weight:700;color:var(--t1);line-height:1.2}
+.util-desc{font-size:.4rem;color:var(--t3);margin-top:.06rem}
+.util-badge{position:absolute;top:.42rem;right:.42rem;font-size:.34rem;font-weight:800;border-radius:99px;padding:.06rem .28rem;letter-spacing:.04em;text-transform:uppercase}
+.badge-live{background:rgba(16,185,129,.18);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.badge-soon{background:rgba(245,158,11,.12);color:var(--orange);border:1px solid rgba(245,158,11,.25)}
+.tx-row{display:flex;align-items:center;gap:.65rem;padding:.65rem .9rem;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .14s;min-height:68px}
+.tx-row:active{background:var(--glass)}
+.tx-ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.tx-ico.sent{background:rgba(239,68,68,.14)}
+.tx-ico.recv{background:rgba(16,185,129,.14)}
+.tx-ico.pend{background:rgba(245,158,11,.12)}
+.tx-info{flex:1;min-width:0}
+.tx-name{font-size:.62rem;font-weight:600;color:var(--t1)}
+.tx-meta{font-size:.44rem;color:var(--t3);margin-top:.06rem}
+.tx-amount{text-align:right;flex-shrink:0}
+.tx-pi{font-family:var(--f-mono);font-size:.72rem;font-weight:700}
+.tx-pi.sent{color:var(--red)}.tx-pi.recv{color:var(--green)}.tx-pi.pend{color:var(--orange)}
+.finput{width:100%;background:var(--glass);border:1.5px solid var(--border2);border-radius:var(--r-sm);padding:.62rem .8rem;font-size:.64rem;color:var(--t1);transition:border-color .15s;display:block}
+.finput:focus{border-color:var(--blue)}
+.finput.mono{font-family:var(--f-mono)}
+.finput-wrap{margin-bottom:.52rem}
+.finput-label{font-size:.48rem;font-weight:600;color:var(--t3);margin-bottom:.24rem;display:block}
+.finput-prefix{position:relative}
+.finput-prefix .finput{padding-left:2.2rem}
+.finput-sym{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);font-size:.72rem;color:var(--gold);font-family:var(--f-mono);font-weight:700}
+.btn{width:100%;padding:.76rem;border-radius:var(--r-md);font-size:.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:.4rem;cursor:pointer;transition:all .15s;min-height:54px;touch-action:manipulation}
+.btn:active{transform:scale(.97)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--grad-blue);color:#fff;box-shadow:0 4px 20px rgba(37,99,235,.4)}
+.btn-teal{background:var(--grad-teal);color:#fff}
+.btn-outline{background:var(--glass);border:1.5px solid var(--border2);color:var(--t1)}
+.btn-danger{background:rgba(239,68,68,.15);border:1.5px solid rgba(239,68,68,.3);color:var(--red)}
+.btn-sm{padding:.42rem .7rem;font-size:.6rem;min-height:38px;width:auto;border-radius:var(--r-sm)}
+.stabs{display:flex;padding:.28rem .75rem;gap:.3rem;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.stab{flex-shrink:0;font-size:.52rem;font-weight:600;padding:.32rem .7rem;border-radius:99px;background:var(--glass);border:1px solid var(--border);color:var(--t3);cursor:pointer;transition:all .15s;white-space:nowrap}
+.stab.on{background:var(--blue);border-color:transparent;color:#fff}
+.pill{display:inline-flex;align-items:center;font-size:.44rem;font-weight:700;border-radius:99px;padding:.14rem .44rem}
+.pill-green{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.pill-blue{background:rgba(37,99,235,.15);color:var(--blue);border:1px solid rgba(37,99,235,.25)}
+.pill-orange{background:rgba(245,158,11,.12);color:var(--orange);border:1px solid rgba(245,158,11,.2)}
+.pill-red{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.pill-gold{background:rgba(200,169,81,.12);color:var(--gold);border:1px solid rgba(200,169,81,.2)}
+.pill-teal{background:rgba(13,148,136,.12);color:var(--teal);border:1px solid rgba(13,148,136,.2)}
+.empty{text-align:center;padding:2.5rem 1.5rem}
+.empty-ico{font-size:3.2rem;margin-bottom:.6rem}
+.empty-t{font-size:.82rem;font-weight:700;color:var(--t1);margin-bottom:.3rem}
+.empty-s{font-size:.56rem;color:var(--t3);line-height:1.6}
+.spin{width:28px;height:28px;border:2.5px solid var(--bg3);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+#toast{position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(12px);background:var(--bg3);border:1px solid var(--border2);color:var(--t1);font-size:.56rem;font-weight:600;padding:.4rem 1.1rem;border-radius:99px;opacity:0;transition:all .22s cubic-bezier(.34,1.56,.64,1);pointer-events:none;z-index:999;white-space:nowrap}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.success{background:rgba(16,185,129,.2);color:var(--green);border-color:rgba(16,185,129,.3)}
+#toast.error{background:rgba(239,68,68,.18);color:var(--red);border-color:rgba(239,68,68,.3)}
+.panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(6px)}
+.panel-overlay.open{display:flex}
+.panel-sheet{width:100%;background:var(--bg1);border-radius:24px 24px 0 0;border-top:1px solid var(--border2);padding:0 0 env(safe-area-inset-bottom);max-height:92vh;display:flex;flex-direction:column;animation:slideUp .22s ease}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem .6rem;border-bottom:1px solid var(--border);flex-shrink:0}
+.panel-title{font-size:.88rem;font-weight:800;color:var(--t1)}
+.panel-close{width:32px;height:32px;border-radius:99px;background:var(--glass2);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--t3);cursor:pointer}
+.panel-body{overflow-y:auto;padding:.7rem .9rem 1.2rem;flex:1}
+.panel-body::-webkit-scrollbar{display:none}
+.more-grid{display:flex;flex-direction:column;gap:.3rem}
+.more-row{display:flex;align-items:center;gap:.65rem;background:var(--glass);border:1px solid var(--border);border-radius:var(--r-md);padding:.6rem .75rem;cursor:pointer;transition:all .15s;min-height:58px}
+.more-row:active{background:var(--glass2)}
+.more-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.more-t{font-size:.64rem;font-weight:700;color:var(--t1)}
+.more-s{font-size:.46rem;color:var(--t3);margin-top:.04rem}
+.more-arrow{margin-left:auto;font-size:.9rem;color:var(--t3)}
+#offline-banner{display:none;position:fixed;top:0;left:0;right:0;background:rgba(239,68,68,.95);padding:.4rem 1rem;text-align:center;z-index:1000;font-size:.52rem;font-weight:700;color:#fff}
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:none;align-items:flex-end}
+.confirm-overlay.open{display:flex}
+.confirm-sheet{width:100%;background:var(--bg1);border-radius:24px 24px 0 0;border-top:1px solid var(--border2);padding:1.2rem 1.1rem 2rem;animation:slideUp .2s ease}
+.confirm-amount{font-family:var(--f-mono);font-size:2.4rem;font-weight:900;color:var(--gold);text-align:center;margin:.4rem 0 .15rem}
+.confirm-to{font-size:.56rem;color:var(--t3);text-align:center;margin-bottom:.8rem}
+#first-launch{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:none;align-items:center;justify-content:center;padding:1.2rem}
+#first-launch.open{display:flex}
+.fl-card{background:var(--bg1);border:1px solid var(--border2);border-radius:20px;padding:1.4rem 1.2rem;max-width:340px;width:100%;text-align:center}
+.balance-hidden .bc-amount{filter:blur(8px);user-select:none}
+.balance-hidden .bc-sub{filter:blur(4px)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.15rem}
+.cal-cell{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.44rem;color:var(--t2);cursor:pointer}
+.cal-cell.today{background:var(--blue);color:#fff;font-weight:800}
+.cal-cell.has-event::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--gold)}
+.cal-hdr{font-size:.38rem;color:var(--t3);text-align:center;font-weight:700;padding-bottom:.2rem}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" style="display:flex;flex-direction:column;min-height:100vh;background:var(--bg0)">
+  <div class="login-stripe"></div>
+  <div class="login-hero">
+    <div style="margin-bottom:.8rem"><div style="width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#1565C0,#1E88E5,#1DE9B6);display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 0 32px rgba(21,101,192,.4)"><span style="font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-.05em">F</span></div></div>
+    <div class="login-title">Fin<span>Pi</span></div>
+    <div class="login-sub">Pi Financial Platform</div>
+    <div class="login-tags">
+      <span class="login-tag">&#x1F4B3; Payments</span>
+      <span class="login-tag">&#x1F510; Secure</span>
+      <span class="login-tag">&#x1F4CA; Budget</span>
+      <span class="login-tag">&#x1F3EA; Merchant</span>
+      <span class="login-tag">&#x1F9FE; Receipts</span>
+      <span class="login-tag">&#x1F916; AI</span>
+    </div>
+  </div>
+  <div class="login-cta">
+    <button class="btn-signin" id="loginBtn" onclick="piLogin()">
+      <span style="font-size:1.2rem">&#x03C0;</span>
+      <span id="signin-txt">Sign In with Pi</span>
+    </button>
+    <button class="btn-signin-guest" onclick="guestMode()">
+      <span>&#x1F464;</span> Continue as Guest
+    </button>
+    <div id="lmsg"></div>
+    <div class="login-foot">
+      Pi SDK &middot; Mainnet &middot; sandbox:false<br>
+      <a href="/legal/privacy-policy.html">Privacy Policy</a> &middot;
+      <a href="/legal/terms-of-service.html">Terms of Service</a><br>
+      &copy; 2026 FinPi &middot; Abdullahi Bashir Abubakar
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <div id="offline-banner">&#x1F4E1; No internet connection</div>
+  <div id="topbar">
+    <div class="tb-left" style="display:flex;align-items:center;gap:.5rem">
+      <div class="tb-logo" style="display:flex;align-items:center;gap:.3rem">
+        <span style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#1565C0,#1DE9B6);display:inline-flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:900;color:#fff;flex-shrink:0">F</span>Fin<span>Pi</span>
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-btn" id="notif-btn" onclick="openNotifications()">&#x1F514;</div>
+      <div class="tb-avatar" id="tb-avatar" onclick="goTab('profile',document.querySelectorAll('.nb')[4])">F</div>
+    </div>
+  </div>
+  <div id="main">
+    <div class="scr on" id="scr-home"><div class="scroll" id="home-scroll"><div id="home-body"></div></div></div>
+    <div class="scr" id="scr-wallet">
+      <div class="sbar"><div><div class="sbar-t">Wallet</div><div class="sbar-s">Pi balance &amp; tools</div></div></div>
+      <div class="scroll"><div id="wallet-body"></div></div>
+    </div>
+    <div class="scr" id="scr-payments">
+      <div class="sbar"><div><div class="sbar-t">Payments</div><div class="sbar-s">Send, receive &amp; request Pi</div></div></div>
+      <div class="stabs" id="pay-tabs">
+        <div class="stab on" onclick="payTab('send',this)">&#x1F4B8; Send</div>
+        <div class="stab" onclick="payTab('receive',this)">&#x1F4E5; Receive</div>
+        <div class="stab" onclick="payTab('qr',this)">&#x1F4F1; QR</div>
+        <div class="stab" onclick="payTab('request',this)">&#x1F4CB; Request</div>
+        <div class="stab" onclick="payTab('contacts',this)">&#x1F4D2; Contacts</div>
+      </div>
+      <div class="scroll"><div id="pay-body"></div></div>
+    </div>
+    <div class="scr" id="scr-history">
+      <div class="sbar">
+        <div><div class="sbar-t">History</div><div class="sbar-s">All transactions</div></div>
+        <div class="sbar-act"><div class="sbar-btn" onclick="exportTx()">&#x1F4C4;</div></div>
+      </div>
+      <div style="padding:.3rem .75rem;flex-shrink:0"><input class="finput" placeholder="&#x1F50D; Search..." oninput="filterTx(this.value)" style="font-size:.58rem"></div>
+      <div class="stabs" id="tx-tabs">
+        <div class="stab on" onclick="txTabFn('all',this)">All</div>
+        <div class="stab" onclick="txTabFn('sent',this)">Sent</div>
+        <div class="stab" onclick="txTabFn('received',this)">Received</div>
+      </div>
+      <div class="scroll"><div id="hist-body"></div></div>
+    </div>
+    <div class="scr" id="scr-profile">
+      <div class="sbar"><div><div class="sbar-t">Profile</div><div class="sbar-s">Settings &amp; more</div></div></div>
+      <div class="scroll"><div id="profile-body"></div></div>
+    </div>
+  </div>
+  <nav id="nav">
+    <div class="nb on" onclick="goTab('home',this)"><div class="nb-ico">&#x1F3E0;</div><div class="nb-lbl">Home</div></div>
+    <div class="nb" onclick="goTab('wallet',this)"><div class="nb-ico">&#x1F4B0;</div><div class="nb-lbl">Wallet</div></div>
+    <div class="nb" onclick="goTab('payments',this)"><div class="nb-ico">&#x1F4B3;</div><div class="nb-lbl">Pay</div></div>
+    <div class="nb" onclick="goTab('history',this)"><div class="nb-ico">&#x1F4CB;</div><div class="nb-lbl">History</div></div>
+    <div class="nb" onclick="goTab('profile',this)"><div class="nb-ico">&#x1F464;</div><div class="nb-lbl">Profile</div></div>
+  </nav>
+  <div class="panel-overlay" id="panel-overlay" onclick="if(event.target===this)closePanel()">
+    <div class="panel-sheet">
+      <div class="panel-head">
+        <div class="panel-title" id="panel-title">Panel</div>
+        <div class="panel-close" onclick="closePanel()">&#x2715;</div>
+      </div>
+      <div class="panel-body" id="panel-body"></div>
+    </div>
+  </div>
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-sheet">
+      <div style="font-size:.46rem;font-weight:800;color:var(--t3);text-align:center;margin-bottom:.3rem;letter-spacing:.12em;text-transform:uppercase">Confirm Payment</div>
+      <div class="confirm-amount" id="co-amount">&#x03C0; 0.00</div>
+      <div class="confirm-to" id="co-to">To: &mdash;</div>
+      <div style="background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .7rem;margin-bottom:.7rem">
+        <div style="display:flex;justify-content:space-between;padding:.2rem 0;font-size:.52rem"><span style="color:var(--t3)">Memo</span><span style="color:var(--t1)" id="co-memo">&mdash;</span></div>
+        <div style="display:flex;justify-content:space-between;padding:.2rem 0;font-size:.52rem;border-top:1px solid var(--border)"><span style="color:var(--t3)">Network</span><span style="color:var(--teal)">Pi Mainnet</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <button class="btn btn-outline" onclick="closeConfirm()">Cancel</button>
+        <button class="btn btn-primary" onclick="executeConfirmedPayment()">Confirm</button>
+      </div>
+    </div>
+  </div>
+  <div id="first-launch">
+    <div class="fl-card">
+      <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#1565C0,#1E88E5,#1DE9B6);display:flex;align-items:center;justify-content:center;margin:0 auto .5rem;box-shadow:0 0 20px rgba(21,101,192,.4)"><span style="font-size:1.5rem;font-weight:900;color:#fff">F</span></div>
+      <div style="font-size:1rem;font-weight:900;color:var(--t1);margin-bottom:.3rem">Welcome to FinPi</div>
+      <div style="font-size:.52rem;color:var(--t3);line-height:1.7;margin-bottom:.8rem">FinPi stores your data locally on this device. No personal financial data is uploaded externally.</div>
+      <button class="btn btn-primary" onclick="dismissFirstLaunch()">Get Started</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════
+   GLOBAL ERROR LOGGING — Copa exact
+══════════════════════════════════════ */
+window.onerror = function(message, source, line, column, error) {
+  console.error('[GLOBAL ERROR]');
+  console.error('Message:', message);
+  console.error('Source:', source);
+  console.error('Line:', line);
+  console.error('Column:', column);
+  console.error('Error:', error);
+  return true;
+};
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('[PROMISE ERROR]', event.reason);
+});
+
+/* Global click detection — temporary debug */
+document.addEventListener('click', function(e) {
+  console.log('[CLICK]', e.target.tagName, e.target.id || '(no id)', e.target.className || '(no class)');
+});
+document.addEventListener('touchstart', function(e) {
+  console.log('[TOUCH]', e.target.tagName, e.target.id || '(no id)');
+}, {passive: true});
+
+console.log('[1] Script executing — top of JS block');
+console.log('[2] Pi SDK available at script start:', typeof Pi !== 'undefined');
+
+/* GLOBALS */
+var piUser=null,isGuest=false;
+var txLog=[],budgets=[],goals=[],contacts=[],trustedAddrs=[],products=[],recurringList=[];
+var _piPrice=null,_txTab='all',_payTab='send';
+var _payLimit=0,_txPinEnabled=false,_txPin='';
+var _balanceHidden=false,_sessionTimeout=1800000,_sessionTimer=null,_locked=false;
+var _pendingPayment=null;
+var _APPROVE='/approve',_COMPLETE='/complete';
+
+/* ══ COPA EXACT piLogin ══ */
+function piLogin() {
+  console.log('[CLICK] Sign In with Pi');
+  console.log('[8] piLogin() entered');
+  var btn     = document.getElementById('loginBtn');
+  var btnText = document.getElementById('signin-txt');
+  var lmsg    = document.getElementById('lmsg');
+  console.log('[9] btn:', !!btn, '| btnText:', !!btnText, '| lmsg:', !!lmsg);
+  console.log('[10] Pi SDK:', typeof Pi);
+  if (btn)     { btn.disabled = true; btn.style.opacity = '0.7'; }
+  if (btnText) btnText.textContent = 'Authenticating...';
+  if (lmsg)    lmsg.textContent = 'Connecting to Pi Network...';
+  if (typeof Pi === 'undefined') {
+    console.log('[11] Pi SDK not found — demo mode');
+    setTimeout(function() {
+      piUser = { username: 'Pioneer', uid: 'demo' };
+      localStorage.setItem('fp_user', JSON.stringify(piUser));
+      launchApp();
+      toast('Demo mode — open in Pi Browser!');
+    }, 500);
+    return;
+  }
+  console.log('[11] Pi SDK found — calling Pi.init()');
+  Pi.init({ version: '2.0', sandbox: false });
+  console.log('[12] Pi.init() done — calling Pi.authenticate()');
+  Pi.authenticate(['username', 'payments'], onIncompletePayment)
+    .then(function(auth) {
+      console.log('[13] Authentication SUCCESS — user:', auth.user.username);
+      piUser  = auth.user;
+      isGuest = false;
+      localStorage.setItem('fp_user', JSON.stringify(piUser));
+      launchApp();
+    })
+    .catch(function(err) {
+      console.error('[13] Authentication FAILED:', err);
+      console.error('[FinPi] Auth error:', err);
+      if (btn)     { btn.disabled = false; btn.style.opacity = '1'; }
+      if (btnText) btnText.textContent = 'Sign In with Pi';
+      if (lmsg)    lmsg.textContent = 'Try again';
+    });
+}
+
+
+function onIncompletePayment(payment){
+  if(!payment)return;
+  var txid='';
+  try{txid=(payment.transaction&&payment.transaction.txid)?payment.transaction.txid:'';}catch(e){}
+  var pid=payment.identifier;
+  if(txid){
+    fetch(_COMPLETE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paymentId:pid,txid:txid})})
+      .then(function(r){return r.json();}).catch(function(){});
+  }
+}
+
+function guestMode(){
+  console.log('[CLICK] Continue as Guest');
+  console.log('[GUEST] guestMode() entered');
+  piUser={username:'Guest',uid:'guest'};
+  isGuest=true;
+  launchApp();
+}
+
+/* ══ COPA EXACT launchApp ══ */
+function launchApp(){
+  console.log('[14] launchApp() entered');
+  var loginEl=document.getElementById('login');
+  var appEl=document.getElementById('app');
+  console.log('[15] login el:', !!loginEl, '| app el:', !!appEl);
+  if(loginEl)loginEl.style.display='none';
+  if(appEl){appEl.style.display='flex';appEl.style.flexDirection='column';appEl.style.height='100vh';}
+  var uname=piUser?(piUser.username||'Pioneer'):'Pioneer';
+  var av=document.getElementById('tb-avatar');
+  if(av)av.textContent=uname[0].toUpperCase();
+  try{txLog=JSON.parse(localStorage.getItem('fp_tx')||'[]');}catch(e){txLog=[];}
+  try{budgets=JSON.parse(localStorage.getItem('fp_budgets')||'[]');}catch(e){budgets=[];}
+  try{goals=JSON.parse(localStorage.getItem('fp_goals')||'[]');}catch(e){goals=[];}
+  try{contacts=JSON.parse(localStorage.getItem('fp_contacts')||'[]');}catch(e){contacts=[];}
+  try{trustedAddrs=JSON.parse(localStorage.getItem('fp_trusted')||'[]');}catch(e){trustedAddrs=[];}
+  try{products=JSON.parse(localStorage.getItem('fp_products')||'[]');}catch(e){products=[];}
+  try{recurringList=JSON.parse(localStorage.getItem('fp_recurring')||'[]');}catch(e){recurringList=[];}
+  try{_payLimit=parseFloat(localStorage.getItem('fp_pay_limit')||'0');}catch(e){}
+  try{_txPinEnabled=localStorage.getItem('fp_pin_enabled')==='1';}catch(e){}
+  try{_txPin=localStorage.getItem('fp_pin_hash')||'';}catch(e){}
+  try{_balanceHidden=localStorage.getItem('fp_balance_hidden')==='1';}catch(e){}
+  renderHome();renderWallet();renderPayments();renderHistory('all');renderProfile();
+  registerSessionListeners();
+  setTimeout(function(){
+    initPullToRefresh(document.getElementById('home-scroll'),function(){renderHome();toast('Refreshed');});
+  },300);
+  if(!localStorage.getItem('fp_launched')){
+    document.getElementById('first-launch').classList.add('open');
+  }
+  if(!isGuest){toast('Welcome @'+uname+' 🎉');haptic('success');}
+  recordLogin();
+  initAppearance();
+}
+
+/* ══ COPA EXACT window.load ══ */
+window.addEventListener('load', function() {
+  console.log('[3] window.load fired');
+  console.log('[4] Pi SDK at load:', typeof Pi !== 'undefined');
+  console.log('[5] loginBtn exists:', !!document.getElementById('loginBtn'));
+  console.log('[6] signin-txt exists:', !!document.getElementById('signin-txt'));
+  try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function() {}); } catch(e) {}
+  window.addEventListener('online',  function() { document.getElementById('offline-banner').style.display = 'none'; });
+  window.addEventListener('offline', function() { document.getElementById('offline-banner').style.display = 'block'; });
+  console.log('[7] Calling piLogin()');
+  piLogin();
+});
+
+
+function dismissFirstLaunch(){localStorage.setItem('fp_launched','1');document.getElementById('first-launch').classList.remove('open');}
+
+/* NAV */
+function goTab(tab,btn){
+  console.log('[NAVIGATION]', tab);
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on');});
+  var el=document.getElementById('scr-'+tab);if(el)el.classList.add('on');
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
+  if(btn)btn.classList.add('on');
+}
+function payTab(tab,btn){
+  _payTab=tab;
+  document.querySelectorAll('#pay-tabs .stab').forEach(function(b){b.classList.remove('on');});
+  if(btn)btn.classList.add('on');
+  renderPayments();
+}
+function txTabFn(tab,btn){
+  _txTab=tab;
+  document.querySelectorAll('#tx-tabs .stab').forEach(function(b){b.classList.remove('on');});
+  if(btn)btn.classList.add('on');
+  renderHistory(tab);
+}
+
+/* PANEL */
+function openPanel(title,html){
+  console.log('[OPEN PANEL]', title);
+  document.getElementById('panel-title').textContent=title;
+  document.getElementById('panel-body').innerHTML=html;
+  document.getElementById('panel-overlay').classList.add('open');
+}
+function closePanel(){console.log('[CLOSE PANEL]');document.getElementById('panel-overlay').classList.remove('open');}
+
+/* TOAST */
+function toast(msg,type){
+  var el=document.getElementById('toast');
+  el.textContent=msg;el.className='on'+(type?' '+type:'');
+  clearTimeout(el._t);el._t=setTimeout(function(){el.className='';},2800);
+}
+
+/* HAPTIC */
+function haptic(type){
+  if(!navigator.vibrate)return;
+  if(type==='light')navigator.vibrate(30);
+  if(type==='success')navigator.vibrate([30,30,80]);
+  if(type==='error')navigator.vibrate([80,30,80,30,80]);
+}
+
+/* PULL TO REFRESH */
+var _ptr={startY:0,pulling:false};
+function initPullToRefresh(el,cb){
+  if(!el)return;
+  el.addEventListener('touchstart',function(e){if(el.scrollTop===0){_ptr.startY=e.touches[0].clientY;_ptr.pulling=true;}},{passive:true});
+  el.addEventListener('touchmove',function(e){if(!_ptr.pulling)return;},{passive:true});
+  el.addEventListener('touchend',function(){if(!_ptr.pulling)return;_ptr.pulling=false;});
+}
+
+/* SESSION */
+function registerSessionListeners(){
+  document.addEventListener('touchstart',resetSessionTimer,{passive:true});
+  document.addEventListener('click',resetSessionTimer);
+}
+function resetSessionTimer(){
+  if(_sessionTimeout<=0)return;
+  clearTimeout(_sessionTimer);
+  _sessionTimer=setTimeout(function(){if(piUser&&!_locked)lockSession();},_sessionTimeout);
+}
+function lockSession(){_locked=true;openPanel('Session Locked','<div style="text-align:center;padding:1rem"><div style="font-size:3rem;margin-bottom:.6rem">&#x1F512;</div><div style="font-size:.88rem;font-weight:800;color:var(--t1);margin-bottom:.3rem">Session Locked</div><button class="btn btn-primary" onclick="unlockSession()">&#x1F513; Unlock</button></div>');}
+function unlockSession(){_locked=false;closePanel();resetSessionTimer();toast('Unlocked','success');}
+
+/* FORMAT */
+function fmtDate(d){
+  if(!d)return'';
+  try{var dt=new Date(d);return dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' '+dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}catch(e){return d;}
+}
+function fmtAmt(n){return parseFloat(n||0).toFixed(6);}
+
+/* ADD TX */
+function addTx(type,amount,note,status,meta){
+  var m=meta||{};
+  var receiptNo='FP-'+Math.random().toString(36).slice(2,10).toUpperCase();
+  var tx={type:type,amount:amount,note:note||'Pi Transfer',status:status||'completed',date:new Date().toISOString(),receiptNo:receiptNo,txid:m.txid||'',sender:piUser?piUser.username:'',recipient:m.recipient||'',recipientName:m.recipientName||'',title:m.title||note||'Pi Transfer',category:m.category||'',narration:m.narration||''};
+  if(_piPrice&&_piPrice.usd)tx.usdRef=(parseFloat(amount)*_piPrice.usd).toFixed(4);
+  txLog.unshift(tx);
+  if(txLog.length>200)txLog.pop();
+  localStorage.setItem('fp_tx',JSON.stringify(txLog));
+  checkBudgetAlerts(parseFloat(amount)||0,m.category||'Transfer');
+  if(type==='sent')addNotification('payment','Payment Sent','π '+parseFloat(amount).toFixed(2)+' sent'+(m.recipient?' to '+m.recipient:'')+'.');
+  else if(type==='received')addNotification('payment','Payment Received','π '+parseFloat(amount).toFixed(2)+' received.');
+}
+function checkBudgetAlerts(amt,cat){
+  budgets.forEach(function(b,i){
+    if(!b.name)return;
+    var prev=Math.round((b.spent||0)/b.limit*100);
+    var ns=(b.spent||0)+amt;var pct=Math.round(ns/b.limit*100);
+    if(pct>=100&&prev<100)toast('\u26A0\uFE0F Budget "'+b.name+'" full!','error');
+    else if(pct>=90&&prev<90)toast('Budget "'+b.name+'" at 90%');
+    else if(pct>=80&&prev<80)toast('Budget "'+b.name+'" at 80%');
+    budgets[i].spent=ns;
+  });
+  localStorage.setItem('fp_budgets',JSON.stringify(budgets));
+}
+
+/* TX ROW */
+function buildTxRow(tx,idx){
+  var icon=tx.type==='sent'?'&#x1F4B8;':tx.type==='received'?'&#x1F4E5;':'&#x23F3;';
+  var cls=tx.type==='sent'?'sent':tx.type==='received'?'recv':'pend';
+  var sign=tx.type==='sent'?'&minus;':tx.type==='received'?'+':'';
+  var label=tx.title||tx.note||'Pi Transfer';
+  var cat=tx.category?'<span style="background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.2);border-radius:99px;padding:.04rem .28rem;font-size:.38rem;color:var(--blue);margin-right:.28rem">'+tx.category+'</span>':'';
+  return '<div class="tx-row" onclick="openReceipt('+idx+')">'
+    +'<div class="tx-ico '+cls+'">'+icon+'</div>'
+    +'<div class="tx-info"><div class="tx-name">'+label+'</div><div class="tx-meta">'+cat+fmtDate(tx.date)+'</div></div>'
+    +'<div class="tx-amount"><div class="tx-pi '+cls+'">'+sign+'&#x03C0; '+parseFloat(tx.amount).toFixed(2)+'</div>'
+    +'<span class="pill pill-'+(tx.status==='completed'?'green':tx.status==='pending'?'orange':'blue')+'">'+( tx.status||'completed')+'</span></div></div>';
+}
+
+/* RECEIPT */
+function openReceipt(idx){
+  var tx=txLog[idx];if(!tx)return;
+  var fields=[['Receipt No.',tx.receiptNo||'\u2014'],['Title',tx.title||tx.note||'Pi Transfer'],['Category',tx.category||'\u2014'],['Sender','@'+(tx.sender||'\u2014')],['Recipient',tx.recipient||'\u2014'],['Recipient Name',tx.recipientName||'\u2014'],['Narration',tx.narration||'\u2014'],['Date',fmtDate(tx.date)],['Payment Method','Pi SDK \xb7 Pi Network Mainnet'],['Transaction ID',tx.txid||'Pending']];
+  var usd=tx.usdRef?'<div style="display:flex;justify-content:space-between;padding:.22rem 0;font-size:.5rem;border-top:1px solid var(--border)"><span style="color:var(--t3)">Reference Value</span><span style="color:var(--t2)">$'+tx.usdRef+' USD</span></div>':'';
+  var html='<div style="background:var(--grad-card);border:1px solid rgba(37,99,235,.25);border-radius:var(--r-lg);padding:.9rem;margin-bottom:.6rem">'
+    +'<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem"><div style="font-size:1.4rem;font-weight:900;color:var(--t1)">Fin<span style="background:var(--grad-blue);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Pi</span></div><span class="pill pill-'+(tx.status==='completed'?'green':'orange')+'">'+( tx.status||'completed').toUpperCase()+'</span></div>'
+    +'<div style="font-family:var(--f-mono);font-size:1.8rem;font-weight:800;color:var(--gold)">&#x03C0; '+fmtAmt(tx.amount)+'</div>'
+    +(tx.usdRef?'<div style="font-size:.44rem;color:var(--t3)">\u2248 $'+tx.usdRef+' USD \xb7 Reference only</div>':'')+'</div>'
+    +'<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .65rem;margin-bottom:.5rem">'
+    +fields.map(function(r){return '<div style="display:flex;justify-content:space-between;padding:.22rem 0;font-size:.5rem;border-bottom:1px solid var(--border)"><span style="color:var(--t3)">'+r[0]+'</span><span style="color:var(--t1);text-align:right;max-width:55%;word-break:break-all">'+r[1]+'</span></div>';}).join('')
+    +usd+'</div>'
+    +'<div style="font-size:.4rem;color:var(--t4);text-align:center;margin-bottom:.6rem">FinPi stores receipt metadata locally. This does not replace the Pi blockchain record.</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.35rem">'
+    +'<button class="btn btn-outline btn-sm" onclick="shareReceipt('+idx+')">&#x1F4E4; Share</button>'
+    +'<button class="btn btn-outline btn-sm" onclick="copyReceipt('+idx+')">&#x1F4CB; Copy</button>'
+    +'<button class="btn btn-outline btn-sm" onclick="printReceipt('+idx+')">&#x1F5A8; Print</button>'
+    +'</div>';
+  openPanel('Receipt',html);
+}
+function getReceiptText(tx){return'=== FinPi Receipt ===\nReceipt No.: '+(tx.receiptNo||'\u2014')+'\nTitle: '+(tx.title||tx.note||'Pi Transfer')+'\nCategory: '+(tx.category||'\u2014')+'\nSender: @'+(tx.sender||'\u2014')+'\nRecipient: '+(tx.recipient||'\u2014')+'\nRecipient Name: '+(tx.recipientName||'\u2014')+'\nAmount: \u03C0 '+fmtAmt(tx.amount)+(tx.usdRef?'\nReference: $'+tx.usdRef+' USD':'')+'\nNarration: '+(tx.narration||'\u2014')+'\nStatus: '+(tx.status||'completed').toUpperCase()+'\nDate: '+fmtDate(tx.date)+'\nPayment Method: Pi SDK \xb7 Pi Network Mainnet\nTXID: '+(tx.txid||'Pending')+'\nFinPi \xb7 Finance. Trust. Pi.';}
+function copyReceipt(idx){var tx=txLog[idx];if(!tx)return;if(navigator.clipboard)navigator.clipboard.writeText(getReceiptText(tx)).then(function(){toast('Copied','success');});else toast('Copy not supported');}
+function shareReceipt(idx){var tx=txLog[idx];if(!tx)return;if(navigator.share)navigator.share({title:'FinPi Receipt',text:getReceiptText(tx)}).catch(function(){});else copyReceipt(idx);}
+function printReceipt(idx){var tx=txLog[idx];if(!tx)return;var w=window.open('','_blank');if(!w)return;w.document.write('<html><head><title>FinPi Receipt</title></head><body><pre>'+getReceiptText(tx)+'</pre><button onclick="window.print()">Print</button></body></html>');w.document.close();}
+
+/* RENDER HOME */
+function renderHome(){
+  console.log('[RENDER] renderHome()');
+  var el=document.getElementById('home-body');if(!el)return;
+  var uname=piUser?(piUser.username||'Pioneer'):'Pioneer';
+  var bal=txLog.reduce(function(acc,tx){return acc+(tx.type==='received'?1:-1)*parseFloat(tx.amount||0);},0);
+  var usdRef=_piPrice&&_piPrice.usd?'<div class="bc-sub">\u2248 $'+(Math.max(0,bal)*_piPrice.usd).toFixed(4)+' USD \xb7 Reference only</div>':'<div class="bc-sub">Loading price...</div>';
+  el.innerHTML=''
+    +'<div class="balance-card" id="balance-card">'
+      +'<div class="bc-top"><div class="bc-label">Pi Balance</div>'
+        +'<div style="display:flex;align-items:center;gap:.4rem">'
+          +'<div onclick="toggleBalance()" style="cursor:pointer;font-size:1rem;opacity:.6" id="eye-btn">&#x1F441;</div>'
+          +'<div class="bc-status"><div class="bc-dot"></div><div class="bc-st-txt">Mainnet</div></div>'
+        +'</div></div>'
+      +'<div class="bc-amount">&#x03C0; '+Math.max(0,bal).toFixed(2)+'</div>'
+      +usdRef
+      +'<div class="bc-actions">'
+        +'<div class="bc-action primary" onclick="goTab(\'payments\',document.querySelectorAll(\'.nb\')[2]);payTab(\'send\',document.querySelectorAll(\'#pay-tabs .stab\')[0])"><div class="bca-ico">&#x1F4B8;</div><div class="bca-lbl">Send Pi</div></div>'
+        +'<div class="bc-action secondary" onclick="goTab(\'payments\',document.querySelectorAll(\'.nb\')[2]);payTab(\'receive\',document.querySelectorAll(\'#pay-tabs .stab\')[1])"><div class="bca-ico">&#x1F4E5;</div><div class="bca-lbl">Receive</div></div>'
+      +'</div>'
+    +'</div>'
+    +'<div class="qa-grid">'
+      +'<div class="qa-btn" onclick="openConverter()"><div class="qa-ico" style="background:rgba(37,99,235,.15)">&#x1F4B1;</div><div class="qa-lbl">Converter</div></div>'
+      +'<div class="qa-btn" onclick="openCalc()"><div class="qa-ico" style="background:rgba(13,148,136,.15)">&#x1F9EE;</div><div class="qa-lbl">Calculator</div></div>'
+      +'<div class="qa-btn" onclick="openAnalytics()"><div class="qa-ico" style="background:rgba(200,169,81,.15)">&#x1F4CA;</div><div class="qa-lbl">Analytics</div></div>'
+      +'<div class="qa-btn" onclick="openQRCenter()"><div class="qa-ico" style="background:rgba(16,185,129,.15)">&#x1F4F1;</div><div class="qa-lbl">QR Center</div></div>'
+    +'</div>'
+    +'<div class="sec-lbl">Recent Transactions<span class="sec-lbl-action" onclick="goTab(\'history\',document.querySelectorAll(\'.nb\')[3])">See All</span></div>'
+    +(txLog.slice(0,5).length?txLog.slice(0,5).map(function(tx,i){return buildTxRow(tx,i);}).join(''):'<div class="empty"><div class="empty-ico">&#x1F4B0;</div><div class="empty-t">No transactions yet</div><div class="empty-s">Send or receive Pi to get started</div></div>');
+  if(_balanceHidden)document.getElementById('balance-card').classList.add('balance-hidden');
+  fetchPiPrice();
+}
+function toggleBalance(){_balanceHidden=!_balanceHidden;localStorage.setItem('fp_balance_hidden',_balanceHidden?'1':'0');var c=document.getElementById('balance-card');if(c)c.classList.toggle('balance-hidden',_balanceHidden);var e=document.getElementById('eye-btn');if(e)e.innerHTML=_balanceHidden?'&#x1F648;':'&#x1F441;';toast(_balanceHidden?'Balance hidden':'Balance visible');}
+
+/* PRICE */
+var _priceTimer=null;
+function fetchPiPrice(){
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids=pi-network&vs_currencies=usd,eur,gbp,sar,aed,ngn&include_24hr_change=true')
+    .then(function(r){return r.json();}).then(function(d){if(d&&d['pi-network'])_piPrice=d['pi-network'];}).catch(function(){});
+  clearTimeout(_priceTimer);_priceTimer=setTimeout(fetchPiPrice,60000);
+}
+
+/* RENDER WALLET */
+function renderWallet(){
+  var el=document.getElementById('wallet-body');if(!el)return;
+  var addr=piUser&&piUser.wallet_address?piUser.wallet_address:'Connect Pi Wallet';
+  el.innerHTML='<div class="card"><div style="font-size:.52rem;font-weight:700;color:var(--t3);margin-bottom:.3rem;letter-spacing:.08em;text-transform:uppercase">Pi Wallet Address</div>'
+    +'<div style="font-family:var(--f-mono);font-size:.5rem;color:var(--t1);word-break:break-all;margin-bottom:.4rem">'+addr+'</div>'
+    +'<button class="btn btn-outline btn-sm" style="width:auto" onclick="if(navigator.clipboard)navigator.clipboard.writeText(\''+addr+'\').then(function(){toast(\'Copied\',\'success\')})">&#x1F4CB; Copy</button></div>'
+    +'<div class="sec-lbl">Business Tools</div><div class="util-grid">'
+    +'<div class="util-card" onclick="openBusinessProfile()"><div class="util-ico">&#x1F3E2;</div><div class="util-name">Business Profile</div><div class="util-desc">Name, logo, Pi address</div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openProductCatalogue()"><div class="util-ico">&#x1F4E6;</div><div class="util-name">Products</div><div class="util-desc">List items with Pi prices</div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openInvoice()"><div class="util-ico">&#x1F9FE;</div><div class="util-name">Invoice</div><div class="util-desc">Generate payment requests</div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openRevenueSummary()"><div class="util-ico">&#x1F4C9;</div><div class="util-name">Revenue</div><div class="util-desc">Income summary</div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openPOSMode()"><div class="util-ico">&#x1F5A5;</div><div class="util-name">POS Mode</div><div class="util-desc">Accept Pi in-store</div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openRecurring()"><div class="util-ico">&#x1F501;</div><div class="util-name">Recurring</div><div class="util-desc">Schedule invoices</div><span class="util-badge badge-live">Live</span></div>'
+    +'</div><div class="sec-lbl">Finance Tools</div><div class="util-grid">'
+    +'<div class="util-card" onclick="openConverter()"><div class="util-ico">&#x1F4B1;</div><div class="util-name">Converter</div><div class="util-desc">Live Pi price reference</div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openCalc()"><div class="util-ico">&#x1F9EE;</div><div class="util-name">Calculator</div><div class="util-desc">Pi amount calculator</div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openExpenseCategories()"><div class="util-ico">&#x1F3F7;</div><div class="util-name">Categories</div><div class="util-desc">Spending breakdown</div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openMonthlySummary()"><div class="util-ico">&#x1F4CA;</div><div class="util-name">Monthly Chart</div><div class="util-desc">6-month spending</div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openFinancialCalendar()"><div class="util-ico">&#x1F4C5;</div><div class="util-name">Calendar</div><div class="util-desc">Reminders &amp; events</div><span class="util-badge badge-live">Live</span></div>'
+    +'<div class="util-card" onclick="openAIPanel()"><div class="util-ico">&#x1F916;</div><div class="util-name">AI Assistant</div><div class="util-desc">Financial education</div><span class="util-badge badge-live">Live</span></div>'
+    +'</div>';
+}
+
+/* RENDER PAYMENTS */
+function renderPayments(){
+  var el=document.getElementById('pay-body');if(!el)return;
+  if(_payTab==='send')el.innerHTML=buildSendHTML();
+  else if(_payTab==='receive')el.innerHTML=buildReceiveHTML();
+  else if(_payTab==='qr')el.innerHTML=buildQRHTML();
+  else if(_payTab==='request')el.innerHTML=buildRequestHTML();
+  else if(_payTab==='contacts')el.innerHTML=buildContactsHTML();
+}
+
+function buildSendHTML(){
+  var ctcts=contacts.length?'<div style="display:flex;gap:.3rem;overflow-x:auto;padding-bottom:.3rem;margin-bottom:.4rem;scrollbar-width:none">'+contacts.slice(0,8).map(function(c){return '<div onclick="(function(){var t=document.getElementById(\'s-to\');var n=document.getElementById(\'s-rname\');if(t)t.value=\''+c.addr+'\';if(n)n.value=\''+c.name+'\';})();" style="flex-shrink:0;background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.2);border-radius:99px;padding:.18rem .52rem;font-size:.44rem;font-weight:600;color:var(--blue);cursor:pointer;white-space:nowrap">'+c.name+'</div>';}).join('')+'</div>':'';
+  var cats=['Payment','School Fees','Rent','Salary','Invoice','Product Purchase','Service','Donation','Transfer','Business','Food','Transport','Health','Entertainment','Other'];
+  return '<div style="padding:.7rem .75rem">'+(contacts.length?'<div style="font-size:.42rem;color:var(--t3);margin-bottom:.18rem;font-weight:600">QUICK SELECT</div>'+ctcts:'')
+    +'<div class="finput-wrap"><label class="finput-label">Recipient Pi Username or Address</label><input class="finput" id="s-to" placeholder="@username or wallet address" autocomplete="off"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Recipient Name <span style="color:var(--t4)">(optional)</span></label><input class="finput" id="s-rname" placeholder="e.g. John Musa"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Payment Title</label><input class="finput" id="s-title" placeholder="e.g. School Fees, Invoice #1025"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Amount (&#x03C0;)</label><div class="finput-prefix"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="s-amt" type="number" step="0.01" min="0.01" placeholder="0.00" oninput="(function(){var a=parseFloat(document.getElementById(\'s-amt\').value)||0;var r=document.getElementById(\'s-ref\');if(r&&_piPrice&&_piPrice.usd&&a>0)r.textContent=\'\u2248 $\'+(a*_piPrice.usd).toFixed(4)+\' USD \xb7 Reference only\';else if(r)r.textContent=\'\';})()" ></div><div id="s-ref" style="font-size:.4rem;color:var(--t4);margin-top:.1rem"></div></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Category</label><select class="finput" id="s-cat" style="cursor:pointer"><option value="">Select category...</option>'+cats.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('')+'</select></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Narration <span style="color:var(--t4)">(optional)</span></label><textarea class="finput" id="s-narr" rows="2" placeholder="Additional details..." style="resize:none;line-height:1.5"></textarea></div>'
+    +'<div id="send-status" style="font-size:.5rem;min-height:.8rem;margin-bottom:.3rem;color:var(--t3)"></div>'
+    +'<button class="btn btn-primary" id="send-btn" onclick="doSendPi()"><span>&#x03C0;</span> Send Pi</button>'
+    +'<div style="font-size:.42rem;color:var(--t4);text-align:center;margin-top:.4rem">Pi Wallet will open to confirm \xb7 Pi Mainnet</div></div>';
+}
+
+function buildReceiveHTML(){
+  var uname=piUser?(piUser.username||''):'';
+  var addr=piUser&&piUser.wallet_address?piUser.wallet_address:'';
+  return '<div style="padding:.7rem .75rem;text-align:center"><div style="font-size:.62rem;font-weight:700;color:var(--t1);margin-bottom:.5rem">Your Pi Address</div><div style="font-family:var(--f-mono);font-size:.5rem;color:var(--t2);word-break:break-all;background:var(--bg0);border-radius:var(--r-sm);padding:.6rem;margin-bottom:.5rem">'+(addr||'@'+uname)+'</div><button class="btn btn-primary" onclick="if(navigator.clipboard)navigator.clipboard.writeText(\''+(addr||uname)+'\').then(function(){toast(\'Copied\',\'success\')})">&#x1F4CB; Copy Address</button></div>';
+}
+
+function buildQRHTML(){
+  var uname=piUser?(piUser.username||'Pioneer'):'Pioneer';
+  return '<div style="padding:.7rem .75rem;text-align:center"><div style="font-size:.62rem;font-weight:700;color:var(--t1);margin-bottom:.6rem">Your FinPi QR Code</div><div style="background:#fff;border-radius:16px;padding:1rem;display:inline-block;margin-bottom:.5rem"><div style="width:140px;height:140px;background:var(--grad-blue);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff"><div style="font-size:1rem;font-weight:900">Fin<span style="color:var(--gold)">Pi</span></div><div style="font-size:.44rem;margin-top:.2rem;opacity:.8">@'+uname+'</div></div></div><div style="font-size:.5rem;color:var(--t3);margin-bottom:.5rem">Scan to pay @'+uname+'</div><button class="btn btn-outline" onclick="if(navigator.share)navigator.share({title:\'Pay me on FinPi\',text:\'Pay @'+uname+' on FinPi\',url:\'finpi.pi/pay/'+uname+'\'})">&#x1F4E4; Share QR</button></div>';
+}
+
+function buildRequestHTML(){
+  return '<div style="padding:.7rem .75rem"><div class="finput-wrap"><label class="finput-label">Amount (&#x03C0;)</label><div class="finput-prefix"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="req-amt" type="number" step="0.01" placeholder="0.00"></div></div><div class="finput-wrap"><label class="finput-label">Request Title</label><input class="finput" id="req-title" placeholder="e.g. Invoice #1025"></div><button class="btn btn-primary" onclick="genRequest()">&#x1F517; Generate Request Link</button><div id="req-result" style="margin-top:.5rem"></div></div>';
+}
+function genRequest(){
+  var amt=parseFloat(document.getElementById('req-amt')?.value)||0;
+  var title=document.getElementById('req-title')?.value||'Payment Request';
+  if(!amt||amt<=0){toast('Enter amount','error');return;}
+  var link='finpi.pi/pay/'+(piUser?piUser.username:'')+'?amount='+amt+'&memo='+encodeURIComponent(title);
+  var el=document.getElementById('req-result');
+  if(el)el.innerHTML='<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.6rem;margin-top:.2rem"><div style="font-size:.52rem;font-weight:700;color:var(--green);margin-bottom:.2rem">&#x2705; Request Ready</div><div style="font-family:var(--f-mono);font-size:.44rem;color:var(--t2);word-break:break-all;margin-bottom:.4rem">'+link+'</div><button class="btn btn-outline btn-sm" onclick="if(navigator.clipboard)navigator.clipboard.writeText(\''+link+'\').then(function(){toast(\'Copied\',\'success\')})">&#x1F4CB; Copy Link</button></div>';
+}
+
+function buildContactsHTML(){
+  return '<div style="padding:.7rem .75rem"><div style="font-size:.7rem;font-weight:800;color:var(--t1);margin-bottom:.4rem">&#x1F4D2; Address Book</div>'
+    +(contacts.length?contacts.map(function(c,i){return '<div class="more-row" style="margin-bottom:.3rem"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F464;</div><div style="flex:1"><div class="more-t">'+c.name+'</div><div class="more-s" style="font-family:var(--f-mono);font-size:.4rem">'+c.addr+'</div></div><button onclick="removeContact('+i+')" class="btn btn-danger btn-sm">Remove</button></div>';}).join(''):'<div class="empty" style="padding:1rem"><div class="empty-ico">&#x1F4D2;</div><div class="empty-t">No contacts</div></div>')
+    +'<div style="margin-top:.5rem"><div class="finput-wrap"><label class="finput-label">Name</label><input class="finput" id="c-name" placeholder="Contact name"></div><div class="finput-wrap"><label class="finput-label">Pi Address or Username</label><input class="finput mono" id="c-addr" placeholder="@username or address"></div><button class="btn btn-teal" onclick="addContact()">+ Add Contact</button></div></div>';
+}
+function addContact(){var name=document.getElementById('c-name')?.value||'';var addr=document.getElementById('c-addr')?.value||'';if(!name||!addr){toast('Fill in all fields','error');return;}contacts.push({name:name,addr:addr});localStorage.setItem('fp_contacts',JSON.stringify(contacts));toast('Contact added','success');renderPayments();}
+function removeContact(i){contacts.splice(i,1);localStorage.setItem('fp_contacts',JSON.stringify(contacts));renderPayments();}
+
+/* SEND PI — Copa exact payment pattern */
+function doSendPi(){
+  var to=document.getElementById('s-to')?.value?.trim()||'';
+  var amt=parseFloat(document.getElementById('s-amt')?.value)||0;
+  var memo=document.getElementById('s-title')?.value||'FinPi transfer';
+  var rname=document.getElementById('s-rname')?.value||'';
+  var cat=document.getElementById('s-cat')?.value||'Transfer';
+  var narr=document.getElementById('s-narr')?.value||'';
+  var btn=document.getElementById('send-btn');
+  if(!to){toast('Enter recipient','error');return;}
+  if(!amt||amt<=0){toast('Enter amount','error');return;}
+  if(btn){btn.disabled=true;btn.textContent='Opening Pi Wallet...';}
+  _doSendPi(to,amt,memo,{recipient:to,recipientName:rname,title:memo,category:cat,narration:narr});
+}
+
+function _doSendPi(to,amt,memo,meta){
+  var btn=document.getElementById('send-btn');
+  if(typeof Pi==='undefined'){toast('Open in Pi Browser','error');if(btn){btn.disabled=false;btn.textContent='\u03C0 Send Pi';}return;}
+  var m=meta||{};
+  Pi.createPayment({amount:amt,memo:memo||'FinPi payment',metadata:{type:'send',app:'finpi',network:'mainnet',recipient:m.recipient||to}},{
+    onReadyForServerApproval:function(paymentId){
+      console.log('[PAYMENT CREATED] paymentId:', paymentId);
+      return fetch(_APPROVE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paymentId:paymentId})})
+        .then(function(r){return r.json();}).then(function(d){console.log('[PAYMENT APPROVED]',d);});
+    },
+    onReadyForServerCompletion:function(paymentId,txid){
+      return fetch(_COMPLETE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paymentId:paymentId,txid:txid})})
+        .then(function(r){return r.json();})
+        .then(function(){
+          console.log('[PAYMENT COMPLETED] txid:', txid);
+          addTx('sent',amt,memo||'Pi Transfer','completed',Object.assign({},m,{txid:txid}));
+          renderHome();renderHistory(_txTab);
+          haptic('success');toast('\u03C0 '+amt.toFixed(2)+' sent!','success');
+          if(btn){btn.disabled=false;btn.textContent='\u03C0 Send Pi';}
+        }).catch(function(err){console.error('[FinPi] Complete error:',err);});
+    },
+    onCancel:function(){haptic('error');toast('Payment cancelled');if(btn){btn.disabled=false;btn.textContent='\u03C0 Send Pi';}},
+    onError:function(err){console.error('[FinPi] Error:',err);toast('Payment error','error');if(btn){btn.disabled=false;btn.textContent='\u03C0 Send Pi';}}
+  });
+}
+
+/* HISTORY */
+function renderHistory(tab,q){
+  var el=document.getElementById('hist-body');if(!el)return;
+  _txTab=tab||_txTab||'all';
+  var list=txLog.slice();
+  if(tab==='sent')list=list.filter(function(t){return t.type==='sent';});
+  else if(tab==='received')list=list.filter(function(t){return t.type==='received';});
+  if(q&&q.trim()){var ql=q.toLowerCase().trim();list=list.filter(function(t){return (t.note||'').toLowerCase().includes(ql)||(t.title||'').toLowerCase().includes(ql)||(t.narration||'').toLowerCase().includes(ql)||(t.category||'').toLowerCase().includes(ql)||(t.recipient||'').toLowerCase().includes(ql)||(t.receiptNo||'').toLowerCase().includes(ql)||String(t.amount||'').includes(ql);});}
+  if(!list.length){el.innerHTML='<div class="empty"><div class="empty-ico">&#x1F4CB;</div><div class="empty-t">No transactions</div><div class="empty-s">Your transactions will appear here</div></div>';return;}
+  el.innerHTML=list.map(function(tx){return buildTxRow(tx,txLog.indexOf(tx));}).join('');
+}
+function filterTx(q){renderHistory(_txTab,q);}
+function exportTx(){
+  var q='"',nl='\n',cm=',';
+  var hdr=['ReceiptNo','Date','Type','Amount','Title','Category','Narration','Recipient','TXID','Status'];
+  var rows=txLog.map(function(tx){
+    return [tx.receiptNo,tx.date,tx.type,tx.amount,tx.title||tx.note,tx.category,tx.narration,tx.recipient,tx.txid,tx.status]
+      .map(function(v){var s=(v||'').toString().split('"').join('""');return q+s+q;}).join(cm);
+  });
+  var csv=hdr.join(cm)+nl+rows.join(nl);
+  var blob=new Blob([csv],{type:'text/csv'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='finpi-transactions.csv';a.click();
+  toast('Exported','success');
+}
+
+/* RENDER PROFILE */
+function renderProfile(){
+  var el=document.getElementById('profile-body');if(!el)return;
+  var uname=piUser?(piUser.username||'Pioneer'):'Pioneer';
+  var items=[
+  ['&#x1F194;','Identity Card','Your FinPi digital identity','openIdentityCard()'],
+  ['&#x1F464;','Profile Setup','Name, email, preferences','openProfileSetup()'],
+  ['&#x1F4CA;','Analytics','Charts &amp; health score','openAnalytics()'],
+  ['&#x1F4C8;','Financial Overview','Balance &amp; health snapshot','openFinancialOverview()'],
+  ['&#x1F4F1;','QR Center','Personal, merchant, scan','openQRCenter()'],
+  ['&#x1F4F7;','Scan &amp; Pay','Scan QR to pay','openScanPay()'],
+  ['&#x1F512;','Security','PIN, timeout, limits','openSecurityPanel()'],
+  ['&#x1F4CB;','Login Activity','Recent sign-in history','openLoginActivity()'],
+  ['&#x1F4BB;','Trusted Devices','Manage connected devices','openTrustedDevices()'],
+  ['&#x1F4B3;','FinPi Card','Premium card concept','openFinPiCard()'],
+  ['&#x1F3E7;','ATM Access','ATM card concept','openATMCard()'],
+  ['&#x1F3EA;','Customer List','Payment recipients','openCustomerList()'],
+  ['&#x2B50;','Favourite Contacts','Quick-pay contacts','openFavoriteContacts()'],
+  ['&#x1F4B0;','Wallet Activity','Transaction overview','openWalletActivity()'],['&#x2699;','Settings','Theme, language, privacy','openSettings()'],['&#x1F916;','AI Assistant','Financial education','openAIPanel()'],['&#x1F9FE;','Invoice Generator','Create payment requests','openInvoice()'],['&#x1F3EA;','Business Profile','Set up business page','openBusinessProfile()'],['&#x1F4E6;','Product Catalogue','List your products','openProductCatalogue()'],['&#x1F5A5;','POS Mode','Accept Pi payments','openPOSMode()'],['&#x1F4B9;','Revenue Summary','Income overview','openRevenueSummary()'],['&#x1F501;','Recurring Requests','Scheduled invoices','openRecurring()'],['&#x1F4E4;','Batch Requests','Request from multiple','openBatchRequests()'],['&#x1F4CA;','Budget Tracker','Manage budgets','openBudget()'],['&#x1F3AF;','Savings Goals','Track goals','openGoals()'],['&#x1F4C5;','Financial Calendar','Reminders','openFinancialCalendar()'],['&#x1F3F7;','Expense Categories','Spending breakdown','openExpenseCategories()'],['&#x1F4CA;','Monthly Summary','6-month chart','openMonthlySummary()'],['&#x1F916;','System Status','Service health','openSystemStatus()'],['&#x1F4DC;','Release Notes','v1.1.0 changelog','openReleaseNotes()'],['&#x1F4BE;','Data Management','Export &amp; clear','openDataMgmt()'],['&#x2139;','About FinPi','Platform information','openAbout()'],['&#x1F4DC;','Legal','Privacy, Terms, Security','openLegal()'],['&#x1F6AA;','Sign Out','Return to login','logOut()']];
+  el.innerHTML='<div style="padding:.5rem .75rem 0"><div style="background:var(--grad-card);border:1px solid rgba(37,99,235,.25);border-radius:var(--r-xl);padding:1rem;margin-bottom:.5rem;text-align:center"><div style="width:56px;height:56px;border-radius:99px;background:var(--grad-blue);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;color:#fff;margin:0 auto .4rem">'+uname[0].toUpperCase()+'</div><div style="font-size:.9rem;font-weight:800;color:var(--t1)">@'+uname+'</div><div style="font-size:.46rem;color:var(--t3);margin-top:.1rem">Pi Mainnet \xb7 sandbox:false</div></div></div>'
+    +'<div class="more-grid" style="padding:.5rem .75rem">'+items.map(function(r){return '<div class="more-row" onclick="'+r[3]+'"><div class="more-ico" style="background:var(--glass2)">'+r[0]+'</div><div><div class="more-t">'+r[1]+'</div><div class="more-s">'+r[2]+'</div></div><div class="more-arrow">&#x203A;</div></div>';}).join('')+'</div>';
+}
+
+function logOut(){if(!confirm('Sign out?'))return;piUser=null;isGuest=false;document.getElementById('app').style.display='none';var l=document.getElementById('login');l.style.display='flex';l.style.flexDirection='column';var btn=document.getElementById('loginBtn');var txt=document.getElementById('signin-txt');var lmsg=document.getElementById('lmsg');if(btn){btn.disabled=false;btn.style.opacity='1';}if(txt)txt.textContent='Sign In with Pi';if(lmsg)lmsg.textContent='';}
+function showNotifs(){openPanel('Notifications','<div class="empty"><div class="empty-ico">&#x1F514;</div><div class="empty-t">No notifications</div><div class="empty-s">Payment alerts will appear here</div></div>');}
+
+/* CONVERTER */
+function openConverter(){
+  var curs=['usd','eur','gbp','sar','aed','ngn'];
+  var labs={usd:'USD $',eur:'EUR \u20AC',gbp:'GBP \xA3',sar:'SAR \uFDFC',aed:'AED \u062F.\u0625',ngn:'NGN \u20A6'};
+  var amt=parseFloat(document.getElementById('conv-amt-val')||1);
+  var rows=_piPrice?curs.map(function(c){var rate=_piPrice[c]||0;var val=(amt||1)*rate;var chg=_piPrice[c+'_24h_change']||0;return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border);font-size:.6rem"><span style="color:var(--t2)">'+labs[c]+'</span><div style="text-align:right"><div style="font-family:var(--f-mono);font-weight:700;color:var(--t1)">'+val.toFixed(4)+'</div><div style="font-size:.4rem;color:'+(chg>=0?'var(--green)':'var(--red)')+'">'+( chg>=0?'+':'')+chg.toFixed(2)+'% 24h</div></div></div>';}).join(''):'<div style="color:var(--t3);font-size:.6rem;padding:.5rem">Loading price data...</div>';
+  openPanel('Pi Converter','<div class="finput-wrap"><label class="finput-label">Pi Amount</label><div class="finput-prefix"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="conv-amt-val" type="number" value="1" step="0.01" oninput="openConverter()"></div></div><div>'+rows+'</div><div style="font-size:.4rem;color:var(--t4);text-align:center;margin-top:.5rem">Reference data from CoinGecko \xb7 Updated periodically by data provider</div>');
+}
+
+/* CALCULATOR */
+var _calc={expr:'0'};
+function openCalc(){
+  var btns=[['7','8','9','\xF7'],['4','5','6','\xD7'],['1','2','3','\u2212'],['0','.','C','+'],['(',')','.','\u21A9']];
+  var bhtml=btns.map(function(row){return row.map(function(b){return '<button onclick="calcKey(\''+b+'\')" style="padding:.7rem;background:var(--glass);border:1px solid var(--border);border-radius:var(--r-sm);font-size:.9rem;color:var(--t1);cursor:pointer">'+b+'</button>';}).join('');}).join('');
+  openPanel('Pi Calculator','<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.6rem .8rem;margin-bottom:.5rem;text-align:right"><div style="font-size:.5rem;color:var(--t3);margin-bottom:.1rem;font-family:var(--f-mono)" id="calc-expr">'+_calc.expr+'</div><div style="font-family:var(--f-mono);font-size:1.6rem;font-weight:700;color:var(--gold)" id="calc-res">\u03C0 0</div></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem">'+bhtml+'<button onclick="calcEq()" style="grid-column:span 4;padding:.7rem;background:var(--blue);border-radius:var(--r-sm);font-size:1rem;font-weight:700;color:#fff;cursor:pointer">= Calculate</button></div>');
+}
+function calcKey(k){if(k==='C'){_calc.expr='0';}else if(k==='\u21A9'){_calc.expr=_calc.expr.slice(0,-1)||'0';}else if(k==='\xF7'){_calc.expr+='/';}else if(k==='\xD7'){_calc.expr+='*';}else if(k==='\u2212'){_calc.expr+='-';}else{if(_calc.expr==='0'&&k!=='.')_calc.expr=k;else _calc.expr+=k;}var e=document.getElementById('calc-expr');if(e)e.textContent=_calc.expr;}
+function calcEq(){var r;try{r=eval(_calc.expr);}catch(e){r='Error';}var el=document.getElementById('calc-res');if(el)el.textContent='\u03C0 '+r;}
+
+/* BUDGET */
+function openBudget(){openPanel('Budget Tracker','<div class="more-grid">'+(budgets.length?budgets.map(function(b,i){var pct=Math.round((b.spent||0)/b.limit*100);var col=pct>=100?'var(--red)':pct>=80?'var(--orange)':'var(--green)';return '<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .65rem;margin-bottom:.3rem"><div style="display:flex;justify-content:space-between;margin-bottom:.2rem"><span style="font-size:.6rem;font-weight:700;color:var(--t1)">'+b.name+'</span><span style="font-size:.52rem;font-family:var(--f-mono);color:var(--t2)">\u03C0 '+(b.spent||0).toFixed(2)+' / \u03C0 '+b.limit+'</span></div><div style="height:5px;background:var(--bg3);border-radius:99px;margin-bottom:.15rem"><div style="height:5px;border-radius:99px;background:'+col+';width:'+Math.min(100,pct)+'%"></div></div><div style="font-size:.42rem;color:'+col+'">'+pct+'% used</div></div>';}).join(''):'<div class="empty" style="padding:1rem"><div class="empty-ico">&#x1F4CA;</div><div class="empty-t">No budgets</div></div>')+'</div>'
+  +'<div class="finput-wrap" style="margin-top:.5rem"><label class="finput-label">Budget Name</label><input class="finput" id="b-name" placeholder="e.g. Food, Transport"></div>'
+  +'<div class="finput-wrap"><label class="finput-label">Limit (&#x03C0;)</label><div class="finput-prefix"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="b-limit" type="number" step="0.01" placeholder="0.00"></div></div>'
+  +'<button class="btn btn-primary" onclick="addBudget()">+ Add Budget</button>');}
+function addBudget(){var name=document.getElementById('b-name')?.value||'';var limit=parseFloat(document.getElementById('b-limit')?.value)||0;if(!name||!limit){toast('Fill in all fields','error');return;}budgets.push({name:name,limit:limit,spent:0});localStorage.setItem('fp_budgets',JSON.stringify(budgets));toast('Budget added','success');closePanel();openBudget();}
+
+/* GOALS */
+function openGoals(){openPanel('Savings Goals','<div class="more-grid">'+(goals.length?goals.map(function(g,i){var pct=Math.round(g.current/g.target*100);return '<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .65rem;margin-bottom:.3rem"><div style="display:flex;justify-content:space-between;margin-bottom:.2rem"><span style="font-size:.6rem;font-weight:700;color:var(--t1)">'+g.name+'</span><span style="font-size:.52rem;font-family:var(--f-mono);color:var(--t2)">\u03C0 '+g.current+' / \u03C0 '+g.target+'</span></div><div style="height:5px;background:var(--bg3);border-radius:99px;margin-bottom:.15rem"><div style="height:5px;border-radius:99px;background:var(--teal);width:'+Math.min(100,pct)+'%"></div></div><div style="font-size:.42rem;color:var(--teal)">'+pct+'%</div></div>';}).join(''):'<div class="empty" style="padding:1rem"><div class="empty-ico">&#x1F3AF;</div><div class="empty-t">No goals</div></div>')+'</div>'
+  +'<div class="finput-wrap" style="margin-top:.5rem"><label class="finput-label">Goal Name</label><input class="finput" id="g-name" placeholder="e.g. New Phone"></div>'
+  +'<div class="finput-wrap"><label class="finput-label">Target (&#x03C0;)</label><div class="finput-prefix"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="g-target" type="number" step="0.01" placeholder="0.00"></div></div>'
+  +'<button class="btn btn-teal" onclick="addGoal()">+ Add Goal</button>');}
+function addGoal(){var name=document.getElementById('g-name')?.value||'';var target=parseFloat(document.getElementById('g-target')?.value)||0;if(!name||!target){toast('Fill in all fields','error');return;}goals.push({name:name,target:target,current:0});localStorage.setItem('fp_goals',JSON.stringify(goals));toast('Goal added','success');closePanel();openGoals();}
+
+/* INVOICE */
+function openInvoice(){openPanel('Invoice Generator','<div class="finput-wrap"><label class="finput-label">Client Name</label><input class="finput" id="inv-client" placeholder="Client name"></div><div class="finput-wrap"><label class="finput-label">Service / Product</label><input class="finput" id="inv-service" placeholder="What are you invoicing for?"></div><div class="finput-wrap"><label class="finput-label">Amount (&#x03C0;)</label><div class="finput-prefix"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="inv-amt" type="number" step="0.01" placeholder="0.00"></div></div><div class="finput-wrap"><label class="finput-label">Due Date</label><input class="finput" id="inv-due" type="date"></div><button class="btn btn-primary" onclick="genInvoice()">&#x1F9FE; Generate</button><div id="inv-result" style="margin-top:.5rem"></div>');}
+function genInvoice(){
+  var c=document.getElementById('inv-client')?.value||'Client';
+  var s=document.getElementById('inv-service')?.value||'Service';
+  var a=parseFloat(document.getElementById('inv-amt')?.value)||0;
+  var d=document.getElementById('inv-due')?.value||'';
+  if(!a){toast('Enter amount','error');return;}
+  var invNo='INV-'+Date.now().toString(36).toUpperCase();
+  var text='FinPi Invoice\nInv No: '+invNo+'\nClient: '+c+'\nService: '+s+'\nAmount: \u03C0 '+a.toFixed(2)+(d?'\nDue: '+d:'')+'\nPayment: Pi Network Mainnet';
+  var el=document.getElementById('inv-result');
+  if(!el)return;
+  el.innerHTML='<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.6rem">'
+    +'<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem;padding-bottom:.3rem;border-bottom:1px solid var(--border2);">'
+    +'<span style="font-size:1rem;font-weight:900;background:linear-gradient(135deg,#1565C0,#1DE9B6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">FinPi</span>'
+    +'<span style="font-size:.38rem;color:var(--teal)"> Invoice</span></div>'
+    +'<pre id="inv-text" style="font-family:var(--f-mono);font-size:.5rem;color:var(--t2);line-height:1.8;white-space:pre-wrap">'+text+'</pre>'
+    +'<button class="btn btn-outline btn-sm" id="inv-copy-btn" style="margin-top:.4rem">&#x1F4CB; Copy Invoice</button>'
+    +'</div>';
+  var copyBtn=document.getElementById('inv-copy-btn');
+  if(copyBtn){copyBtn.onclick=function(){
+    var t=document.getElementById('inv-text');
+    if(t&&navigator.clipboard)navigator.clipboard.writeText(t.textContent).then(function(){toast('Copied','success');});
+  };}
+}
+
+/* AI */
+function openAIPanel(){openPanel('FinPi AI Assistant','<div style="font-size:.44rem;color:var(--t3);margin-bottom:.5rem;padding:.35rem .5rem;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.18);border-radius:var(--r-sm)">&#x26A0;&#xFE0F; Educational assistant only \xb7 Not financial advice</div><div id="ai-msgs" style="min-height:120px;max-height:240px;overflow-y:auto;margin-bottom:.5rem"><div style="font-size:.54rem;color:var(--t2);padding:.3rem 0">&#x1F44B; I\'m your FinPi Educational Assistant. Ask about Pi budgeting, finance tips, or FinPi features.</div></div><div style="display:flex;gap:.3rem"><input class="finput" id="ai-inp" placeholder="Ask anything..." style="flex:1" onkeydown="if(event.key===\'Enter\')sendAI()"><button class="btn btn-primary btn-sm" onclick="sendAI()">Send</button></div>');}
+function sendAI(){var inp=document.getElementById('ai-inp');var msgs=document.getElementById('ai-msgs');if(!inp||!msgs)return;var q=inp.value.trim();if(!q)return;msgs.innerHTML+='<div style="font-size:.54rem;color:var(--blue);text-align:right;padding:.25rem 0;border-bottom:1px solid var(--border)">You: '+q+'</div>';inp.value='';var r=getAIResp(q);msgs.innerHTML+='<div style="font-size:.54rem;color:var(--t2);padding:.25rem 0;border-bottom:1px solid var(--border)">🤖 '+r+'</div>';msgs.scrollTop=msgs.scrollHeight;}
+function getAIResp(q){q=q.toLowerCase();if(q.includes('budget'))return 'Budgeting tip: Track your Pi spending by category. Allocate a percentage to needs, wants, and savings goals.';if(q.includes('save')||q.includes('goal'))return 'Savings strategy: Set a specific Pi goal with a deadline. Small regular amounts add up over time.';if(q.includes('send')||q.includes('payment'))return 'To send Pi: Go to Payments tab \u2192 Send Pi. Enter recipient, title, amount, and category for your records.';if(q.includes('receipt'))return 'Every FinPi payment generates a receipt with TXID, category, narration, and reference USD value. Tap any transaction to view.';if(q.includes('invoice'))return 'Use Invoice Generator in the Wallet tab to create payment requests with client name, service, and amount.';if(q.includes('merchant')||q.includes('business'))return 'Set up your Business Profile and Product Catalogue in the Wallet tab. Use POS Mode to accept payments in-store.';return 'I can help with budgeting, savings goals, sending Pi, receipts, invoices, and merchant tools. What would you like to know?';}
+
+/* EXPENSE CATEGORIES */
+function openExpenseCategories(){var cats=['Food','Transport','Business','Shopping','Health','Education','Entertainment','Other'];var totals={};cats.forEach(function(c){totals[c]=0;});txLog.forEach(function(tx){if(tx.category&&totals[tx.category]!==undefined)totals[tx.category]+=Number(tx.amount)||0;});var total=Object.values(totals).reduce(function(a,b){return a+b;},0)||1;var colors=['var(--blue)','var(--teal)','var(--gold)','#8B5CF6','var(--green)','#EC4899','#F59E0B','var(--t3)'];openPanel('Expense Categories','<div style="display:grid;gap:.3rem">'+cats.map(function(cat,i){var amt=totals[cat]||0;var pct=Math.round(amt/total*100);return '<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .65rem"><div style="display:flex;justify-content:space-between;margin-bottom:.25rem"><span style="font-size:.56rem;font-weight:600;color:var(--t1)">'+cat+'</span><span style="font-size:.52rem;font-family:var(--f-mono);color:var(--t2)">\u03C0 '+amt.toFixed(2)+'</span></div><div style="height:5px;background:var(--bg3);border-radius:99px"><div style="height:5px;border-radius:99px;background:'+colors[i]+';width:'+pct+'%"></div></div></div>';}).join('')+'</div>');}
+
+/* MONTHLY SUMMARY */
+function openMonthlySummary(){var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var now=new Date();var data=Array(6).fill(0);var labels=[];for(var i=5;i>=0;i--){var d=new Date(now.getFullYear(),now.getMonth()-i,1);labels.push(months[d.getMonth()]);}txLog.forEach(function(tx){try{var d=new Date(tx.date);var diff=(now.getFullYear()-d.getFullYear())*12+(now.getMonth()-d.getMonth());if(diff>=0&&diff<6&&tx.type==='sent')data[5-diff]+=Number(tx.amount)||0;}catch(e){}});var maxVal=Math.max.apply(null,data)||1;var bars='<div style="display:flex;align-items:flex-end;gap:.3rem;height:90px;margin-bottom:.25rem">'+data.map(function(v,i){var h=Math.max(4,Math.round(v/maxVal*80));return '<div style="flex:1;height:'+h+'px;background:var(--blue);border-radius:4px 4px 0 0;opacity:'+(0.5+i*0.1).toFixed(1)+'"></div>';}).join('')+'</div><div style="display:flex;gap:.3rem">'+labels.map(function(l){return '<div style="flex:1;font-size:.38rem;color:var(--t3);text-align:center">'+l+'</div>';}).join('')+'</div>';openPanel('Monthly Summary','<div style="font-size:.56rem;color:var(--t3);margin-bottom:.6rem">Outgoing Pi \xb7 last 6 months</div>'+bars+'<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.6rem;margin-top:.6rem"><div style="display:flex;justify-content:space-between;padding:.18rem 0;font-size:.52rem"><span style="color:var(--t3)">Total</span><span style="font-family:var(--f-mono);font-weight:700;color:var(--t1)">\u03C0 '+data.reduce(function(a,b){return a+b;},0).toFixed(2)+'</span></div></div>');}
+
+/* FINANCIAL CALENDAR */
+function openFinancialCalendar(){var now=new Date();var year=now.getFullYear(),month=now.getMonth();var monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];var firstDay=new Date(year,month,1).getDay();var daysInMonth=new Date(year,month+1,0).getDate();var dayNames=['Su','Mo','Tu','We','Th','Fr','Sa'];var txDays={};txLog.forEach(function(tx){try{var d=new Date(tx.date);if(d.getFullYear()===year&&d.getMonth()===month)txDays[d.getDate()]=true;}catch(e){}});var cal='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem"><div style="font-size:.7rem;font-weight:800;color:var(--t1)">'+monthNames[month]+' '+year+'</div><span class="pill pill-blue">'+Object.keys(txDays).length+' active days</span></div><div class="cal-grid">';dayNames.forEach(function(d){cal+='<div class="cal-hdr">'+d+'</div>';});for(var i=0;i<firstDay;i++)cal+='<div></div>';for(var day=1;day<=daysInMonth;day++){cal+='<div class="cal-cell'+(day===now.getDate()?' today':'')+(txDays[day]?' has-event':'')+'" style="font-size:.44rem">'+day+'</div>';}cal+='</div>';openPanel('Financial Calendar',cal);}
+
+/* BUSINESS */
+function openBusinessProfile(){var p=JSON.parse(localStorage.getItem('fp_business')||'{}');openPanel('Business Profile',(p.name?'<div style="background:var(--grad-card);border:1px solid rgba(37,99,235,.25);border-radius:var(--r-lg);padding:1rem;margin-bottom:.6rem;text-align:center"><div style="font-size:2rem;margin-bottom:.2rem">'+(p.logo||'&#x1F3EA;')+'</div><div style="font-size:.9rem;font-weight:800;color:var(--t1)">'+p.name+'</div><div style="font-size:.5rem;color:var(--t3)">'+p.category+'</div></div>':'')+'<div class="finput-wrap"><label class="finput-label">Business Name</label><input class="finput" id="biz-name" placeholder="Your business name" value="'+(p.name||'')+'"></div><div class="finput-wrap"><label class="finput-label">Category</label><input class="finput" id="biz-cat" placeholder="e.g. Food, Retail, Services" value="'+(p.category||'')+'"></div><div class="finput-wrap"><label class="finput-label">Pi Address</label><input class="finput mono" id="biz-addr" placeholder="Pi address" value="'+(p.piAddress||'')+'"></div><div class="finput-wrap"><label class="finput-label">Logo Emoji</label><input class="finput" id="biz-logo" maxlength="2" placeholder="&#x1F3EA;" value="'+(p.logo||'')+'"></div><button class="btn btn-primary" onclick="saveBusinessProfile()">Save Profile</button>');}
+function saveBusinessProfile(){var name=document.getElementById('biz-name')?.value||'';var cat=document.getElementById('biz-cat')?.value||'';var addr=document.getElementById('biz-addr')?.value||'';var logo=document.getElementById('biz-logo')?.value||'🏪';if(!name){toast('Enter business name','error');return;}localStorage.setItem('fp_business',JSON.stringify({name:name,category:cat,piAddress:addr,logo:logo,created:new Date().toISOString()}));toast('Business profile saved','success');closePanel();openBusinessProfile();}
+
+/* PRODUCT CATALOGUE */
+function openProductCatalogue(){openPanel('Product Catalogue',(products.length?'<div style="display:grid;gap:.3rem;margin-bottom:.5rem">'+products.map(function(p,i){return '<div class="more-row"><div class="more-ico" style="background:rgba(37,99,235,.14);font-size:1.1rem">'+(p.emoji||'&#x1F4E6;')+'</div><div style="flex:1"><div class="more-t">'+p.name+'</div><div class="more-s">'+p.desc+'</div></div><div style="font-family:var(--f-mono);font-size:.64rem;font-weight:700;color:var(--gold)">\u03C0 '+Number(p.price).toFixed(2)+'</div></div>';}).join('')+'</div>':'<div class="empty" style="padding:1rem"><div class="empty-ico">&#x1F4E6;</div><div class="empty-t">No products</div></div>')+'<div class="finput-wrap"><label class="finput-label">Product Name</label><input class="finput" id="prod-name" placeholder="e.g. Design Service"></div><div class="finput-wrap"><label class="finput-label">Description</label><input class="finput" id="prod-desc" placeholder="Short description"></div><div class="finput-wrap"><label class="finput-label">Price (&#x03C0;)</label><div class="finput-prefix"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="prod-price" type="number" step="0.01" placeholder="0.00"></div></div><div class="finput-wrap"><label class="finput-label">Emoji</label><input class="finput" id="prod-emoji" maxlength="2" placeholder="&#x1F4E6;"></div><button class="btn btn-teal" onclick="addProduct()">+ Add Product</button>');}
+function addProduct(){var name=document.getElementById('prod-name')?.value||'';var desc=document.getElementById('prod-desc')?.value||'';var price=parseFloat(document.getElementById('prod-price')?.value)||0;var emoji=document.getElementById('prod-emoji')?.value||'📦';if(!name||!price){toast('Name and price required','error');return;}products.push({name:name,desc:desc,price:price,emoji:emoji});localStorage.setItem('fp_products',JSON.stringify(products));toast('Product added','success');closePanel();openProductCatalogue();}
+
+/* POS MODE */
+function openPOSMode(){var biz=JSON.parse(localStorage.getItem('fp_business')||'{}');openPanel('POS Mode \u2014 Point of Sale','<div style="text-align:center"><div style="font-size:.46rem;color:var(--t3);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700">'+(biz.name||'FinPi POS')+'</div><div class="finput-prefix" style="margin-bottom:.4rem"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="pos-amt" type="number" step="0.01" placeholder="0.00" style="font-size:1.6rem;font-weight:900;text-align:right"></div><div class="finput-wrap"><label class="finput-label">Item</label><input class="finput" id="pos-desc" placeholder="e.g. Coffee, Service Fee"></div><div style="background:#fff;border-radius:16px;padding:1rem;display:inline-block;margin:.5rem 0 .3rem"><div style="width:140px;height:140px;background:var(--grad-blue);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff"><div style="font-size:1rem;font-weight:900">Fin<span style="color:var(--gold)">Pi</span></div><div style="font-size:.44rem;margin-top:.2rem;opacity:.8">POS</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem"><button class="btn btn-outline" onclick="(function(){var a=document.getElementById(\'pos-amt\');if(navigator.clipboard&&a)navigator.clipboard.writeText(a.value).then(function(){toast(\'Copied\',\'success\')})})()">&#x1F4CB; Copy Amt</button><button class="btn btn-primary" onclick="(function(){var a=parseFloat(document.getElementById(\'pos-amt\')?.value)||0;var d=document.getElementById(\'pos-desc\')?.value||\'POS Payment\';if(!a||a<=0){toast(\'Enter amount\',\'error\');return;}closePanel();goTab(\'payments\',document.querySelectorAll(\'.nb\')[2]);payTab(\'send\',document.querySelectorAll(\'#pay-tabs .stab\')[0]);setTimeout(function(){var amt=document.getElementById(\'s-amt\');if(amt)amt.value=a;var t=document.getElementById(\'s-title\');if(t)t.value=d;},200);})()">&#x1F4B3; Accept Pi</button></div></div>');}
+
+/* REVENUE SUMMARY */
+function openRevenueSummary(){var now=new Date();var todayStr=now.toDateString();var weekAgo=new Date(now.getTime()-7*24*3600*1000);var todayAmt=0,weekAmt=0,totalAmt=0;txLog.forEach(function(tx){if(tx.type!=='received')return;var amt=Number(tx.amount)||0;var d=new Date(tx.date);totalAmt+=amt;if(d.toDateString()===todayStr)todayAmt+=amt;if(d>=weekAgo)weekAmt+=amt;});openPanel('Revenue Summary','<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.6rem">'+[['Today','\u03C0 '+todayAmt.toFixed(2),'var(--blue)'],['This Week','\u03C0 '+weekAmt.toFixed(2),'var(--teal)'],['All Time','\u03C0 '+totalAmt.toFixed(2),'var(--gold)'],['Received',txLog.filter(function(t){return t.type==='received';}).length+' payments','var(--green)']].map(function(s){return '<div style="background:var(--bg0);border:1px solid var(--border);border-radius:var(--r-md);padding:.6rem .7rem"><div style="font-size:.42rem;color:var(--t3);margin-bottom:.15rem">'+s[0]+'</div><div style="font-family:var(--f-mono);font-size:.82rem;font-weight:800;color:'+s[2]+'">'+s[1]+'</div></div>';}).join('')+'</div>');}
+
+/* RECURRING */
+function openRecurring(){openPanel('Recurring Requests','<div class="more-grid">'+(recurringList.length?recurringList.map(function(r,i){return '<div class="more-row"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F501;</div><div style="flex:1"><div class="more-t">'+r.title+'</div><div class="more-s">\u03C0 '+r.amount+' \xb7 '+r.frequency+'</div></div><button onclick="recurringList.splice('+i+',1);localStorage.setItem(\'fp_recurring\',JSON.stringify(recurringList));closePanel();openRecurring();" class="btn btn-danger btn-sm">Remove</button></div>';}).join(''):'<div class="empty" style="padding:1rem"><div class="empty-ico">&#x1F501;</div><div class="empty-t">No recurring requests</div></div>')+'</div>'
+  +'<div class="finput-wrap" style="margin-top:.5rem"><label class="finput-label">Title</label><input class="finput" id="rec-title" placeholder="e.g. Monthly Rent"></div>'
+  +'<div class="finput-wrap"><label class="finput-label">Amount (&#x03C0;)</label><div class="finput-prefix"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="rec-amt" type="number" step="0.01" placeholder="0.00"></div></div>'
+  +'<div class="finput-wrap"><label class="finput-label">Frequency</label><select class="finput" id="rec-freq"><option>Weekly</option><option>Bi-weekly</option><option selected>Monthly</option><option>Quarterly</option><option>Annually</option></select></div>'
+  +'<button class="btn btn-primary" onclick="saveRecurring()">+ Add Recurring</button>');}
+function saveRecurring(){var t=document.getElementById('rec-title')?.value||'';var a=parseFloat(document.getElementById('rec-amt')?.value)||0;var f=document.getElementById('rec-freq')?.value||'Monthly';if(!t||!a){toast('Fill in all fields','error');return;}recurringList.push({title:t,amount:a,frequency:f,created:new Date().toISOString()});localStorage.setItem('fp_recurring',JSON.stringify(recurringList));toast('Added','success');closePanel();openRecurring();}
+
+/* BATCH REQUESTS */
+function openBatchRequests(){openPanel('Batch Request','<div class="finput-wrap"><label class="finput-label">Payment Title</label><input class="finput" id="batch-title" placeholder="e.g. Team Contribution"></div><div class="finput-wrap"><label class="finput-label">Amount per person (&#x03C0;)</label><div class="finput-prefix"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="batch-amt" type="number" step="0.01" placeholder="0.00"></div></div><div class="finput-wrap"><label class="finput-label">Select Contacts</label>'+(contacts.length?'<div style="display:grid;gap:.2rem;max-height:160px;overflow-y:auto">'+contacts.map(function(c,i){return '<label style="display:flex;align-items:center;gap:.4rem;background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:.3rem .5rem;cursor:pointer"><input type="checkbox" id="bc-'+i+'" style="width:16px;height:16px"> <span style="font-size:.56rem;color:var(--t1)">'+c.name+'</span></label>';}).join('')+'</div>':'<div style="font-size:.52rem;color:var(--t3);padding:.3rem">Add contacts first</div>')+'</div><button class="btn btn-primary" style="margin-top:.4rem" onclick="sendBatchRequests()">&#x1F4E8; Send Batch Request</button>');}
+function sendBatchRequests(){var title=document.getElementById('batch-title')?.value||'Batch Request';var amt=parseFloat(document.getElementById('batch-amt')?.value)||0;if(!amt||amt<=0){toast('Enter amount','error');return;}var sel=[];contacts.forEach(function(c,i){var cb=document.getElementById('bc-'+i);if(cb&&cb.checked)sel.push(c);});if(!sel.length){toast('Select at least one contact','error');return;}var link='finpi.pi/pay/'+(piUser?piUser.username:'')+('?amount='+amt+'&memo='+encodeURIComponent(title));if(navigator.clipboard)navigator.clipboard.writeText(link).then(function(){toast('Batch link copied for '+sel.length+' contacts','success');});else toast('Batch created for '+sel.length+' contacts','success');}
+
+/* SECURITY */
+function openSecurityPanel(){openPanel('Security Center','<div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);border-radius:var(--r-sm);padding:.5rem .7rem;margin-bottom:.5rem"><div style="font-size:.52rem;font-weight:700;color:var(--green)">&#x2705; Pi SDK Authentication Active</div><div style="font-size:.44rem;color:var(--t3)">Pi Mainnet \xb7 sandbox:false</div></div><div class="more-grid"><div class="more-row" onclick="openTxPINSettings()"><div class="more-ico" style="background:rgba(239,68,68,.14)">&#x1F522;</div><div><div class="more-t">Transaction PIN</div><div class="more-s">'+(localStorage.getItem('fp_pin_enabled')==='1'?'Enabled':'Tap to set up')+'</div></div><div class="more-arrow">&#x203A;</div></div><div class="more-row" onclick="openSessionSettings()"><div class="more-ico" style="background:rgba(245,158,11,.14)">&#x23F1;</div><div><div class="more-t">Session Timeout</div><div class="more-s">Auto-lock after inactivity</div></div><div class="more-arrow">&#x203A;</div></div><div class="more-row" onclick="openPayLimit()"><div class="more-ico" style="background:rgba(37,99,235,.16)">&#x1F4B0;</div><div><div class="more-t">Payment Limit</div><div class="more-s">'+(parseFloat(localStorage.getItem('fp_pay_limit')||'0')>0?'\u03C0 '+parseFloat(localStorage.getItem('fp_pay_limit')).toFixed(2):'No limit set')+'</div></div><div class="more-arrow">&#x203A;</div></div><div class="more-row" onclick="openTrustedAddrs()"><div class="more-ico" style="background:rgba(16,185,129,.14)">&#x2705;</div><div><div class="more-t">Trusted Addresses</div><div class="more-s">Skip confirmation for trusted</div></div><div class="more-arrow">&#x203A;</div></div></div>');}
+function openTxPINSettings(){openPanel('Transaction PIN','<div style="font-size:.54rem;color:var(--t2);margin-bottom:.5rem">Require a 4-digit PIN before each payment.</div><button class="btn btn-primary" onclick="setupPIN()">Set Up PIN</button>');}
+function setupPIN(){openPanel('Set PIN','<div style="text-align:center;padding:.5rem 0"><div style="font-size:.54rem;color:var(--t3);margin-bottom:.8rem">Enter a 4-digit PIN</div><div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:.8rem"><input type="password" maxlength="1" id="p1" class="finput" style="width:52px;text-align:center;font-size:1.4rem;font-weight:900" inputmode="numeric"><input type="password" maxlength="1" id="p2" class="finput" style="width:52px;text-align:center;font-size:1.4rem;font-weight:900" inputmode="numeric"><input type="password" maxlength="1" id="p3" class="finput" style="width:52px;text-align:center;font-size:1.4rem;font-weight:900" inputmode="numeric"><input type="password" maxlength="1" id="p4" class="finput" style="width:52px;text-align:center;font-size:1.4rem;font-weight:900" inputmode="numeric"></div><button class="btn btn-primary" onclick="savePIN()">Set PIN</button></div>');setTimeout(function(){['p1','p2','p3','p4'].forEach(function(id,i,arr){var el=document.getElementById(id);if(el)el.addEventListener('input',function(){if(el.value&&arr[i+1])document.getElementById(arr[i+1]).focus();});});},100);}
+function savePIN(){var pin=['p1','p2','p3','p4'].map(function(id){return(document.getElementById(id)||{}).value||'';}).join('');if(pin.length!==4){toast('Enter 4 digits','error');return;}_txPin=btoa(pin);localStorage.setItem('fp_pin_hash',_txPin);_txPinEnabled=true;localStorage.setItem('fp_pin_enabled','1');haptic('success');toast('PIN set','success');closePanel();}
+function openSessionSettings(){openPanel('Session Timeout','<div class="more-grid">'+[['5 min','5'],['15 min','15'],['30 min','30'],['60 min','60'],['Never','0']].map(function(o){return '<div class="more-row" onclick="localStorage.setItem(\'fp_session_mins\',\''+o[1]+'\');_sessionTimeout=parseInt(\''+o[1]+'\')*60*1000;toast(\'Session: \'+(\''+o[1]+'\'===\'0\'?\'Never\':\''+o[0]+'\'),\'success\');closePanel();"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x23F1;</div><div><div class="more-t">'+o[0]+'</div></div></div>';}).join('')+'</div>');}
+function openPayLimit(){openPanel('Payment Limit','<div style="font-size:.54rem;color:var(--t2);margin-bottom:.5rem">Payments above this limit require PIN confirmation.</div><div class="finput-wrap"><label class="finput-label">Limit (&#x03C0;)</label><div class="finput-prefix"><span class="finput-sym">&#x03C0;</span><input class="finput mono" id="pay-limit-inp" type="number" step="0.01" placeholder="0.00" value="'+(_payLimit||'')+'"></div></div><button class="btn btn-primary" onclick="(function(){var v=parseFloat(document.getElementById(\'pay-limit-inp\')?.value)||0;_payLimit=v;localStorage.setItem(\'fp_pay_limit\',v.toString());toast(v>0?\'Limit: \u03C0\'+v.toFixed(2):\'Limit removed\',\'success\');closePanel();})()">Save Limit</button>');}
+function openTrustedAddrs(){openPanel('Trusted Addresses','<div class="more-grid">'+(trustedAddrs.length?trustedAddrs.map(function(a,i){return '<div class="more-row"><div class="more-ico" style="background:rgba(16,185,129,.14)">&#x2705;</div><div style="flex:1"><div class="more-t">'+a.name+'</div><div class="more-s" style="font-family:var(--f-mono);font-size:.4rem">'+a.addr.slice(0,24)+'\u2026</div></div><button onclick="trustedAddrs.splice('+i+',1);localStorage.setItem(\'fp_trusted\',JSON.stringify(trustedAddrs));closePanel();openTrustedAddrs();" class="btn btn-danger btn-sm">Remove</button></div>';}).join(''):'<div class="empty" style="padding:1rem"><div class="empty-ico">&#x1F512;</div><div class="empty-t">No trusted addresses</div></div>')+'</div><div class="finput-wrap" style="margin-top:.5rem"><label class="finput-label">Label</label><input class="finput" id="ta-name" placeholder="e.g. Business partner"></div><div class="finput-wrap"><label class="finput-label">Pi Address</label><input class="finput mono" id="ta-addr" placeholder="Wallet address"></div><button class="btn btn-primary" onclick="(function(){var n=document.getElementById(\'ta-name\')?.value||\'\';var a=document.getElementById(\'ta-addr\')?.value||\'\';if(!n||!a){toast(\'Fill in all fields\',\'error\');return;}trustedAddrs.push({name:n,addr:a});localStorage.setItem(\'fp_trusted\',JSON.stringify(trustedAddrs));toast(\'Added\',\'success\');closePanel();openTrustedAddrs();})()">+ Add</button>');}
+
+/* SETTINGS */
+function openSettings(){openPanel('Settings',
+  '<div class="more-grid">'
+  +'<div class="more-row" onclick="openAppearance()"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F3A8;</div><div><div class="more-t">Appearance</div><div class="more-s">Theme, text size, direction</div></div><div class="more-arrow">&#x203A;</div></div>'
+  +'<div class="more-row" onclick="openLanguage()"><div class="more-ico" style="background:rgba(13,148,136,.14)">&#x1F310;</div><div><div class="more-t">Language</div><div class="more-s">Interface language preference</div></div><div class="more-arrow">&#x203A;</div></div>'
+  +'<div class="more-row" onclick="openCurrencyPanel()"><div class="more-ico" style="background:rgba(200,169,81,.14)">&#x1F4B1;</div><div><div class="more-t">Currency Reference</div><div class="more-s">Reference display currency</div></div><div class="more-arrow">&#x203A;</div></div>'
+  +'<div class="more-row" onclick="openAccessibility()"><div class="more-ico" style="background:rgba(16,185,129,.14)">&#x267F;</div><div><div class="more-t">Accessibility</div><div class="more-s">Text, contrast, motion</div></div><div class="more-arrow">&#x203A;</div></div>'
+  +'<div class="more-row" onclick="toggleBalance()"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F441;</div><div><div class="more-t">Balance Privacy</div><div class="more-s">Hide/show balance</div></div></div>'
+  +'<div class="more-row" onclick="openDataMgmt()"><div class="more-ico" style="background:rgba(16,185,129,.14)">&#x1F4BE;</div><div><div class="more-t">Data Management</div><div class="more-s">Export &amp; clear data</div></div><div class="more-arrow">&#x203A;</div></div>'
+  +'<div class="more-row" onclick="openReleaseNotes()"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F4DC;</div><div><div class="more-t">Release Notes</div><div class="more-s">v1.1.0 changelog</div></div><div class="more-arrow">&#x203A;</div></div>'
+  +'<div class="more-row" onclick="openSystemStatus()"><div class="more-ico" style="background:rgba(16,185,129,.14)">&#x1F7E2;</div><div><div class="more-t">System Status</div><div class="more-s">Service health overview</div></div><div class="more-arrow">&#x203A;</div></div>'
+  +'<div class="more-row" onclick="openHelpCenter()"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x2753;</div><div><div class="more-t">Help Center</div><div class="more-s">FAQs, support, report issue</div></div><div class="more-arrow">&#x203A;</div></div>'
+  +'</div>'
+);}
+function toggleBalance(){_balanceHidden=!_balanceHidden;localStorage.setItem('fp_balance_hidden',_balanceHidden?'1':'0');var c=document.getElementById('balance-card');if(c)c.classList.toggle('balance-hidden',_balanceHidden);var e=document.getElementById('eye-btn');if(e)e.innerHTML=_balanceHidden?'&#x1F648;':'&#x1F441;';toast(_balanceHidden?'Balance hidden':'Balance visible');}
+function openDataMgmt(){openPanel('Data Management','<div class="more-grid"><div class="more-row" onclick="exportTx()"><div class="more-ico" style="background:rgba(16,185,129,.14)">&#x2B07;&#xFE0F;</div><div><div class="more-t">Export Transactions</div><div class="more-s">Download as CSV</div></div><div class="more-arrow">&#x203A;</div></div><div class="more-row" onclick="if(confirm(\'Clear all FinPi local data?\')){txLog=[];budgets=[];goals=[];contacts=[];localStorage.clear();toast(\'Data cleared\');closePanel();}"><div class="more-ico" style="background:rgba(239,68,68,.12)">&#x1F5D1;&#xFE0F;</div><div><div class="more-t">Clear Local Data</div><div class="more-s">Remove app data from device</div></div><div class="more-arrow">&#x203A;</div></div></div><div style="font-size:.46rem;color:var(--t3);margin-top:.5rem;line-height:1.6">FinPi stores data locally on your device.</div>');}
+function openReleaseNotes(){openPanel('Release Notes','<div style="background:var(--grad-card);border:1px solid rgba(37,99,235,.22);border-radius:var(--r-lg);padding:.8rem .9rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem"><div style="font-size:.9rem;font-weight:900;color:var(--t1)">FinPi v1.1.0</div><span class="pill pill-green">Current</span></div><div style="font-size:.44rem;color:var(--t3);margin-bottom:.4rem">July 2026 \xb7 Pi Mainnet \xb7 sandbox:false</div><div style="display:grid;gap:.18rem">'+['&#x1F4B3; Pi Payments (Send, Receive, QR, Request)','&#x1F510; Pi SDK Authentication \xb7 Mainnet','&#x1F4B0; Wallet Overview','&#x1F9EE; Pi Calculator','&#x1F4B1; Currency Converter','&#x1F4CA; Budget Organiser','&#x1F3AF; Savings Goals','&#x1F9FE; Invoice Generator','&#x1F4CB; Transaction History with Receipts','&#x1F916; Educational AI Assistant','&#x1F3EA; Business Profile','&#x1F4E6; Product Catalogue','&#x1F5A5; POS Mode','&#x1F501; Recurring Requests','&#x1F4E4; Batch Requests','&#x1F4C5; Financial Calendar','&#x1F512; Security Center','&#x1F4DC; Full Legal Suite'].map(function(f){return '<div style="font-size:.5rem;color:var(--t2);padding:.14rem 0;border-bottom:1px solid rgba(255,255,255,.04)">'+f+'</div>';}).join('')+'</div></div>');}
+function openSystemStatus(){openPanel('System Status','<div class="more-grid">'+[['&#x1F510;','Pi Authentication','Operational','green'],['&#x1F4B3;','Pi Payments','Operational','green'],['&#x2601;&#xFE0F;','Cloudflare Pages','Operational','green'],['&#x1F4CA;','CoinGecko Price API','Reference data','blue'],['&#x1F916;','AI Assistant','Operational','green']].map(function(s){return '<div class="more-row"><div class="more-ico" style="background:rgba(16,185,129,.12)">'+s[0]+'</div><div><div class="more-t">'+s[1]+'</div><div class="more-s">'+s[2]+'</div></div><span class="pill pill-'+s[3]+'">'+s[2]+'</span></div>';}).join('')+'</div><div style="font-size:.46rem;color:var(--t3);text-align:center;margin-top:.5rem">finpi.app@gmail.com</div>');}
+function openLegal(){openPanel('Legal &amp; Compliance','<div class="more-grid"><div class="more-row" onclick="window.location.href=\'/legal/privacy-policy.html\'"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F512;</div><div><div class="more-t">Privacy Policy</div></div><div class="more-arrow">&#x203A;</div></div><div class="more-row" onclick="window.location.href=\'/legal/terms-of-service.html\'"><div class="more-ico" style="background:rgba(13,148,136,.14)">&#x1F4CB;</div><div><div class="more-t">Terms of Service</div></div><div class="more-arrow">&#x203A;</div></div><div class="more-row" onclick="window.location.href=\'/legal/security-policy.html\'"><div class="more-ico" style="background:rgba(16,185,129,.14)">&#x1F6E1;</div><div><div class="more-t">Security Policy</div></div><div class="more-arrow">&#x203A;</div></div><div class="more-row" onclick="window.location.href=\'/legal/risk-disclosure.html\'"><div class="more-ico" style="background:rgba(245,158,11,.12)">&#x26A0;&#xFE0F;</div><div><div class="more-t">Risk Disclosure</div></div><div class="more-arrow">&#x203A;</div></div><div class="more-row" onclick="window.location.href=\'/legal/community-guidelines.html\'"><div class="more-ico" style="background:rgba(200,169,81,.12)">&#x1F91D;</div><div><div class="more-t">Community Guidelines</div></div><div class="more-arrow">&#x203A;</div></div><div class="more-row" onclick="window.location.href=\'/legal/responsible-disclosure.html\'"><div class="more-ico" style="background:rgba(37,99,235,.12)">&#x1F50D;</div><div><div class="more-t">Responsible Disclosure</div></div><div class="more-arrow">&#x203A;</div></div></div><div style="font-size:.42rem;color:var(--t4);text-align:center;margin-top:.5rem">\xa9 2026 FinPi \xb7 finpi.app@gmail.com</div>');}
+function openAbout(){openPanel('About FinPi','<div style="text-align:center;padding:.4rem 0 .7rem"><div style="font-size:2.2rem;font-weight:900;color:var(--t1)">Fin<span style="background:var(--grad-blue);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Pi</span></div><div style="font-size:.44rem;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin:.15rem 0 .4rem">Finance \xb7 Trust \xb7 Pi</div><div style="display:flex;gap:.3rem;justify-content:center;flex-wrap:wrap"><span class="pill pill-blue">v1.1.0</span><span class="pill pill-green">Pi Mainnet</span></div></div><div style="font-size:.54rem;color:var(--t2);line-height:1.75;margin-bottom:.6rem">A financial technology platform built for the Pi ecosystem. Designed with modern fintech principles focused on simplicity, security, and usability.</div><a href="/about/about-finpi.html" style="display:block;text-align:center;font-size:.56rem;color:var(--teal);margin-bottom:.5rem">Full About Page \u2192</a><div style="font-size:.4rem;color:var(--t4);text-align:center">\xa9 2026 FinPi \xb7 finpi.app@gmail.com \xb7 Abdullahi Bashir Abubakar</div>');}
+
+/* CONFIRM */
+function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');_pendingPayment=null;var btn=document.getElementById('send-btn');if(btn){btn.textContent='\u03C0 Send Pi';btn.disabled=false;}}
+function executeConfirmedPayment(){document.getElementById('confirm-overlay').classList.remove('open');if(!_pendingPayment)return;haptic('medium');_doSendPi(_pendingPayment.to,_pendingPayment.amt,_pendingPayment.memo,_pendingPayment.meta);_pendingPayment=null;}
+
+
+/* ═══════════════════════════════════════════════
+   AUTHENTICATION — Identity Card, Profile QR, KYC
+═══════════════════════════════════════════════ */
+function openIdentityCard(){
+  var uname = piUser?(piUser.username||'Pioneer'):'Pioneer';
+  var uid   = piUser?(piUser.uid||'—'):'—';
+  var addr  = piUser&&piUser.wallet_address?piUser.wallet_address:'Pi Wallet';
+  var profile = getProfile();
+  var biz   = JSON.parse(localStorage.getItem('fp_business')||'{}');
+  var health = calcHealthScore();
+  var txCount = txLog.length;
+  var joined = localStorage.getItem('fp_joined')||new Date().toISOString().slice(0,10);
+
+  openPanel('FinPi Identity Card',
+    '<div style="background:linear-gradient(135deg,#0a0f1e,#1a1f3a,#0d2040);border-radius:20px;padding:1.2rem 1.1rem;margin-bottom:.6rem;position:relative;overflow:hidden;border:1px solid rgba(37,99,235,.35);box-shadow:0 8px 32px rgba(0,0,0,.5)">'
+    +'<div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,.25),transparent 70%)"></div>'
+    +'<div style="position:absolute;bottom:-20px;left:-20px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(13,148,136,.2),transparent 70%)"></div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;position:relative">'
+      +'<div style="display:flex;align-items:center;gap:.35rem"><span style="font-size:1rem;font-weight:900;color:#fff">Fin<span style="color:#C8A951">Pi</span></span>'
+      +'<span style="background:rgba(16,185,129,.25);color:#10B981;border:1px solid #10B981;font-size:.4rem;font-weight:700;border-radius:99px;padding:.1rem .4rem">Pi Mainnet</span>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem;position:relative">'
+      +'<div style="width:52px;height:52px;flex-shrink:0">'
+      +'<div>'
+        +'<div style="font-size:.82rem;font-weight:800;color:#fff;letter-spacing:-.02em">@'+uname+'</div>'
+        +(profile.fullName?'<div style="font-size:.5rem;color:rgba(255,255,255,.6)">'+profile.fullName+'</div>':'')
+        +(biz.name?'<div style="font-size:.44rem;color:rgba(200,169,81,.8)">'+biz.name+'</div>':'')
+      +'</div>'
+    +'</div>'
+    +'<div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.5rem .6rem;margin-bottom:.6rem;position:relative">'
+      +'<div style="font-size:.38rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.1rem">Pi Wallet</div>'
+      +'<div style="font-family:monospace;font-size:.44rem;color:rgba(255,255,255,.7);word-break:break-all">'+addr+'</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.3rem;position:relative">'
+      +[['Transactions',txCount,'var(--blue)'],['Health Score',health+'/100','var(--green)'],['Member Since',joined.slice(0,7),'var(--gold)']].map(function(s){
+        return '<div style="background:rgba(255,255,255,.06);border-radius:8px;padding:.35rem .3rem;text-align:center">'
+          +'<div style="font-family:monospace;font-size:.62rem;font-weight:800;color:'+s[2]+'">'+s[1]+'</div>'
+          +'<div style="font-size:.36rem;color:rgba(255,255,255,.4);margin-top:.06rem">'+s[0]+'</div></div>';
+      }).join('')
+    +'</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem">'
+      +'<button class="btn btn-outline btn-sm" onclick="openProfileQR()">&#x1F4F1; Profile QR</button>'
+      +'<button class="btn btn-primary btn-sm" onclick="openProfileSetup()">&#x270F;&#xFE0F; Edit Profile</button>'
+    +'</div>'
+    +'<div style="background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.18);border-radius:var(--r-sm);padding:.5rem .65rem;margin-top:.5rem">'
+      +'<div style="font-size:.52rem;font-weight:700;color:var(--blue);margin-bottom:.15rem">&#x1F194; Pi KYC Status</div>'
+      +'<div style="font-size:.48rem;color:var(--t3);line-height:1.6">KYC verification is managed by Pi Network. Complete your KYC in the Pi Network App to unlock full payment capabilities on Pi Mainnet.</div>'
+    +'</div>'
+  );
+}
+
+function openProfileQR(){
+  var uname = piUser?(piUser.username||'Pioneer'):'Pioneer';
+  var profile = getProfile();
+  openPanel('Profile QR Code',
+    '<div style="text-align:center;padding:.5rem 0">'
+    +'<div style="background:#fff;border-radius:20px;padding:1.4rem;display:inline-block;margin-bottom:.5rem">'
+      +'<div style="width:180px;height:180px;background:linear-gradient(135deg,#1E3A8A,#2563EB);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff">'
+        +'<div style="width:40px;height:40px;margin:0 auto .2rem;border-radius:50%;background:linear-gradient(135deg,#1565C0,#1DE9B6);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;color:#fff">F</div>'
+        +'<div style="width:90px;height:90px;background:rgba(255,255,255,.15);border-radius:8px;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;padding:4px;margin-bottom:.2rem">'
+          +Array(36).fill(0).map(function(_,i){var on=[0,1,2,3,4,5,6,11,12,13,18,19,24,25,30,31,32,33,34,35].indexOf(i)>=0||Math.random()>.45;return '<div style="background:'+(on?'#fff':'transparent')+'"></div>';}).join('')
+        +'</div>'
+        +'<div style="font-size:.44rem;opacity:.85">@'+uname+'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="font-size:.54rem;font-weight:700;color:var(--t1);margin-bottom:.1rem">@'+uname+'</div>'
+    +(profile.fullName?'<div style="font-size:.48rem;color:var(--t3);margin-bottom:.5rem">'+profile.fullName+'</div>':'<div style="margin-bottom:.5rem"></div>')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem;max-width:280px;margin:0 auto">'
+      +'<button class="btn btn-outline btn-sm" onclick="if(navigator.share)navigator.share({title:\'FinPi\',text:\'Pay me on FinPi: @'+uname+'\',url:\'https://finpi.pi/pay/'+uname+'\'})">&#x1F4E4; Share</button>'
+      +'<button class="btn btn-primary btn-sm" onclick="if(navigator.clipboard)navigator.clipboard.writeText(\'https://finpi.pi/pay/'+uname+'\').then(function(){toast(\'Link copied\',\'success\')})">&#x1F517; Copy Link</button>'
+    +'</div>'
+    +'</div>'
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   WALLET — Activity, Favorite Contacts
+═══════════════════════════════════════════════ */
+function openWalletActivity(){
+  var sent   = txLog.filter(function(t){return t.type==='sent';});
+  var recv   = txLog.filter(function(t){return t.type==='received';});
+  var sentAmt= sent.reduce(function(a,t){return a+Number(t.amount||0);},0);
+  var recvAmt= recv.reduce(function(a,t){return a+Number(t.amount||0);},0);
+  var last7  = txLog.filter(function(t){return new Date(t.date)>new Date(Date.now()-7*864e5);});
+
+  openPanel('Wallet Activity',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem;margin-bottom:.6rem">'
+    +[['Total Sent','\u03C0 '+sentAmt.toFixed(2),'var(--red)'],['Total Received','\u03C0 '+recvAmt.toFixed(2),'var(--green)'],
+      ['This Week',last7.length+' txns','var(--blue)'],['Net Balance','\u03C0 '+(recvAmt-sentAmt).toFixed(2),(recvAmt>=sentAmt?'var(--green)':'var(--red)')]].map(function(s){
+      return '<div style="background:var(--bg0);border:1px solid var(--border);border-radius:var(--r-md);padding:.6rem .65rem">'
+        +'<div style="font-size:.4rem;color:var(--t3);margin-bottom:.12rem">'+s[0]+'</div>'
+        +'<div style="font-family:var(--f-mono);font-size:.78rem;font-weight:800;color:'+s[2]+'">'+s[1]+'</div></div>';
+    }).join('')+'</div>'
+    +'<div style="font-size:.6rem;font-weight:700;color:var(--t1);margin-bottom:.3rem">Last 5 Transactions</div>'
+    +(txLog.slice(0,5).length
+      ? txLog.slice(0,5).map(function(tx,i){return buildTxRow(tx,i);}).join('')
+      : '<div class="empty" style="padding:.8rem"><div class="empty-ico" style="font-size:2rem">&#x1F4B0;</div><div class="empty-t">No activity yet</div></div>')
+  );
+}
+
+function openFavoriteContacts(){
+  var favs = contacts.filter(function(c){return c.fav;});
+  openPanel('Favourite Contacts',
+    '<div style="font-size:.54rem;color:var(--t2);margin-bottom:.4rem">Star contacts to add them here for quick payments.</div>'
+    +'<div class="more-grid" style="margin-bottom:.5rem">'
+    +(favs.length ? favs.map(function(c,i){
+      var ri = contacts.indexOf(c);
+      return '<div class="more-row">'
+        +'<div class="more-ico" style="background:rgba(200,169,81,.15)">&#x2B50;</div>'
+        +'<div style="flex:1"><div class="more-t">'+c.name+'</div><div class="more-s" style="font-family:var(--f-mono);font-size:.4rem">'+c.addr.slice(0,20)+'&#x2026;</div></div>'
+        +'<button onclick="quickPayContact(\''+c.addr+'\',\''+c.name+'\')" class="btn btn-primary btn-sm">Pay</button></div>';
+    }).join('') : '<div class="empty" style="padding:.8rem"><div class="empty-ico" style="font-size:2rem">&#x2B50;</div><div class="empty-t">No favourites yet</div><div class="empty-s">Tap the star icon on any contact</div></div>')
+    +'</div>'
+    +'<div style="font-size:.6rem;font-weight:700;color:var(--t1);margin:.2rem 0 .3rem">All Contacts</div>'
+    +'<div class="more-grid">'
+    +(contacts.length ? contacts.map(function(c,i){
+      return '<div class="more-row">'
+        +'<div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F464;</div>'
+        +'<div style="flex:1"><div class="more-t">'+c.name+'</div><div class="more-s" style="font-family:var(--f-mono);font-size:.4rem">'+c.addr.slice(0,20)+'&#x2026;</div></div>'
+        +'<div style="display:flex;gap:.3rem;align-items:center">'
+          +'<span onclick="toggleFav('+i+')" style="font-size:1rem;cursor:pointer;color:'+(c.fav?'var(--gold)':'var(--t4)')+'">&#x2B50;</span>'
+          +'<button onclick="quickPayContact(\''+c.addr+'\',\''+c.name+'\')" class="btn btn-primary btn-sm">Pay</button>'
+        +'</div></div>';
+    }).join('') : '<div class="empty" style="padding:.8rem"><div class="empty-ico" style="font-size:2rem">&#x1F4D2;</div><div class="empty-t">No contacts</div><div class="empty-s">Add contacts in Payments > Contacts</div></div>')
+    +'</div>'
+  );
+}
+function toggleFav(i){
+  if(!contacts[i])return;
+  contacts[i].fav = !contacts[i].fav;
+  localStorage.setItem('fp_contacts',JSON.stringify(contacts));
+  toast(contacts[i].fav?'Added to favourites \u2B50':'Removed from favourites');
+  openFavoriteContacts();
+}
+function quickPayContact(addr,name){
+  closePanel();
+  goTab('payments',document.querySelectorAll('.nb')[2]);
+  payTab('send',document.querySelectorAll('#pay-tabs .stab')[0]);
+  setTimeout(function(){
+    var t=document.getElementById('s-to'); if(t)t.value=addr;
+    var n=document.getElementById('s-rname'); if(n)n.value=name;
+  },200);
+}
+
+/* ═══════════════════════════════════════════════
+   SCAN & PAY — Camera QR scanning
+═══════════════════════════════════════════════ */
+function openScanPay(){
+  openPanel('Scan & Pay',
+    '<div style="text-align:center;padding:.5rem 0">'
+    +'<div style="width:220px;height:220px;border:3px solid var(--blue);border-radius:16px;margin:0 auto .6rem;position:relative;background:var(--bg0);display:flex;align-items:center;justify-content:center;overflow:hidden">'
+      +'<div style="position:absolute;top:0;left:0;width:24px;height:24px;border-top:4px solid var(--blue);border-left:4px solid var(--blue);border-radius:4px 0 0 0"></div>'
+      +'<div style="position:absolute;top:0;right:0;width:24px;height:24px;border-top:4px solid var(--blue);border-right:4px solid var(--blue);border-radius:0 4px 0 0"></div>'
+      +'<div style="position:absolute;bottom:0;left:0;width:24px;height:24px;border-bottom:4px solid var(--blue);border-left:4px solid var(--blue);border-radius:0 0 0 4px"></div>'
+      +'<div style="position:absolute;bottom:0;right:0;width:24px;height:24px;border-bottom:4px solid var(--blue);border-right:4px solid var(--blue);border-radius:0 0 4px 0"></div>'
+      +'<div style="text-align:center"><div style="font-size:3rem">&#x1F4F7;</div><div style="font-size:.48rem;color:var(--t3);margin-top:.3rem">Camera viewfinder</div></div>'
+    +'</div>'
+    +'<div style="font-size:.54rem;color:var(--t2);margin-bottom:.6rem">Point camera at a FinPi or Pi Network QR code to pay instantly</div>'
+    +'<button class="btn btn-primary" onclick="toast(\'QR scanner requires Pi Browser camera access\')">&#x1F4F7; Start Camera</button>'
+    +'<div class="finput-wrap" style="margin-top:.8rem"><label class="finput-label">Or paste wallet address manually</label><input class="finput mono" id="scan-addr" placeholder="Pi username or wallet address"></div>'
+    +'<button class="btn btn-teal" onclick="(function(){var a=document.getElementById(\'scan-addr\')?.value||\'\';\nif(!a){toast(\'Enter address\',\'error\');return;}\nclosePanel();\ngoTab(\'payments\',document.querySelectorAll(\'.nb\')[2]);\npayTab(\'send\',document.querySelectorAll(\'#pay-tabs .stab\')[0]);\nsetTimeout(function(){var t=document.getElementById(\'s-to\');if(t)t.value=a;},200);})()">Continue to Payment</button>'
+    +'</div>'
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   FINANCIAL OVERVIEW — Dashboard widget
+═══════════════════════════════════════════════ */
+function openFinancialOverview(){
+  var sent = txLog.filter(function(t){return t.type==='sent';}).reduce(function(a,t){return a+Number(t.amount||0);},0);
+  var recv = txLog.filter(function(t){return t.type==='received';}).reduce(function(a,t){return a+Number(t.amount||0);},0);
+  var net  = recv - sent;
+  var health = calcHealthScore();
+  var budgetsOk = budgets.filter(function(b){return (b.spent||0)<b.limit;}).length;
+  var goalsOk   = goals.filter(function(g){return g.current>=g.target;}).length;
+  var healthColor = health>=70?'var(--green)':health>=40?'var(--orange)':'var(--red)';
+
+  openPanel('Financial Overview',
+    '<div style="background:var(--grad-card);border:1px solid rgba(37,99,235,.22);border-radius:var(--r-lg);padding:.9rem;margin-bottom:.5rem">'
+      +'<div style="font-size:.44rem;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.2rem">Financial Health</div>'
+      +'<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem">'
+        +'<div style="font-size:2.4rem;font-weight:900;color:'+healthColor+'">'+health+'</div>'
+        +'<div><div style="font-size:.62rem;font-weight:700;color:var(--t1)">/ 100</div>'
+          +'<div style="font-size:.46rem;color:var(--t3)">'+(health>=70?'Healthy':'Needs attention')+'</div></div>'
+        +'<div style="flex:1"><div style="height:8px;background:var(--bg3);border-radius:99px"><div style="height:8px;border-radius:99px;background:'+healthColor+';width:'+health+'%;transition:width 1s ease"></div></div></div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem;margin-bottom:.5rem">'
+    +[['&#x1F4C8; Income','\u03C0 '+recv.toFixed(2),'var(--green)'],
+      ['&#x1F4C9; Spending','\u03C0 '+sent.toFixed(2),'var(--red)'],
+      ['&#x2194; Net','\u03C0 '+Math.abs(net).toFixed(2)+(net>=0?' surplus':' deficit'),(net>=0?'var(--green)':'var(--red)')],
+      ['&#x1F4CA; Transactions',txLog.length+' total','var(--blue)']].map(function(s){
+        return '<div style="background:var(--bg0);border:1px solid var(--border);border-radius:var(--r-md);padding:.55rem .65rem">'
+          +'<div style="font-size:.44rem;color:var(--t3);margin-bottom:.1rem">'+s[0]+'</div>'
+          +'<div style="font-family:var(--f-mono);font-size:.72rem;font-weight:800;color:'+s[2]+'">'+s[1]+'</div></div>';
+      }).join('')+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem;margin-bottom:.5rem">'
+      +'<div style="background:var(--bg0);border:1px solid var(--border);border-radius:var(--r-md);padding:.55rem .65rem">'
+        +'<div style="font-size:.44rem;color:var(--t3);margin-bottom:.1rem">&#x1F4CA; Budgets</div>'
+        +'<div style="font-size:.72rem;font-weight:800;color:var(--teal)">'+budgetsOk+'/'+budgets.length+' on track</div></div>'
+      +'<div style="background:var(--bg0);border:1px solid var(--border);border-radius:var(--r-md);padding:.55rem .65rem">'
+        +'<div style="font-size:.44rem;color:var(--t3);margin-bottom:.1rem">&#x1F3AF; Goals</div>'
+        +'<div style="font-size:.72rem;font-weight:800;color:var(--gold)">'+goalsOk+'/'+goals.length+' completed</div></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.3rem">'
+      +'<button class="btn btn-outline btn-sm" onclick="openAnalytics()">&#x1F4CA; Analytics</button>'
+      +'<button class="btn btn-outline btn-sm" onclick="openBudget()">&#x1F4CA; Budgets</button>'
+      +'<button class="btn btn-outline btn-sm" onclick="openGoals()">&#x1F3AF; Goals</button>'
+    +'</div>'
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   SECURITY — Login Activity, Trusted Devices
+═══════════════════════════════════════════════ */
+function openLoginActivity(){
+  var logs = JSON.parse(localStorage.getItem('fp_login_log')||'[]');
+  // Record current session
+  openPanel('Login Activity',
+    '<div style="font-size:.52rem;color:var(--t2);margin-bottom:.4rem">Recent sign-in sessions for your FinPi account.</div>'
+    +(logs.length ? '<div class="more-grid">'
+    +logs.slice(0,10).map(function(l){
+      return '<div class="more-row" style="align-items:flex-start">'
+        +'<div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F4F1;</div>'
+        +'<div><div class="more-t" style="font-size:.58rem">'+l.device+'</div>'
+          +'<div class="more-s">'+fmtDate(l.date)+'</div>'
+          +'<div class="more-s" style="color:'+(l.current?'var(--green)':'var(--t4)')+'">'+( l.current?'\u2714 Current session':l.status||'Signed in')+'</div>'
+        +'</div></div>';
+    }).join('')+'</div>'
+    : '<div class="empty" style="padding:.8rem"><div class="empty-ico" style="font-size:2rem">&#x1F4CB;</div><div class="empty-t">No login history yet</div><div class="empty-s">Sessions will appear here after sign-in</div></div>')
+    +'<button class="btn btn-outline btn-sm" style="margin-top:.5rem" onclick="clearLoginLog()">Clear History</button>'
+  );
+}
+function recordLogin(){
+  var logs = [];
+  try{logs=JSON.parse(localStorage.getItem('fp_login_log')||'[]');}catch(e){}
+  logs.unshift({device:'Pi Browser \u2022 Mobile',date:new Date().toISOString(),current:true,status:'Signed in'});
+  if(logs.length>1)logs[1].current=false;
+  if(logs.length>20)logs.pop();
+  localStorage.setItem('fp_login_log',JSON.stringify(logs));
+  localStorage.setItem('fp_joined',localStorage.getItem('fp_joined')||new Date().toISOString().slice(0,10));
+}
+function clearLoginLog(){localStorage.setItem('fp_login_log','[]');toast('Login history cleared');closePanel();}
+
+function openTrustedDevices(){
+  var devices = JSON.parse(localStorage.getItem('fp_trusted_devices')||'[]');
+  openPanel('Trusted Devices',
+    '<div style="font-size:.52rem;color:var(--t2);margin-bottom:.4rem">Devices where your FinPi account is trusted.</div>'
+    +'<div class="more-grid" style="margin-bottom:.5rem">'
+    +'<div class="more-row"><div class="more-ico" style="background:rgba(16,185,129,.14)">&#x1F4F1;</div>'
+      +'<div style="flex:1"><div class="more-t">Pi Browser \u2022 Mobile</div><div class="more-s">Current device \u2022 Active now</div></div>'
+      +'<span class="pill pill-green">Current</span></div>'
+    +(devices.map(function(d,i){
+      return '<div class="more-row"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F4BB;</div>'
+        +'<div style="flex:1"><div class="more-t">'+d.name+'</div><div class="more-s">'+fmtDate(d.added)+'</div></div>'
+        +'<button onclick="removeTrustedDevice('+i+')" class="btn btn-danger btn-sm">Remove</button></div>';
+    }).join(''))
+    +'</div>'
+    +'<div style="background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.18);border-radius:var(--r-sm);padding:.5rem .65rem;font-size:.46rem;color:var(--t3);line-height:1.6">'
+      +'Full multi-device trusted device management with remote session revocation is coming in a future FinPi release.'
+    +'</div>'
+  );
+}
+function removeTrustedDevice(i){
+  var d=JSON.parse(localStorage.getItem('fp_trusted_devices')||'[]');
+  d.splice(i,1);localStorage.setItem('fp_trusted_devices',JSON.stringify(d));
+  toast('Device removed');closePanel();openTrustedDevices();
+}
+
+/* ═══════════════════════════════════════════════
+   APPEARANCE / THEME
+═══════════════════════════════════════════════ */
+function openAppearance(){
+  var themes=[
+    {id:'dark',label:'Deep Blue',desc:'Default dark theme',colors:['#060B14','#2563EB','#C8A951']},
+    {id:'midnight',label:'Midnight',desc:'Pure black OLED theme',colors:['#000000','#3B82F6','#F59E0B']},
+    {id:'ocean',label:'Ocean',desc:'Deep ocean tones',colors:['#0c1445','#0ea5e9','#22d3ee']},
+    {id:'forest',label:'Forest',desc:'Deep green tones',colors:['#0a1a0e','#10B981','#34d399']},
+    {id:'light',label:'Light',desc:'Clean white interface',colors:['#f0f4ff','#2563EB','#C8A951']},
+  ];
+  var cur=localStorage.getItem('fp_theme')||'dark';
+  var sizes=[['small','Small','90%'],['normal','Normal','100%'],['large','Large','112%']];
+  var cur2=localStorage.getItem('fp_textsize')||'normal';
+  var dir=localStorage.getItem('fp_dir')||'ltr';
+
+  var themeRows=themes.map(function(t){
+    var active=cur===t.id;
+    var colorDots=t.colors.map(function(c){
+      return '<div style="width:18px;height:18px;border-radius:50%;background:'+c+';border:1px solid rgba(255,255,255,.2)"></div>';
+    }).join('');
+    return '<div data-theme="'+t.id+'" class="theme-row" style="background:var(--glass);border:1.5px solid '+(active?'var(--blue)':'var(--border)')+';border-radius:var(--r-md);padding:.6rem .75rem;cursor:pointer;display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem">'
+      +'<div style="display:flex;gap:4px">'+colorDots+'</div>'
+      +'<div style="flex:1"><div style="font-size:.6rem;font-weight:700;color:var(--t1)">'+t.label+'</div>'
+      +'<div style="font-size:.44rem;color:var(--t3)">'+t.desc+'</div></div>'
+      +(active?'<span class="pill pill-blue">Active</span>':'')
+      +'</div>';
+  }).join('');
+
+  var sizeRows=sizes.map(function(s){
+    var active2=cur2===s[0];
+    return '<div data-size="'+s[0]+'" class="size-row" style="background:var(--glass);border:1.5px solid '+(active2?'var(--blue)':'var(--border)')+';border-radius:var(--r-sm);padding:.5rem;text-align:center;cursor:pointer">'
+      +'<div style="font-size:'+s[2]+';font-weight:700;color:var(--t1)">Aa</div>'
+      +'<div style="font-size:.44rem;color:var(--t3);margin-top:.1rem">'+s[1]+'</div></div>';
+  }).join('');
+
+  var html='<div style="font-size:.6rem;font-weight:700;color:var(--t1);margin-bottom:.35rem">Theme</div>'
+    +'<div style="margin-bottom:.6rem">'+themeRows+'</div>'
+    +'<div style="font-size:.6rem;font-weight:700;color:var(--t1);margin-bottom:.35rem">Text Size</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.3rem;margin-bottom:.6rem">'+sizeRows+'</div>'
+    +'<div style="font-size:.6rem;font-weight:700;color:var(--t1);margin-bottom:.35rem">Direction</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">'
+    +'<div data-dir="ltr" class="dir-row" style="background:var(--glass);border:1.5px solid '+(dir!=='rtl'?'var(--blue)':'var(--border)')+';border-radius:var(--r-sm);padding:.5rem;text-align:center;cursor:pointer"><div style="font-size:.6rem;font-weight:700;color:var(--t1)">&#x2B05; LTR</div><div style="font-size:.42rem;color:var(--t3)">Left to Right</div></div>'
+    +'<div data-dir="rtl" class="dir-row" style="background:var(--glass);border:1.5px solid '+(dir==='rtl'?'var(--blue)':'var(--border)')+';border-radius:var(--r-sm);padding:.5rem;text-align:center;cursor:pointer"><div style="font-size:.6rem;font-weight:700;color:var(--t1)">RTL &#x27A1;</div><div style="font-size:.42rem;color:var(--t3)">Right to Left</div></div>'
+    +'</div>';
+
+  openPanel('Appearance', html);
+
+  /* Attach event listeners after panel renders */
+  setTimeout(function(){
+    document.querySelectorAll('.theme-row').forEach(function(el){
+      el.onclick=function(){applyThemeId(this.dataset.theme);};
+    });
+    document.querySelectorAll('.size-row').forEach(function(el){
+      el.onclick=function(){applyTextSize(this.dataset.size);};
+    });
+    document.querySelectorAll('.dir-row').forEach(function(el){
+      el.onclick=function(){
+        var d=this.dataset.dir;
+        if(d==='rtl'){document.documentElement.setAttribute('dir','rtl');}
+        else{document.documentElement.removeAttribute('dir');}
+        localStorage.setItem('fp_dir',d);
+        toast(d==='rtl'?'Right to left':'Left to right');
+        openAppearance();
+      };
+    });
+  },50);
+}
+
+function applyThemeId(id){
+  localStorage.setItem('fp_theme',id);
+  var root=document.documentElement;
+  var themes={
+    dark:{},
+    midnight:{'--bg0':'#000','--bg1':'#0a0a0a','--bg2':'#111','--bg3':'#1a1a1a','--bg4':'#222'},
+    ocean:{'--bg0':'#0c1445','--bg1':'#0d1854','--bg2':'#0e1f6a','--bg3':'#112580','--bg4':'#152b96','--blue':'#0ea5e9','--teal':'#22d3ee','--t1':'#f0f9ff'},
+    forest:{'--bg0':'#0a1a0e','--bg1':'#0c1f11','--bg2':'#0f2516','--bg3':'#122c1a','--bg4':'#16331f','--blue':'#10B981','--teal':'#34d399','--t1':'#f0fdf4'},
+    light:{'--bg0':'#f0f4ff','--bg1':'#ffffff','--bg2':'#e8edf8','--bg3':'#d8e0f0','--bg4':'#c8d4e8','--t1':'#0a1020','--t2':'rgba(10,16,32,.7)','--t3':'rgba(10,16,32,.4)','--t4':'rgba(10,16,32,.2)','--glass':'rgba(0,0,0,.04)','--glass2':'rgba(0,0,0,.07)','--border':'rgba(0,0,0,.1)','--border2':'rgba(0,0,0,.15)'}
+  };
+  // Reset first
+  ['--bg0','--bg1','--bg2','--bg3','--bg4','--blue','--teal','--t1','--t2','--t3','--t4','--glass','--glass2','--border','--border2'].forEach(function(p){root.style.removeProperty(p);});
+  var t=themes[id]||{};
+  Object.keys(t).forEach(function(k){root.style.setProperty(k,t[k]);});
+  toast('Theme: '+id.charAt(0).toUpperCase()+id.slice(1),'success');
+  openAppearance();
+}
+function applyTextSize(size){
+  localStorage.setItem('fp_textsize',size);
+  var scales={small:'90%',normal:'100%',large:'112%'};
+  document.documentElement.style.fontSize=scales[size]||'100%';
+  toast('Text size: '+size);openAppearance();
+}
+function initAppearance(){
+  var th=localStorage.getItem('fp_theme');if(th&&th!=='dark')applyThemeId(th);
+  var ts=localStorage.getItem('fp_textsize');if(ts&&ts!=='normal')applyTextSize(ts);
+  var dir=localStorage.getItem('fp_dir');if(dir==='rtl')document.documentElement.setAttribute('dir','rtl');
+}
+
+/* ═══════════════════════════════════════════════
+   LANGUAGE
+═══════════════════════════════════════════════ */
+function openLanguage(){
+  var langs=[
+    {code:'en',name:'English',native:'English',flag:'&#x1F1FA;&#x1F1F8;'},
+    {code:'ar',name:'Arabic',native:'\u0639\u0631\u0628\u064A',flag:'&#x1F1F8;&#x1F1E6;'},
+    {code:'fr',name:'French',native:'Français',flag:'&#x1F1EB;&#x1F1F7;'},
+    {code:'es',name:'Spanish',native:'Español',flag:'&#x1F1EA;&#x1F1F8;'},
+    {code:'sw',name:'Swahili',native:'Kiswahili',flag:'&#x1F1F0;&#x1F1EA;'},
+    {code:'id',name:'Indonesian',native:'Bahasa Indonesia',flag:'&#x1F1EE;&#x1F1E9;'},
+    {code:'pt',name:'Portuguese',native:'Português',flag:'&#x1F1E7;&#x1F1F7;'},
+    {code:'tr',name:'Turkish',native:'Türkçe',flag:'&#x1F1F9;&#x1F1F7;'},
+    {code:'zh',name:'Chinese',native:'\u4E2D\u6587',flag:'&#x1F1E8;&#x1F1F3;'},
+    {code:'hi',name:'Hindi',native:'\u0939\u093F\u0928\u094D\u062C\u0940',flag:'&#x1F1EE;&#x1F1F3;'},
+  ];
+  var cur=localStorage.getItem('fp_lang')||'en';
+  openPanel('Language',
+    '<div style="font-size:.52rem;color:var(--t2);margin-bottom:.4rem">Translation support for additional languages is coming in a future release. Select your preference below.</div>'
+    +'<div class="more-grid">'
+    +langs.map(function(l){
+      var active=cur===l.code;
+      return '<div onclick="setLanguage(\''+l.code+'\')" class="more-row" style="border-color:'+(active?'var(--blue)':'var(--border)')+'">'
+        +'<div class="more-ico" style="background:var(--glass2);font-size:1.3rem">'+l.flag+'</div>'
+        +'<div><div class="more-t">'+l.name+'</div><div class="more-s">'+l.native+'</div></div>'
+        +(active?'<span class="pill pill-blue">Active</span>':'')
+        +'</div>';
+    }).join('')
+    +'</div>'
+  );
+}
+function setLanguage(code){
+  localStorage.setItem('fp_lang',code);
+  if(code==='ar'){document.documentElement.setAttribute('dir','rtl');}
+  else{document.documentElement.removeAttribute('dir');}
+  toast('Language preference saved','success');
+  closePanel();openLanguage();
+}
+
+/* ═══════════════════════════════════════════════
+   CURRENCY PREFERENCE
+═══════════════════════════════════════════════ */
+function openCurrencyPanel(){
+  var curs=[
+    {code:'usd',name:'US Dollar',symbol:'$',flag:'&#x1F1FA;&#x1F1F8;'},
+    {code:'eur',name:'Euro',symbol:'\u20AC',flag:'&#x1F1EA;&#x1F1FA;'},
+    {code:'gbp',name:'British Pound',symbol:'\xA3',flag:'&#x1F1EC;&#x1F1E7;'},
+    {code:'sar',name:'Saudi Riyal',symbol:'\uFDFC',flag:'&#x1F1F8;&#x1F1E6;'},
+    {code:'aed',name:'UAE Dirham',symbol:'\u062F.\u0625',flag:'&#x1F1E6;&#x1F1EA;'},
+    {code:'ngn',name:'Nigerian Naira',symbol:'\u20A6',flag:'&#x1F1F3;&#x1F1EC;'},
+    {code:'kes',name:'Kenyan Shilling',symbol:'KSh',flag:'&#x1F1F0;&#x1F1EA;'},
+    {code:'try',name:'Turkish Lira',symbol:'\u20BA',flag:'&#x1F1F9;&#x1F1F7;'},
+  ];
+  var cur=localStorage.getItem('fp_currency')||'usd';
+  openPanel('Currency Reference',
+    '<div style="font-size:.5rem;color:var(--t3);margin-bottom:.4rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:var(--r-sm);padding:.4rem .6rem">'
+      +'&#x26A0;&#xFE0F; All values shown are reference data only. Not official exchange rates.'
+    +'</div>'
+    +'<div class="more-grid">'
+    +curs.map(function(c){
+      var active=cur===c.code;
+      var rate=_piPrice&&_piPrice[c.code]?'\u03C0 1 = '+c.symbol+_piPrice[c.code].toFixed(4):'Rate loading...';
+      return '<div onclick="setCurrency(\''+c.code+'\')" class="more-row" style="border-color:'+(active?'var(--blue)':'var(--border)')+'">'
+        +'<div class="more-ico" style="background:var(--glass2);font-size:1.2rem">'+c.flag+'</div>'
+        +'<div><div class="more-t">'+c.name+'</div><div class="more-s">'+c.symbol+' \u2022 '+rate+'</div></div>'
+        +(active?'<span class="pill pill-blue">Active</span>':'')
+        +'</div>';
+    }).join('')
+    +'</div>'
+  );
+}
+function setCurrency(code){
+  localStorage.setItem('fp_currency',code);
+  toast('Currency reference set to '+code.toUpperCase(),'success');
+  closePanel();openCurrencyPanel();
+}
+
+/* ═══════════════════════════════════════════════
+   ACCESSIBILITY
+═══════════════════════════════════════════════ */
+function openAccessibility(){
+  var features=[
+    {label:'Large Text',sub:'Increase text size',key:'fp_large_text',action:'applyLargeText'},
+    {label:'High Contrast',sub:'Enhanced colour contrast',key:'fp_hi_contrast',action:'applyHighContrast'},
+    {label:'Reduce Motion',sub:'Minimise animations',key:'fp_reduce_motion',action:'applyReduceMotion'},
+    {label:'Haptic Feedback',sub:'Vibration on interactions',key:'fp_haptic',action:''},
+    {label:'Bold Text',sub:'Increase font weight',key:'fp_bold_text',action:'applyBoldText'},
+  ];
+  openPanel('Accessibility',
+    '<div class="more-grid" style="margin-bottom:.5rem">'
+    +features.map(function(f){
+      var on=localStorage.getItem(f.key)==='1';
+      return '<div class="more-row" onclick="toggleAccessSetting(\''+f.key+'\',\''+f.action+'\')">'
+        +'<div class="more-ico" style="background:rgba(37,99,235,.14)">&#x267F;</div>'
+        +'<div style="flex:1"><div class="more-t">'+f.label+'</div><div class="more-s">'+f.sub+'</div></div>'
+        +'<div style="width:44px;height:24px;background:'+(on?'var(--blue)':'var(--bg3)')+';border-radius:99px;position:relative;flex-shrink:0;transition:background .2s">'
+          +'<div style="position:absolute;'+(on?'right':'left')+':3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:all .2s"></div>'
+        +'</div></div>';
+    }).join('')
+    +'</div>'
+    +'<div style="background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.18);border-radius:var(--r-sm);padding:.5rem .65rem;font-size:.46rem;color:var(--t3);line-height:1.6">'
+      +'Additional accessibility features including full screen reader support and keyboard navigation are planned for future FinPi releases.'
+    +'</div>'
+  );
+}
+function toggleAccessSetting(key,action){
+  var on=localStorage.getItem(key)==='1';
+  localStorage.setItem(key,on?'0':'1');
+  if(action)try{window[action]&&window[action]();}catch(e){}
+  openAccessibility();
+}
+function applyLargeText(){document.documentElement.classList.toggle('fp-large',localStorage.getItem('fp_large_text')==='1');}
+function applyHighContrast(){document.documentElement.classList.toggle('fp-contrast',localStorage.getItem('fp_hi_contrast')==='1');}
+function applyReduceMotion(){document.documentElement.classList.toggle('fp-reduce-motion',localStorage.getItem('fp_reduce_motion')==='1');}
+function applyBoldText(){document.documentElement.classList.toggle('fp-bold',localStorage.getItem('fp_bold_text')==='1');}
+
+/* ═══════════════════════════════════════════════
+   HELP CENTER, FAQs, SUPPORT
+═══════════════════════════════════════════════ */
+function openHelpCenter(){
+  openPanel('Help Center',
+    '<div class="more-grid">'
+    +'<div class="more-row" onclick="openFAQs()"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x2753;</div><div><div class="more-t">FAQs</div><div class="more-s">Frequently asked questions</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'<div class="more-row" onclick="openContactSupport()"><div class="more-ico" style="background:rgba(13,148,136,.14)">&#x1F4AC;</div><div><div class="more-t">Contact Support</div><div class="more-s">Email us directly</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'<div class="more-row" onclick="openReportIssue()"><div class="more-ico" style="background:rgba(239,68,68,.12)">&#x26A0;&#xFE0F;</div><div><div class="more-t">Report an Issue</div><div class="more-s">Payment, bug or security issue</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'<div class="more-row" onclick="openSystemStatus()"><div class="more-ico" style="background:rgba(16,185,129,.14)">&#x1F7E2;</div><div><div class="more-t">System Status</div><div class="more-s">Service health overview</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'<div class="more-row" onclick="window.location.href=\'mailto:finpi.app@gmail.com\'"><div class="more-ico" style="background:rgba(37,99,235,.1)">&#x1F4E7;</div><div><div class="more-t">finpi.app@gmail.com</div><div class="more-s">Direct email support</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'</div>'
+  );
+}
+
+function openFAQs(){
+  var faqs=[
+    ['How do I send Pi?','Go to Payments \u2192 Send Pi. Enter the recipient address or username, add a title, select a category, enter the amount, and tap Send Pi. Pi Wallet will open to confirm.'],
+    ['How do I receive Pi?','Go to Payments \u2192 Receive Pi to see your Pi address and QR code. Share your address or QR code with the sender.'],
+    ['Is FinPi an official Pi Network application?','FinPi is an independent financial platform built for the Pi ecosystem using the official Pi SDK. It is not operated by Pi Network or the Pi Core Team.'],
+    ['Where is my data stored?','Transaction history, budgets, goals, contacts, and preferences are stored locally on your device. FinPi does not upload personal financial data to external servers.'],
+    ['Why does the Sign In button not respond?','FinPi must be opened inside Pi Browser for authentication to work. The Pi SDK is only available within the Pi Browser environment.'],
+    ['How do I complete KYC?','KYC verification is managed entirely by Pi Network. Open the Pi Network App and follow the KYC process there. FinPi does not perform or manage KYC.'],
+    ['Why does my payment show as pending?','Payments are processed on Pi Mainnet. If a payment shows as pending, check the Transaction History for the Transaction ID and verify on the Pi blockchain.'],
+    ['How do I set up a budget?','Go to Wallet \u2192 Finance Tools \u2192 Budget Tracker. Enter a budget name and monthly limit. FinPi will alert you at 80%, 90%, and 100% usage.'],
+    ['Can I export my transaction history?','Yes. Go to History tab and tap the export icon to download a CSV file of all your transactions including receipt numbers, categories, and narrations.'],
+    ['How do I contact support?','Email finpi.app@gmail.com with your issue. Include your Pi username and a description of the problem for faster assistance.'],
+  ];
+  openPanel('Frequently Asked Questions',
+    '<div style="display:grid;gap:.3rem">'
+    +faqs.map(function(faq){
+      return '<div style="background:var(--glass);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden">'
+        +'<div style="padding:.5rem .7rem;font-size:.58rem;font-weight:700;color:var(--t1)">&#x2753; '+faq[0]+'</div>'
+        +'<div style="padding:.1rem .7rem .5rem;font-size:.5rem;color:var(--t3);line-height:1.6">'+faq[1]+'</div></div>';
+    }).join('')
+    +'</div>'
+  );
+}
+
+function openContactSupport(){
+  openPanel('Contact Support',
+    '<div style="text-align:center;padding:.5rem 0 .6rem">'
+      +'<div style="font-size:2.5rem;margin-bottom:.3rem">&#x1F4E7;</div>'
+      +'<div style="font-size:.72rem;font-weight:800;color:var(--t1);margin-bottom:.2rem">finpi.app@gmail.com</div>'
+      +'<div style="font-size:.5rem;color:var(--t3);margin-bottom:.8rem">We aim to respond within 48 hours</div>'
+    +'</div>'
+    +'<div class="finput-wrap"><label class="finput-label">Subject</label>'
+      +'<select class="finput" id="sup-subj" style="cursor:pointer">'
+        +'<option>Payment Issue</option><option>Bug Report</option><option>Feature Request</option>'
+        +'<option>Account Issue</option><option>Security Concern</option><option>General Inquiry</option>'
+      +'</select></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Message</label>'
+      +'<textarea class="finput" id="sup-msg" rows="4" placeholder="Describe your issue in detail..." style="resize:none;line-height:1.5"></textarea></div>'
+    +'<button class="btn btn-primary" onclick="sendSupportEmail()">&#x1F4E4; Send via Email</button>'
+    +'<div style="font-size:.44rem;color:var(--t4);text-align:center;margin-top:.4rem">This will open your email app to send to finpi.app@gmail.com</div>'
+  );
+}
+function sendSupportEmail(){
+  var subj=document.getElementById('sup-subj')?.value||'FinPi Support';
+  var msg=document.getElementById('sup-msg')?.value||'';
+  var uname=piUser?(piUser.username||''):'';
+  var body=msg+'\n\n---\nFinPi User: @'+uname+'\nApp Version: v1.1.0\nPlatform: Pi Browser';
+  window.location.href='mailto:finpi.app@gmail.com?subject='+encodeURIComponent('[FinPi] '+subj)+'&body='+encodeURIComponent(body);
+}
+
+function openReportIssue(){
+  openPanel('Report an Issue',
+    '<div class="more-grid" style="margin-bottom:.5rem">'
+    +'<div class="more-row" onclick="window.location.href=\'mailto:finpi.app@gmail.com?subject=[FinPi] Payment Issue\'"><div class="more-ico" style="background:rgba(239,68,68,.12)">&#x1F4B3;</div><div><div class="more-t">Payment Issue</div><div class="more-s">Payment not completing or stuck</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'<div class="more-row" onclick="window.location.href=\'mailto:finpi.app@gmail.com?subject=[FinPi] Bug Report\'"><div class="more-ico" style="background:rgba(245,158,11,.12)">&#x1F41B;</div><div><div class="more-t">Bug Report</div><div class="more-s">App not working correctly</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'<div class="more-row" onclick="window.location.href=\'mailto:finpi.app@gmail.com?subject=[FinPi] Security Report\'"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F512;</div><div><div class="more-t">Security Issue</div><div class="more-s">Vulnerability or security concern</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'<div class="more-row" onclick="window.location.href=\'mailto:finpi.app@gmail.com?subject=[FinPi] Merchant Report\'"><div class="more-ico" style="background:rgba(13,148,136,.12)">&#x1F3EA;</div><div><div class="more-t">Merchant Issue</div><div class="more-s">Report a problematic listing</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'</div>'
+    +'<div style="font-size:.46rem;color:var(--t3);line-height:1.6;background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.15);border-radius:var(--r-sm);padding:.5rem .65rem">'
+      +'For security vulnerabilities, see our <a href="/legal/responsible-disclosure.html" style="color:var(--teal)">Responsible Disclosure Policy</a>. Response within 72 hours.'
+    +'</div>'
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   CUSTOMER LIST (Merchant)
+═══════════════════════════════════════════════ */
+function openCustomerList(){
+  // Build from transaction history - unique recipients
+  var custMap={};
+  txLog.filter(function(t){return t.type==='sent';}).forEach(function(tx){
+    var key=tx.recipient||'';
+    if(!key)return;
+    if(!custMap[key]){custMap[key]={addr:key,name:tx.recipientName||key,txCount:0,total:0,last:''};}
+    custMap[key].txCount++;
+    custMap[key].total+=Number(tx.amount)||0;
+    custMap[key].last=tx.date;
+  });
+  var custs=Object.values(custMap).sort(function(a,b){return b.total-a.total;});
+
+  openPanel('Customer List',
+    '<div style="font-size:.52rem;color:var(--t2);margin-bottom:.4rem">Contacts derived from your transaction history.</div>'
+    +(custs.length
+      ?'<div class="more-grid">'
+        +custs.map(function(c){
+          return '<div class="more-row">'
+            +'<div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F464;</div>'
+            +'<div style="flex:1"><div class="more-t">'+c.name+'</div>'
+              +'<div class="more-s">'+c.txCount+' payment'+(c.txCount>1?'s':'')+' \u2022 Last: '+fmtDate(c.last).slice(0,11)+'</div></div>'
+            +'<div style="text-align:right"><div style="font-family:var(--f-mono);font-size:.6rem;font-weight:700;color:var(--gold)">\u03C0 '+c.total.toFixed(2)+'</div></div>'
+            +'</div>';
+        }).join('')
+        +'</div>'
+      :'<div class="empty" style="padding:1rem"><div class="empty-ico">&#x1F464;</div><div class="empty-t">No customers yet</div><div class="empty-s">Your payment recipients will appear here as customer records</div></div>'
+    )
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   COMING SOON — Beautiful consolidated screen
+═══════════════════════════════════════════════ */
+function openComingSoon(category){
+  var specs={
+    payments:{icon:'&#x1F4B8;',title:'Advanced Payments',color:'var(--blue)',items:['Scheduled Payments','Recurring Payments','Batch Payments','Split Bills','Payment Templates','Payment Links','Offline Payments']},
+    wallet:{icon:'&#x1F4B0;',title:'Advanced Wallet',color:'var(--teal)',items:['Multi-Wallet Support','Wallet Backup','Family Wallet','Wallet Insights']},
+    merchant:{icon:'&#x1F3EA;',title:'Merchant Platform',color:'var(--gold)',items:['Merchant Directory','Inventory Management','Sales Analytics','Customer Loyalty','Promotions','Multi-Branch Management']},
+    business:{icon:'&#x1F3E2;',title:'Business Platform',color:'var(--green)',items:['Team Accounts','Employee Roles','Payroll','Audit Logs','Business Reports','Organisation Accounts']},
+    marketplace:{icon:'&#x1F6CD;',title:'Marketplace',color:'#8B5CF6',items:['Product Marketplace','Service Marketplace','Digital Products','Reviews & Ratings','Wishlist','Pi Vouchers']},
+    ai:{icon:'&#x1F916;',title:'Enhanced AI',color:'var(--teal)',items:['Voice Assistant','Personalised Financial Coach','Spending Prediction','Goal Optimisation','Financial Learning Modules']},
+    academy:{icon:'&#x1F393;',title:'FinPi Academy',color:'var(--gold)',items:['Financial Literacy Courses','Pi Business Courses','Budget Training','Security Training','Certificates']},
+    analytics:{icon:'&#x1F4CA;',title:'Advanced Analytics',color:'var(--blue)',items:['Cash Flow Analysis','Financial Reports','Annual Reports','Forecasting','Tax Reference Tracking']},
+    community:{icon:'&#x1F30D;',title:'Community & Ecosystem',color:'var(--green)',items:['Pi Ecosystem Directory','Official News Feed','Community Events','Merchant Discovery']},
+    developer:{icon:'&#x2699;',title:'Developer Platform',color:'var(--t3)',items:['FinPi API','SDK Documentation','Webhooks','Developer Dashboard','Sandbox Environment']},
+    enterprise:{icon:'&#x1F3E6;',title:'Enterprise',color:'var(--gold)',items:['Enterprise Dashboard','Advanced Compliance','Multi-Organisation Support','Accounting Export (QuickBooks/Xero)']},
+    global:{icon:'&#x1F310;',title:'Global Features',color:'var(--teal)',items:['20+ Languages','Full RTL Support','Offline Mode','NFC Payments (if supported)','Pi Domain Integration','Push Notifications (when supported)']},
+  };
+  var s=specs[category];
+  if(!s){toast('Coming soon');return;}
+  openPanel(s.title,
+    '<div style="text-align:center;padding:.4rem 0 .6rem">'
+      +'<div style="font-size:3.5rem;margin-bottom:.3rem">'+s.icon+'</div>'
+      +'<div style="font-size:.88rem;font-weight:900;color:var(--t1);margin-bottom:.2rem">'+s.title+'</div>'
+      +'<div style="font-size:.5rem;color:var(--t3);margin-bottom:.5rem">Planned for a future FinPi release</div>'
+      +'<span style="background:rgba(245,158,11,.15);color:var(--orange);border:1px solid rgba(245,158,11,.3);font-size:.48rem;font-weight:700;border-radius:99px;padding:.2rem .6rem">&#x23F3; Coming Soon</span>'
+    +'</div>'
+    +'<div style="background:var(--bg0);border-radius:var(--r-lg);padding:.7rem .8rem;margin-bottom:.5rem">'
+      +'<div style="font-size:.54rem;font-weight:700;color:var(--t1);margin-bottom:.35rem">Planned Features</div>'
+      +'<div style="display:grid;gap:.22rem">'
+        +s.items.map(function(item){
+          return '<div style="display:flex;align-items:center;gap:.4rem;font-size:.52rem;color:var(--t2);padding:.18rem 0;border-bottom:1px solid rgba(255,255,255,.04)">'
+            +'<span style="color:'+s.color+';font-size:.7rem">&#x25B8;</span>'+item+'</div>';
+        }).join('')
+      +'</div>'
+    +'</div>'
+    +'<div style="font-size:.44rem;color:var(--t4);text-align:center;line-height:1.7">No release dates are guaranteed. Features may change based on Pi Network platform capabilities and community feedback.</div>'
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   INIT — Apply saved appearance on launch
+═══════════════════════════════════════════════ */
+/* launchApp hooks merged into core launchApp */
+
+/* ═══ UTILITIES ═══ */
+
+/* ════════════════════════════════════════
+   ANALYTICS & CHARTS
+════════════════════════════════════════ */
+function openAnalytics(){
+  var sent=0,recv=0,cats={};
+  txLog.forEach(function(tx){
+    var a=Number(tx.amount)||0;
+    if(tx.type==='sent'){sent+=a;var c=tx.category||'Other';cats[c]=(cats[c]||0)+a;}
+    else if(tx.type==='received')recv+=a;
+  });
+  var catEntries=Object.entries(cats).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+  var maxCat=catEntries.length?catEntries[0][1]:1;
+  var catColors=['#2563EB','#0D9488','#C8A951','#8B5CF6','#10B981','#F59E0B'];
+
+  /* Monthly data - last 6 months */
+  var now=new Date();
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var sentData=Array(6).fill(0),recvData=Array(6).fill(0),labels=[];
+  for(var i=5;i>=0;i--){var d=new Date(now.getFullYear(),now.getMonth()-i,1);labels.push(months[d.getMonth()]);}
+  txLog.forEach(function(tx){
+    try{
+      var d=new Date(tx.date);
+      var diff=(now.getFullYear()-d.getFullYear())*12+(now.getMonth()-d.getMonth());
+      if(diff>=0&&diff<6){
+        if(tx.type==='sent')sentData[5-diff]+=Number(tx.amount)||0;
+        else if(tx.type==='received')recvData[5-diff]+=Number(tx.amount)||0;
+      }
+    }catch(e){}
+  });
+  var maxBar=Math.max(Math.max.apply(null,sentData),Math.max.apply(null,recvData))||1;
+
+  var health=calcHealthScore();
+
+  var html=''
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.6rem">'
+    +[['Total Sent','π '+sent.toFixed(2),'var(--red)'],['Total Received','π '+recv.toFixed(2),'var(--green)'],
+      ['Net Flow','π '+(recv-sent).toFixed(2),(recv>=sent?'var(--green)':'var(--red)')],
+      ['Transactions',txLog.length+' total','var(--blue)']].map(function(s){
+        return '<div style="background:var(--bg0);border:1px solid var(--border);border-radius:var(--r-md);padding:.6rem .7rem"><div style="font-size:.42rem;color:var(--t3);margin-bottom:.15rem">'+s[0]+'</div><div style="font-family:var(--f-mono);font-size:.78rem;font-weight:800;color:'+s[2]+'">'+s[1]+'</div></div>';
+      }).join('')
+    +'</div>'
+    /* Cash Flow Chart */
+    +'<div style="font-size:.58rem;font-weight:700;color:var(--t1);margin-bottom:.3rem">Cash Flow (6 months)</div>'
+    +'<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.6rem;margin-bottom:.5rem">'
+    +'<div style="display:flex;align-items:flex-end;gap:.2rem;height:80px;margin-bottom:.2rem">'
+    +sentData.map(function(v,i){
+      var sh=Math.max(2,Math.round(v/maxBar*70));
+      var rh=Math.max(2,Math.round(recvData[i]/maxBar*70));
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">'
+        +'<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;width:100%;gap:1px">'
+        +'<div style="height:'+rh+'px;background:var(--green);border-radius:3px 3px 0 0;opacity:.8"></div>'
+        +'<div style="height:'+sh+'px;background:var(--red);border-radius:3px 3px 0 0;opacity:.8"></div>'
+        +'</div></div>';
+    }).join('')
+    +'</div>'
+    +'<div style="display:flex;gap:.2rem">'+labels.map(function(l){return '<div style="flex:1;font-size:.36rem;color:var(--t3);text-align:center">'+l+'</div>';}).join('')+'</div>'
+    +'<div style="display:flex;gap:.6rem;margin-top:.3rem;font-size:.42rem"><span style="color:var(--green)">&#x25A0; Income</span><span style="color:var(--red)">&#x25A0; Spending</span></div>'
+    +'</div>'
+    /* Spending by Category */
+    +(catEntries.length?'<div style="font-size:.58rem;font-weight:700;color:var(--t1);margin:.4rem 0 .3rem">Spending by Category</div>'
+    +'<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.6rem;margin-bottom:.5rem;display:grid;gap:.3rem">'
+    +catEntries.map(function(e,i){
+      var pct=Math.round(e[1]/maxCat*100);
+      return '<div><div style="display:flex;justify-content:space-between;font-size:.52rem;margin-bottom:.18rem"><span style="color:var(--t2)">'+e[0]+'</span><span style="font-family:var(--f-mono);color:var(--t1)">π '+e[1].toFixed(2)+'</span></div>'
+        +'<div style="height:6px;background:var(--bg3);border-radius:99px"><div style="height:6px;border-radius:99px;background:'+catColors[i]+';width:'+pct+'%;transition:width .5s"></div></div></div>';
+    }).join('')+'</div>':'')
+    /* Health Score */
+    +'<div style="background:var(--grad-card);border:1px solid rgba(37,99,235,.22);border-radius:var(--r-lg);padding:.8rem;text-align:center">'
+    +'<div style="font-size:.48rem;color:var(--t3);margin-bottom:.2rem;letter-spacing:.1em;text-transform:uppercase">Financial Health Score</div>'
+    +'<div style="font-size:2.4rem;font-weight:900;color:'+(health>=70?'var(--green)':health>=40?'var(--orange)':'var(--red)')+'">'+health+'<span style="font-size:1rem;color:var(--t3)">/100</span></div>'
+    +'<div style="font-size:.52rem;color:var(--t2);margin-top:.2rem">'+(health>=70?'Good financial habits':'Keep tracking to improve')+'</div>'
+    +'<div style="height:8px;background:var(--bg3);border-radius:99px;margin:.5rem 0 .2rem"><div style="height:8px;border-radius:99px;background:'+(health>=70?'var(--green)':health>=40?'var(--orange)':'var(--red)')+';width:'+health+'%;transition:width 1s ease"></div></div>'
+    +'<div style="font-size:.4rem;color:var(--t4)">Based on your transaction history and budget compliance</div>'
+    +'</div>';
+
+  openPanel('Analytics',html);
+}
+
+/* FINANCIAL HEALTH SCORE */
+function calcHealthScore(){
+  if(!txLog.length)return 50;
+  var score=50;
+  var sent=txLog.filter(function(t){return t.type==='sent';}).reduce(function(a,t){return a+Number(t.amount||0);},0);
+  var recv=txLog.filter(function(t){return t.type==='received';}).reduce(function(a,t){return a+Number(t.amount||0);},0);
+  /* Income vs spending ratio */
+  if(recv>0){var ratio=sent/recv;if(ratio<0.5)score+=20;else if(ratio<0.8)score+=10;else if(ratio>1.2)score-=15;}
+  /* Budget compliance */
+  if(budgets.length){
+    var over=budgets.filter(function(b){return (b.spent||0)>b.limit;}).length;
+    var compliance=1-(over/budgets.length);
+    score+=Math.round(compliance*20);
+  }
+  /* Goals progress */
+  if(goals.length){
+    var hasProgress=goals.filter(function(g){return g.current>0;}).length;
+    score+=Math.round((hasProgress/goals.length)*10);
+  }
+  /* Transaction diversity */
+  var catSet=new Set(txLog.map(function(t){return t.category;}).filter(Boolean));
+  if(catSet.size>=3)score+=5;
+  return Math.min(100,Math.max(0,score));
+}
+
+/* ════════════════════════════════════════
+   QR CENTER
+════════════════════════════════════════ */
+function openQRCenter(){
+  var uname=piUser?(piUser.username||'Pioneer'):'Pioneer';
+  openPanel('QR Center','<div class="more-grid">'
+    +'<div class="more-row" onclick="showQR('personal')"><div class="more-ico" style="background:rgba(37,99,235,.14)">&#x1F464;</div><div><div class="more-t">Personal QR</div><div class="more-s">Your Pi payment QR code</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'<div class="more-row" onclick="showQR('merchant')"><div class="more-ico" style="background:rgba(13,148,136,.14)">&#x1F3EA;</div><div><div class="more-t">Merchant QR</div><div class="more-s">Business payment QR code</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'<div class="more-row" onclick="showQR('receive')"><div class="more-ico" style="background:rgba(16,185,129,.14)">&#x1F4E5;</div><div><div class="more-t">Receive QR</div><div class="more-s">QR to receive Pi payments</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'<div class="more-row" onclick="openQRScanner()"><div class="more-ico" style="background:rgba(200,169,81,.14)">&#x1F4F7;</div><div><div class="more-t">Scan QR</div><div class="more-s">Scan to pay or verify</div></div><div class="more-arrow">&#x203A;</div></div>'
+    +'</div>');
+}
+function showQR(type){
+  var uname=piUser?(piUser.username||'Pioneer'):'Pioneer';
+  var biz=JSON.parse(localStorage.getItem('fp_business')||'{}');
+  var labels={personal:'Personal',merchant:'Merchant',receive:'Receive'};
+  var names={personal:'@'+uname,merchant:biz.name||'@'+uname,receive:'@'+uname};
+  var data={personal:'finpi:pay:'+uname,merchant:'finpi:pay:'+(biz.piAddress||uname),receive:'finpi:receive:'+uname};
+  openPanel(labels[type]+' QR Code','<div style="text-align:center;padding:.5rem 0">'
+    +'<div style="background:#fff;border-radius:20px;padding:1.2rem;display:inline-block;margin-bottom:.5rem">'
+    +'<div style="width:180px;height:180px;background:linear-gradient(135deg,#1E3A8A,#2563EB,#0D9488);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative">'
+    +'<div style="font-size:1.4rem;font-weight:900;letter-spacing:-.04em;margin-bottom:.2rem">Fin<span style="color:#C8A951">Pi</span></div>'
+    +'<div style="font-size:.52rem;opacity:.85;margin-bottom:.3rem">'+names[type]+'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px;width:80px">'
+    +Array(25).fill(0).map(function(_,i){var on=Math.random()>.4;return '<div style="width:14px;height:14px;background:'+(on?'#fff':'transparent')+'"></div>';}).join('')
+    +'</div>'
+    +'<div style="position:absolute;bottom:8px;font-size:.36rem;opacity:.6">'+data[type].slice(0,24)+'</div>'
+    +'</div></div>'
+    +'<div style="font-size:.5rem;color:var(--t3);margin-bottom:.6rem">Scan to pay '+names[type]+' with Pi</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">'
+    +'<button class="btn btn-outline" onclick="if(navigator.share)navigator.share({title:'FinPi QR',text:'Pay '+names[type]+' on FinPi',url:'https://finpi.pi/pay/'+uname+''})">&#x1F4E4; Share</button>'
+    +'<button class="btn btn-primary" onclick="if(navigator.clipboard)navigator.clipboard.writeText('https://finpi.pi/pay/'+uname+'').then(function(){toast('Link copied','success')})">&#x1F4CB; Copy Link</button>'
+    +'</div></div>');
+}
+function openQRScanner(){openPanel('Scan QR','<div style="text-align:center;padding:1rem"><div style="width:200px;height:200px;border:3px dashed var(--border2);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto .6rem;background:var(--bg0)"><div style="font-size:3rem">&#x1F4F7;</div></div><div style="font-size:.56rem;color:var(--t3);margin-bottom:.6rem">QR scanner requires camera access via Pi Browser</div><button class="btn btn-primary" onclick="toast('QR scanning requires Pi Browser camera permission')">&#x1F4F7; Open Scanner</button></div>');}
+
+/* ════════════════════════════════════════
+   NOTIFICATIONS (REAL DATA)
+════════════════════════════════════════ */
+var _notifications=[];
+function addNotification(type,title,body,data){
+  _notifications.unshift({type:type,title:title,body:body,data:data||{},date:new Date().toISOString(),read:false});
+  if(_notifications.length>50)_notifications.pop();
+  localStorage.setItem('fp_notifs',JSON.stringify(_notifications));
+  updateNotifBadge();
+}
+function updateNotifBadge(){
+  var unread=_notifications.filter(function(n){return!n.read;}).length;
+  var btn=document.querySelector('#topbar .tb-btn');
+  if(btn)btn.innerHTML='&#x1F514;'+(unread>0?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--red);border-radius:50%;display:block"></span>':'');
+}
+function openNotifications(){
+  try{_notifications=JSON.parse(localStorage.getItem('fp_notifs')||'[]');}catch(e){_notifications=[];}
+  _notifications.forEach(function(n){n.read=true;});
+  localStorage.setItem('fp_notifs',JSON.stringify(_notifications));
+  updateNotifBadge();
+  var icons={payment:'&#x1F4B8;',request:'&#x1F4E5;',budget:'&#x26A0;&#xFE0F;',savings:'&#x1F3AF;',security:'&#x1F512;',system:'&#x2139;'};
+  var colors={payment:'var(--green)',request:'var(--blue)',budget:'var(--orange)',savings:'var(--teal)',security:'var(--red)',system:'var(--t3)'};
+  openPanel('Notifications',_notifications.length
+    ?'<div class="more-grid">'+_notifications.slice(0,30).map(function(n,i){
+      return '<div class="more-row" style="align-items:flex-start;gap:.5rem">'
+        +'<div class="more-ico" style="background:rgba(37,99,235,.1);flex-shrink:0">'+( icons[n.type]||'&#x1F514;')+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:.6rem;font-weight:700;color:var(--t1)">'+n.title+'</div>'
+        +'<div style="font-size:.48rem;color:var(--t3);margin-top:.06rem;line-height:1.4">'+n.body+'</div>'
+        +'<div style="font-size:.4rem;color:var(--t4);margin-top:.1rem">'+fmtDate(n.date)+'</div></div></div>';
+      }).join('')+'</div>'
+      +'<button class="btn btn-outline btn-sm" style="margin-top:.5rem" onclick="_notifications=[];localStorage.setItem('fp_notifs','[]');closePanel();toast('Cleared')">Clear All</button>'
+    :'<div class="empty"><div class="empty-ico">&#x1F514;</div><div class="empty-t">No notifications</div><div class="empty-s">Payment alerts, budget warnings, and system updates will appear here</div></div>');
+}
+
+/* ════════════════════════════════════════
+   PROFILE SETUP
+════════════════════════════════════════ */
+function openProfileSetup(){
+  var saved=JSON.parse(localStorage.getItem('fp_profile')||'{}');
+  var uname=piUser?(piUser.username||'Pioneer'):'Pioneer';
+  openPanel('Profile Setup','<div style="text-align:center;padding:.4rem 0 .6rem">'
+    +'<div style="width:64px;height:64px;border-radius:99px;background:var(--grad-blue);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#fff;margin:0 auto .3rem">'+uname[0].toUpperCase()+'</div>'
+    +'<div style="font-size:.56rem;color:var(--t3)">@'+uname+'</div></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Full Name</label><input class="finput" id="pf-name" placeholder="Your full name" value="'+(saved.fullName||'')+'"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Email</label><input class="finput" id="pf-email" type="email" placeholder="your@email.com" value="'+(saved.email||'')+'"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Phone</label><input class="finput" id="pf-phone" type="tel" placeholder="+1234567890" value="'+(saved.phone||'')+'"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Country</label><input class="finput" id="pf-country" placeholder="Your country" value="'+(saved.country||'')+'"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Currency Preference</label>'
+    +'<select class="finput" id="pf-currency" style="cursor:pointer">'
+    +['USD','EUR','GBP','SAR','AED','NGN'].map(function(c){return '<option value="'+c+'"'+(saved.currency===c?' selected':'')+'>'+c+'</option>';}).join('')
+    +'</select></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Language</label>'
+    +'<select class="finput" id="pf-lang" style="cursor:pointer">'
+    +['English','Arabic','French','Spanish','Swahili','Indonesian','Portuguese','Turkish'].map(function(l){return '<option value="'+l+'"'+(saved.language===l?' selected':'')+'>'+l+'</option>';}).join('')
+    +'</select></div>'
+    +'<button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>');
+}
+function saveProfile(){
+  var profile={
+    fullName:document.getElementById('pf-name')?.value||'',
+    email:document.getElementById('pf-email')?.value||'',
+    phone:document.getElementById('pf-phone')?.value||'',
+    country:document.getElementById('pf-country')?.value||'',
+    currency:document.getElementById('pf-currency')?.value||'USD',
+    language:document.getElementById('pf-lang')?.value||'English',
+    updated:new Date().toISOString()
+  };
+  localStorage.setItem('fp_profile',JSON.stringify(profile));
+  toast('Profile saved — will appear on receipts','success');
+  closePanel();
+  addNotification('system','Profile Updated','Your profile information has been saved and will appear on transaction receipts.');
+}
+function getProfile(){
+  try{return JSON.parse(localStorage.getItem('fp_profile')||'{}');}catch(e){return {};}
+}
+
+/* ════════════════════════════════════════
+   FINPI CARD (COMING SOON)
+════════════════════════════════════════ */
+function openFinPiCard(){
+  var uname=piUser?(piUser.username||'Pioneer'):'Pioneer';
+  var profile=getProfile();
+  var displayName=(profile.fullName||uname).toUpperCase();
+  openPanel('FinPi Card',''
+    +'<div style="font-size:.5rem;color:var(--teal);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.4rem">&#x2B50; Premium Concept</div>'
+    /* Dark Card */
+    +'<div style="background:linear-gradient(135deg,#0a0f1e,#1a1f3a,#0d2040);border-radius:18px;padding:1.2rem 1.1rem;margin-bottom:.4rem;position:relative;overflow:hidden;border:1px solid rgba(37,99,235,.3);box-shadow:0 12px 40px rgba(0,0,0,.5)">'
+    +'<div style="position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,.3),transparent 70%)"></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">'
+    +'<div style="display:flex;align-items:center;gap:.3rem"><span style="font-size:1rem;font-weight:900;color:#fff">Fin<span style="color:#C8A951">Pi</span></span>''<div style="font-size:1rem;font-weight:900;color:#fff;letter-spacing:-.04em">Fin<span style="color:#C8A951">Pi</span></div></div>'
+    +'<div style="font-size:.6rem;color:rgba(255,255,255,.5);font-style:italic">Virtual</div></div>'
+    +'<div style="font-family:monospace;font-size:.72rem;color:rgba(255,255,255,.6);letter-spacing:.15em;margin-bottom:.8rem">**** **** **** 2026</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-end">'
+    +'<div><div style="font-size:.38rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.1rem">Card Holder</div>'
+    +'<div style="font-size:.62rem;font-weight:700;color:#fff;letter-spacing:.06em">'+displayName+'</div></div>'
+    +'<div style="text-align:right"><div style="font-size:.38rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.1rem">Expires</div>'
+    +'<div style="font-size:.56rem;color:rgba(255,255,255,.6)">12/28</div></div></div>'
+    +'<div style="position:absolute;bottom:16px;right:16px;font-size:.9rem;opacity:.4">&#x25F4;&#x25F4;</div>'
+    +'</div>'
+    /* Navy Card */
+    +'<div style="background:linear-gradient(135deg,#1a237e,#283593,#1565c0);border-radius:18px;padding:1.2rem 1.1rem;margin-bottom:.4rem;position:relative;overflow:hidden;border:1px solid rgba(100,149,237,.3)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">'
+    +'<div style="display:flex;align-items:center;gap:.3rem"><span style="font-size:1rem;font-weight:900;color:#fff">Fin<span style="color:#C8A951">Pi</span></span>''<div style="font-size:1rem;font-weight:900;color:#fff;letter-spacing:-.04em">Fin<span style="color:#FFD700">Pi</span></div></div>'
+    +'<div style="font-size:.6rem;color:rgba(255,255,255,.5)">Premium</div></div>'
+    +'<div style="font-family:monospace;font-size:.72rem;color:rgba(255,255,255,.6);letter-spacing:.15em;margin-bottom:.8rem">**** **** **** 2026</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-end">'
+    +'<div><div style="font-size:.38rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.1rem">Card Holder</div>'
+    +'<div style="font-size:.62rem;font-weight:700;color:#fff;letter-spacing:.06em">'+displayName+'</div></div>'
+    +'<div style="text-align:right"><div style="font-size:.38rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.1rem">Network</div>'
+    +'<div style="font-size:.56rem;color:rgba(255,255,255,.6)">π Pi</div></div></div>'
+    +'</div>'
+    /* Features */
+    +'<div style="background:var(--bg0);border-radius:var(--r-lg);padding:.8rem;margin-bottom:.4rem">'
+    +'<div style="font-size:.56rem;font-weight:700;color:var(--t1);margin-bottom:.4rem">Card Features</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">'
+    +[['&#x1F4B3;','Virtual Card'],['&#x1F4E6;','Physical Card'],['&#x1F4F2;','Contactless Pay'],['&#x1F310;','Online Payments'],['&#x1F511;','Secure PIN'],['&#x2B50;','Premium Design']].map(function(f){
+      return '<div style="display:flex;align-items:center;gap:.3rem;font-size:.5rem;color:var(--t2)"><span>'+f[0]+'</span>'+f[1]+'</div>';
+    }).join('')+'</div></div>'
+    +'<div style="background:rgba(200,169,81,.1);border:1px solid rgba(200,169,81,.3);border-radius:var(--r-md);padding:.6rem;text-align:center">'
+    +'<div style="font-size:.56rem;font-weight:800;color:var(--gold)">&#x23F3; Coming Soon</div>'
+    +'<div style="font-size:.46rem;color:var(--t3);margin-top:.2rem">FinPi Card will be available in a future release.<br>Join official FinPi announcements for updates.</div>'
+    +'</div>');
+}
+
+/* ════════════════════════════════════════
+   ATM CARD (COMING SOON)
+════════════════════════════════════════ */
+function openATMCard(){
+  var uname=piUser?(piUser.username||'Pioneer'):'Pioneer';
+  var profile=getProfile();
+  var displayName=(profile.fullName||uname).toUpperCase();
+  openPanel('ATM Access',''
+    +'<div style="font-size:.5rem;color:var(--teal);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.4rem">&#x1F3E6; Concept Design</div>'
+    /* ATM Card mockup */
+    +'<div style="background:linear-gradient(135deg,#1b1b2f,#16213e,#0f3460);border-radius:18px;padding:1.2rem 1.1rem;margin-bottom:.4rem;position:relative;overflow:hidden;border:1px solid rgba(13,148,136,.3);box-shadow:0 12px 40px rgba(0,0,0,.5)">'
+    +'<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.01) 0px,rgba(255,255,255,.01) 1px,transparent 1px,transparent 8px)"></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.6rem;position:relative">'
+    +'<div style="display:flex;align-items:center;gap:.3rem"><span style="font-size:1rem;font-weight:900;color:#fff">Fin<span style="color:#C8A951">Pi</span></span>''<div style="font-size:1rem;font-weight:900;color:#fff;letter-spacing:-.04em">Fin<span style="color:#0D9488">Pi</span></div></div>'
+    +'<div style="background:rgba(255,255,255,.1);border-radius:6px;padding:.15rem .4rem;font-size:.44rem;color:rgba(255,255,255,.6)">ATM</div></div>'
+    +'<div style="width:40px;height:30px;background:linear-gradient(135deg,#d4a843,#f0c040);border-radius:5px;margin-bottom:.6rem;position:relative">'
+    +'<div style="position:absolute;top:8px;left:0;right:0;height:1px;background:rgba(0,0,0,.3)"></div>'
+    +'<div style="position:absolute;top:14px;left:5px;right:5px;height:1px;background:rgba(0,0,0,.2)"></div></div>'
+    +'<div style="font-family:monospace;font-size:.72rem;color:rgba(255,255,255,.6);letter-spacing:.15em;margin-bottom:.8rem">**** **** **** 2026</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-end">'
+    +'<div><div style="font-size:.38rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.1rem">Card Holder</div>'
+    +'<div style="font-size:.62rem;font-weight:700;color:#fff;letter-spacing:.06em">'+displayName+'</div></div>'
+    +'<div style="text-align:right"><div style="font-size:.38rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.1rem">Valid Thru</div>'
+    +'<div style="font-size:.56rem;color:rgba(255,255,255,.6)">12/28</div></div></div>'
+    +'</div>'
+    /* Features */
+    +'<div style="background:var(--bg0);border-radius:var(--r-lg);padding:.8rem;margin-bottom:.4rem">'
+    +'<div style="font-size:.56rem;font-weight:700;color:var(--t1);margin-bottom:.4rem">ATM Features</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">'
+    +[['&#x1F3E7;','ATM Withdrawals'],['&#x1F30D;','Global ATM Access'],['&#x1F512;','Secure Transactions'],['&#x1F4B5;','Cash Access'],['&#x1F4B3;','Debit Card'],['&#x1F4B1;','Multi-Currency']].map(function(f){
+      return '<div style="display:flex;align-items:center;gap:.3rem;font-size:.5rem;color:var(--t2)"><span>'+f[0]+'</span>'+f[1]+'</div>';
+    }).join('')+'</div></div>'
+    +'<div style="background:rgba(13,148,136,.1);border:1px solid rgba(13,148,136,.3);border-radius:var(--r-md);padding:.6rem;text-align:center">'
+    +'<div style="font-size:.56rem;font-weight:800;color:var(--teal)">&#x23F3; Coming Soon</div>'
+    +'<div style="font-size:.46rem;color:var(--t3);margin-top:.2rem">ATM access functionality will be introduced in a future release.<br>Physical card issuance subject to regulatory requirements.</div>'
+    +'</div>');
+}
+
+/* ════════════════════════════════════════
+   ENHANCED RECEIPT (ALL FIELDS)
+════════════════════════════════════════ */
+function openFullReceipt(idx){
+  var tx=txLog[idx];if(!tx)return;
+  var profile=getProfile();
+  var uname=piUser?(piUser.username||'Pioneer'):'Pioneer';
+  var uaddr=piUser&&piUser.wallet_address?piUser.wallet_address:'';
+  var biz=JSON.parse(localStorage.getItem('fp_business')||'{}');
+
+  /* Build branded header */
+  var header='<div style="background:linear-gradient(135deg,#1E3A8A,#2563EB);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:.8rem 1rem;display:flex;align-items:center;justify-content:space-between;margin:-0.7rem -.9rem .6rem">'
+    +'<div style="font-size:1.4rem;font-weight:900;color:#fff;letter-spacing:-.04em">Fin<span style="color:#C8A951">Pi</span></div>'
+    +(biz.name?'<div style="font-size:.44rem;color:rgba(255,255,255,.7)">'+biz.name+'</div>':'')
+    +'<span style="background:'+(tx.status==='completed'?'rgba(16,185,129,.25)':'rgba(245,158,11,.25)')+';color:'+(tx.status==='completed'?'#10B981':'#F59E0B')+';border:1px solid currentColor;font-size:.44rem;font-weight:700;border-radius:99px;padding:.1rem .4rem">'+( tx.status||'completed').toUpperCase()+'</span>'
+    +'</div>';
+
+  /* Amount block */
+  var amtBlock='<div style="text-align:center;margin-bottom:.6rem">'
+    +'<div style="font-family:var(--f-mono);font-size:2rem;font-weight:900;color:var(--gold)">&#x03C0; '+fmtAmt(tx.amount)+'</div>'
+    +(tx.usdRef?'<div style="font-size:.44rem;color:var(--t3)">≈ $'+tx.usdRef+' USD · Reference only</div>':'')
+    +'</div>';
+
+  /* QR verification block */
+  var qrBlock='<div style="background:#fff;border-radius:12px;padding:.6rem;display:inline-block;margin:.4rem auto;display:flex;justify-content:center">'
+    +'<div style="width:80px;height:80px;background:linear-gradient(135deg,#1E3A8A,#0D9488);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff">'
+    +'<div style="font-size:.5rem;font-weight:900;text-align:center">Fin<span style="color:#C8A951">Pi</span><br><span style="font-size:.36rem;opacity:.7">'+(tx.receiptNo||'').slice(0,8)+'</span></div>'
+    +'</div></div>';
+
+  /* All fields table */
+  var fields=[
+    ['Receipt No.', tx.receiptNo||'—'],
+    ['Transaction ID', tx.txid||'Pending blockchain confirmation'],
+    ['Sender Full Name', profile.fullName||'—'],
+    ['Sender Username', '@'+(tx.sender||uname)],
+    ['Sender Wallet', uaddr||'Pi wallet address'],
+    ['Receiver Full Name', tx.recipientName||'—'],
+    ['Receiver Username', tx.recipient||'—'],
+    ['Receiver Wallet', tx.recipientAddr||tx.recipient||'—'],
+    ['Payment Title', tx.title||tx.note||'Pi Transfer'],
+    ['Category', tx.category||'—'],
+    ['Narration', tx.narration||'—'],
+    ['Description', tx.note||'—'],
+    ['Amount', 'π '+fmtAmt(tx.amount)],
+    ['Reference Value', tx.usdRef?('$'+tx.usdRef+' USD · Reference only'):'—'],
+    ['Status', (tx.status||'completed').toUpperCase()],
+    ['Date', new Date(tx.date).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})],
+    ['Time', new Date(tx.date).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'})],
+    ['Payment Method', 'Pi SDK · Pi Network Mainnet'],
+  ];
+
+  var table='<div style="background:var(--bg0);border-radius:var(--r-sm);padding:.5rem .65rem;margin-bottom:.5rem">'
+    +fields.map(function(r){
+      var isMono=r[0].includes('ID')||r[0].includes('Receipt')||r[0].includes('Wallet');
+      return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:.22rem 0;font-size:.48rem;border-bottom:1px solid var(--border)">'
+        +'<span style="color:var(--t3);flex-shrink:0;margin-right:.3rem">'+r[0]+'</span>'
+        +'<span style="color:var(--t1);text-align:right;word-break:break-all;max-width:58%;'+(isMono?'font-family:var(--f-mono);font-size:.42rem':'')+'">'+r[1]+'</span></div>';
+    }).join('')
+    +'</div>';
+
+  var footer='<div style="font-size:.4rem;color:var(--t4);text-align:center;margin-bottom:.6rem;line-height:1.6">'
+    +'FinPi stores receipt metadata locally on your device.<br>'
+    +'This receipt does not replace the official Pi Network blockchain record.<br>'
+    +'finpi.app@gmail.com</div>';
+
+  var actions='<div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem">'
+    +'<button class="btn btn-outline btn-sm" onclick="shareReceipt('+idx+')">&#x1F4E4; Share</button>'
+    +'<button class="btn btn-outline btn-sm" onclick="copyReceipt('+idx+')">&#x1F4CB; Copy</button>'
+    +'<button class="btn btn-outline btn-sm" onclick="printReceipt('+idx+')">&#x1F5A8; Print / PDF</button>'
+    +'<button class="btn btn-primary btn-sm" onclick="editReceiptMeta('+idx+')">&#x270F;&#xFE0F; Edit</button>'
+    +'</div>';
+
+  openPanel('Transaction Receipt', header+amtBlock+qrBlock+table+footer+actions);
+}
+
+function editReceiptMeta(idx){
+  var tx=txLog[idx];if(!tx)return;
+  var cats=['Payment','School Fees','Rent','Salary','Invoice','Product Purchase','Service','Donation','Transfer','Business','Food','Transport','Health','Entertainment','Other'];
+  openPanel('Edit Receipt Details','<div class="finput-wrap"><label class="finput-label">Title / Subject</label><input class="finput" id="er-title" value="'+(tx.title||tx.note||'')+'" placeholder="Payment title"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Recipient Name</label><input class="finput" id="er-rname" value="'+(tx.recipientName||'')+'" placeholder="Recipient full name"></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Category</label><select class="finput" id="er-cat">'+cats.map(function(c){return '<option value="'+c+'"'+(tx.category===c?' selected':'')+'>'+c+'</option>';}).join('')+'</select></div>'
+    +'<div class="finput-wrap"><label class="finput-label">Narration</label><textarea class="finput" id="er-narr" rows="2" style="resize:none">'+( tx.narration||'')+'</textarea></div>'
+    +'<button class="btn btn-primary" onclick="saveReceiptMeta('+idx+')">Save Changes</button>');
+}
+function saveReceiptMeta(idx){
+  var tx=txLog[idx];if(!tx)return;
+  tx.title=document.getElementById('er-title')?.value||tx.title;
+  tx.recipientName=document.getElementById('er-rname')?.value||tx.recipientName;
+  tx.category=document.getElementById('er-cat')?.value||tx.category;
+  tx.narration=document.getElementById('er-narr')?.value||tx.narration;
+  txLog[idx]=tx;
+  localStorage.setItem('fp_tx',JSON.stringify(txLog));
+  toast('Receipt updated','success');
+  closePanel();
+  openFullReceipt(idx);
+}
+
+/* Override openReceipt to use full version */
+function openReceipt(idx){ openFullReceipt(idx); }
+
+/* Notifications on payment */
+/* addTx notifications merged into core addTx */
+
+/* Init notifications from storage */
+try{_notifications=JSON.parse(localStorage.getItem('fp_notifs')||'[]');}catch(e){_notifications=[];}
+</script>
+</body>
+</html>
