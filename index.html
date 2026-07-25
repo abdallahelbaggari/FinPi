@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#060B14">
+<title>FinPi</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/finpi-logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#060B14;--bg1:#0A1020;--bg2:#0F1830;--bg3:#162040;
+  --blue:#2563EB;--teal:#0D9488;--gold:#C8A951;--green:#10B981;--red:#EF4444;--orange:#F59E0B;
+  --t1:#F0F4FF;--t2:rgba(240,244,255,.62);--t3:rgba(240,244,255,.36);
+  --glass:rgba(255,255,255,.05);--border:rgba(255,255,255,.09);--border2:rgba(255,255,255,.15);
+  --r:12px;--nav:68px;
+  --f:'Poppins',sans-serif;--m:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg0);color:var(--t1);-webkit-font-smoothing:antialiased}
+button{background:none;border:none;cursor:pointer;font-family:inherit;touch-action:manipulation}
+input{font-family:inherit;outline:none;border:none;background:none;color:var(--t1)}
+a{color:var(--teal);text-decoration:none}
+
+/* ── LOGIN ── */
+#login{display:flex;flex-direction:column;min-height:100vh;background:var(--bg0)}
+.login-stripe{height:4px;background:linear-gradient(90deg,#1565C0,#0D9488,#C8A951)}
+.login-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;text-align:center}
+.fp-icon{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#1565C0,#1DE9B6);display:flex;align-items:center;justify-content:center;margin:0 auto .8rem;box-shadow:0 0 28px rgba(21,101,192,.4)}
+.fp-icon span{font-size:2.2rem;font-weight:900;color:#fff}
+.login-title{font-size:2.6rem;font-weight:900;letter-spacing:-.04em;margin-bottom:.15rem}
+.login-title b{background:linear-gradient(135deg,#2563EB,#0D9488);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.login-sub{font-size:.58rem;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:1rem}
+.login-tags{display:flex;flex-wrap:wrap;gap:.28rem;justify-content:center;margin-bottom:1rem}
+.ltag{font-size:.42rem;color:var(--t2);background:var(--glass);border:1px solid var(--border);border-radius:99px;padding:.16rem .48rem}
+.login-cta{padding:1rem 1.5rem 2.5rem}
+.btn-pi{width:100%;padding:.88rem;background:#2563EB;border-radius:13px;font-size:.95rem;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;gap:.5rem;touch-action:manipulation;box-shadow:0 4px 20px rgba(37,99,235,.45);transition:opacity .15s}
+.btn-pi:active{opacity:.82}
+.btn-pi:disabled{opacity:.52;cursor:not-allowed}
+.btn-guest{width:100%;padding:.68rem;background:var(--glass);border:1px solid var(--border2);border-radius:13px;font-size:.78rem;font-weight:600;color:var(--t2);display:flex;align-items:center;justify-content:center;gap:.4rem;touch-action:manipulation;margin-top:.45rem;transition:opacity .15s}
+.btn-guest:active{opacity:.75}
+#lmsg{font-size:.48rem;color:var(--t3);text-align:center;margin-top:.5rem;min-height:.85rem}
+.login-foot{font-size:.41rem;color:var(--t3);text-align:center;margin-top:.65rem;line-height:1.75}
+.login-foot a{color:var(--teal)}
+
+/* ── APP ── */
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden}
+#hdr{background:rgba(6,11,20,.96);border-bottom:1px solid var(--border);padding:.48rem .8rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;backdrop-filter:blur(20px);min-height:52px}
+.hdr-brand{font-size:1.15rem;font-weight:900;letter-spacing:-.04em}
+.hdr-brand b{background:linear-gradient(135deg,#2563EB,#0D9488);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr-r{display:flex;gap:.38rem}
+.hdr-btn{width:34px;height:34px;border-radius:99px;background:var(--glass);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.8rem;cursor:pointer;position:relative;touch-action:manipulation}
+.hdr-av{width:34px;height:34px;border-radius:99px;background:linear-gradient(135deg,#1E3A8A,#2563EB);display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:800;color:#fff;cursor:pointer;touch-action:manipulation}
+.ndot{position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--red);display:none}
+
+/* ── MAIN ── */
+#main{flex:1;overflow:hidden;position:relative;min-height:0}
+.scr{display:none;flex-direction:column;height:100%;overflow:hidden}
+.scr.on{display:flex}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav) + 1rem);min-height:0;height:0}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ── NAV ── */
+#nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav);background:rgba(6,11,20,.97);border-top:1px solid var(--border2);display:flex;z-index:50;backdrop-filter:blur(22px);padding-bottom:env(safe-area-inset-bottom)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1rem;cursor:pointer;touch-action:manipulation;position:relative}
+.nb::after{content:'';position:absolute;bottom:0;left:18%;right:18%;height:2.5px;background:linear-gradient(90deg,#2563EB,#0D9488);border-radius:4px 4px 0 0;opacity:0;transition:opacity .2s}
+.nb.on::after{opacity:1}
+.nb-i{font-size:1.45rem;color:var(--t3);transition:all .2s}
+.nb.on .nb-i{color:#2563EB;transform:scale(1.1)}
+.nb-l{font-size:.4rem;font-weight:700;color:var(--t3);letter-spacing:.02em}
+.nb.on .nb-l{color:#2563EB}
+
+/* ── PANEL ── */
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:none;pointer-events:none;align-items:flex-end;backdrop-filter:blur(5px)}
+#ov.open{display:flex;pointer-events:auto}
+.psheet{width:100%;background:var(--bg1);border-radius:20px 20px 0 0;border-top:1px solid var(--border2);max-height:88vh;display:flex;flex-direction:column}
+.phead{display:flex;align-items:center;justify-content:space-between;padding:.72rem .85rem .52rem;border-bottom:1px solid var(--border);flex-shrink:0}
+.ptitle{font-size:.82rem;font-weight:800;color:var(--t1)}
+.pclose{width:28px;height:28px;border-radius:99px;background:var(--glass);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--t3);cursor:pointer;touch-action:manipulation}
+.pbody{overflow-y:auto;padding:.62rem .8rem 1.4rem;flex:1}
+.pbody::-webkit-scrollbar{display:none}
+
+/* ── CARDS ── */
+.bal-card{background:linear-gradient(140deg,rgba(37,99,235,.2),rgba(13,148,136,.14));border:1px solid rgba(37,99,235,.28);border-radius:18px;padding:1rem;margin:.4rem .65rem;position:relative;overflow:hidden}
+.bal-lbl{font-size:.42rem;font-weight:700;color:var(--t3);letter-spacing:.1em;text-transform:uppercase}
+.bal-amt{font-family:var(--m);font-size:2.3rem;font-weight:800;color:var(--gold);line-height:1.1;margin:.14rem 0}
+.bal-addr{font-size:.44rem;color:var(--t3);font-family:var(--m);margin-bottom:.75rem}
+.bal-btns{display:grid;grid-template-columns:1fr 1fr;gap:.38rem}
+.bbal-btn{padding:.5rem;border-radius:var(--r);text-align:center;cursor:pointer;touch-action:manipulation;transition:opacity .15s}
+.bbal-btn:active{opacity:.7}
+.bbal-btn.p{background:#2563EB}
+.bbal-btn.s{background:rgba(255,255,255,.08);border:1px solid var(--border)}
+.bbal-i{font-size:1rem;margin-bottom:.1rem}
+.bbal-l{font-size:.43rem;font-weight:700;color:var(--t1)}
+
+/* ── QUICK ACTIONS ── */
+.qa{display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem;padding:.22rem .65rem .45rem}
+.qa-b{display:flex;flex-direction:column;align-items:center;gap:.22rem;padding:.5rem .1rem;border-radius:var(--r);background:var(--glass);border:1px solid var(--border);cursor:pointer;touch-action:manipulation;min-height:66px;transition:all .15s}
+.qa-b:active{background:rgba(255,255,255,.09);transform:scale(.94)}
+.qa-i{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.qa-l{font-size:.38rem;font-weight:600;color:var(--t2);text-align:center;line-height:1.2}
+
+/* ── TX ROW ── */
+.tx{display:flex;align-items:center;gap:.5rem;padding:.58rem .8rem;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;touch-action:manipulation;min-height:60px;transition:background .12s}
+.tx:active{background:var(--glass)}
+.tx-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
+.tx-ic.s{background:rgba(239,68,68,.15)}.tx-ic.r{background:rgba(16,185,129,.15)}
+.tx-inf{flex:1;min-width:0}
+.tx-nm{font-size:.58rem;font-weight:600;color:var(--t1)}
+.tx-dt{font-size:.4rem;color:var(--t3);margin-top:.04rem}
+.tx-am{text-align:right;flex-shrink:0}
+.tx-pi{font-family:var(--m);font-size:.64rem;font-weight:700}
+.tx-pi.s{color:var(--red)}.tx-pi.r{color:var(--green)}
+.tx-st{font-size:.38rem;color:var(--t3)}
+
+/* ── SECTION ── */
+.slbl{padding:.6rem .8rem .16rem;font-size:.38rem;font-weight:800;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+.sact{font-size:.42rem;font-weight:600;color:var(--blue);cursor:pointer;touch-action:manipulation}
+
+/* ── UTIL GRID ── */
+.ugrid{display:grid;grid-template-columns:1fr 1fr;gap:.32rem;padding:.18rem .65rem}
+.uc{background:var(--glass);border:1px solid var(--border);border-radius:15px;padding:.6rem .55rem;cursor:pointer;touch-action:manipulation;min-height:76px;display:flex;flex-direction:column;justify-content:space-between;transition:all .15s;position:relative}
+.uc:active{background:rgba(255,255,255,.08);transform:scale(.95)}
+.uc-i{font-size:1.3rem;margin-bottom:.2rem}
+.uc-n{font-size:.53rem;font-weight:700;color:var(--t1)}
+.uc-d{font-size:.37rem;color:var(--t3)}
+.ubadge{position:absolute;top:.35rem;right:.35rem;font-size:.3rem;font-weight:800;border-radius:99px;padding:.04rem .22rem;text-transform:uppercase;letter-spacing:.04em}
+.live{background:rgba(16,185,129,.18);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.soon{background:rgba(245,158,11,.12);color:var(--orange);border:1px solid rgba(245,158,11,.25)}
+
+/* ── FORM ── */
+.fi{width:100%;background:var(--glass);border:1.5px solid var(--border2);border-radius:var(--r);padding:.55rem .72rem;font-size:.6rem;color:var(--t1);display:block;margin-bottom:.4rem;transition:border-color .15s}
+.fi:focus{border-color:#2563EB}
+.fl{font-size:.44rem;font-weight:600;color:var(--t3);margin-bottom:.18rem;display:block}
+.btn{width:100%;padding:.7rem;border-radius:var(--r);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:.32rem;cursor:pointer;touch-action:manipulation;min-height:48px;margin-bottom:.32rem;transition:all .15s}
+.btn:active{transform:scale(.97)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.bp{background:linear-gradient(135deg,#1E3A8A,#2563EB);color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.4)}
+.bt{background:linear-gradient(135deg,#0F766E,#0D9488);color:#fff}
+.bo{background:var(--glass);border:1.5px solid var(--border2);color:var(--t1)}
+.bd{background:rgba(239,68,68,.14);border:1.5px solid rgba(239,68,68,.28);color:var(--red)}
+
+/* ── STABS ── */
+.stabs{display:flex;padding:.22rem .65rem;gap:.22rem;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.stab{flex-shrink:0;font-size:.48rem;font-weight:600;padding:.28rem .6rem;border-radius:99px;background:var(--glass);border:1px solid var(--border);color:var(--t3);cursor:pointer;touch-action:manipulation;white-space:nowrap;transition:all .15s}
+.stab.on{background:#2563EB;border-color:transparent;color:#fff}
+
+/* ── MORE ROW ── */
+.mr{display:flex;align-items:center;gap:.55rem;background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:.52rem .68rem;cursor:pointer;touch-action:manipulation;min-height:52px;margin-bottom:.28rem;transition:all .15s}
+.mr:active{background:rgba(255,255,255,.08)}
+.mr-i{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;background:var(--glass)}
+.mr-t{font-size:.6rem;font-weight:700;color:var(--t1)}
+.mr-s{font-size:.42rem;color:var(--t3);margin-top:.03rem}
+.mr-a{margin-left:auto;font-size:.82rem;color:var(--t3)}
+
+/* ── CONFIRM ── */
+#cov{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:none;pointer-events:none;align-items:flex-end}
+#cov.open{display:flex;pointer-events:auto}
+.csheet{width:100%;background:var(--bg1);border-radius:20px 20px 0 0;border-top:1px solid var(--border2);padding:1rem .9rem 2rem}
+.c-lbl{font-size:.42rem;font-weight:800;color:var(--t3);text-align:center;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.3rem}
+.c-amt{font-family:var(--m);font-size:2.1rem;font-weight:900;color:var(--gold);text-align:center;margin:.3rem 0 .12rem}
+.c-to{font-size:.52rem;color:var(--t3);text-align:center;margin-bottom:.7rem}
+.c-btns{display:grid;grid-template-columns:1fr 1fr;gap:.38rem}
+
+/* ── MISC ── */
+#toast{position:fixed;bottom:calc(var(--nav) + 12px);left:50%;transform:translateX(-50%) translateY(12px);background:var(--bg3);border:1px solid var(--border2);color:var(--t1);font-size:.52rem;font-weight:600;padding:.36rem .95rem;border-radius:99px;opacity:0;transition:all .22s cubic-bezier(.34,1.56,.64,1);pointer-events:none;z-index:999;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.s{background:rgba(16,185,129,.22);color:var(--green);border-color:rgba(16,185,129,.3)}
+#toast.e{background:rgba(239,68,68,.18);color:var(--red);border-color:rgba(239,68,68,.3)}
+.sbar{padding:.55rem .8rem .4rem;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.sbar-t{font-size:1.3rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.sbar-s{font-size:.44rem;color:var(--t3);margin-top:.12rem}
+.empty{text-align:center;padding:2.2rem 1rem}
+.empty-i{font-size:2.8rem;margin-bottom:.45rem}
+.empty-t{font-size:.75rem;font-weight:700;color:var(--t1);margin-bottom:.22rem}
+.empty-s{font-size:.52rem;color:var(--t3);line-height:1.6}
+#offbar{display:none;position:fixed;top:0;left:0;right:0;background:rgba(239,68,68,.93);padding:.32rem 1rem;text-align:center;z-index:1000;font-size:.48rem;font-weight:700;color:#fff}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.scr.on{animation:fu .16s ease}
+</style>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-stripe"></div>
+  <div class="login-hero">
+    <div class="fp-icon"><span>F</span></div>
+    <div class="login-title">Fin<b>Pi</b></div>
+    <div class="login-sub">Pi Financial Platform</div>
+    <div class="login-tags">
+      <span class="ltag">&#x1F4B3; Payments</span>
+      <span class="ltag">&#x1F510; Secure</span>
+      <span class="ltag">&#x1F4CA; Budget</span>
+      <span class="ltag">&#x1F3EA; Merchant</span>
+      <span class="ltag">&#x1F9FE; Receipts</span>
+      <span class="ltag">&#x1F916; AI</span>
+    </div>
+  </div>
+  <div class="login-cta">
+    <button class="btn-pi" id="loginBtn" onclick="piLogin()">
+      <span style="font-size:1.15rem">&#x03C0;</span>
+      <span id="signin-txt">Sign In with Pi</span>
+    </button>
+    <button class="btn-guest" onclick="guestMode()">
+      <span>&#x1F464;</span> Continue as Guest
+    </button>
+    <div id="lmsg"></div>
+    <div class="login-foot">
+      Pi SDK &middot; Mainnet &middot; sandbox:false<br>
+      <a href="/legal/privacy-policy.html">Privacy Policy</a> &middot;
+      <a href="/legal/terms-of-service.html">Terms of Service</a><br>
+      &copy; 2026 FinPi &middot; Abdullahi Bashir Abubakar
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <div id="offbar">No internet connection</div>
+  <div id="hdr">
+    <div class="hdr-brand">Fin<b>Pi</b></div>
+    <div class="hdr-r">
+      <div class="hdr-btn" onclick="openNotifs()">&#x1F514;<div class="ndot" id="ndot"></div></div>
+      <div class="hdr-av" id="hdr-av" onclick="goTab('profile',document.querySelectorAll('.nb')[4])">F</div>
+    </div>
+  </div>
+  <div id="main">
+    <div class="scr on" id="scr-home"><div class="scroll" id="home-scroll"></div></div>
+    <div class="scr" id="scr-wallet">
+      <div class="sbar"><div><div class="sbar-t">Wallet</div><div class="sbar-s">Pi balance &amp; tools</div></div></div>
+      <div class="scroll" id="wallet-scroll"></div>
+    </div>
+    <div class="scr" id="scr-pay">
+      <div class="sbar"><div><div class="sbar-t">Payments</div><div class="sbar-s">Send &amp; receive Pi</div></div></div>
+      <div class="stabs" id="ptabs">
+        <div class="stab on" onclick="ptab('send',this)">&#x1F4B8; Send</div>
+        <div class="stab" onclick="ptab('recv',this)">&#x1F4E5; Receive</div>
+        <div class="stab" onclick="ptab('req',this)">&#x1F4CB; Request</div>
+        <div class="stab" onclick="ptab('contacts',this)">&#x1F4D2; Contacts</div>
+        <div class="stab" onclick="ptab('qr',this)">&#x1F4F1; QR</div>
+      </div>
+      <div class="scroll" id="pay-scroll"></div>
+    </div>
+    <div class="scr" id="scr-history">
+      <div class="sbar">
+        <div><div class="sbar-t">History</div><div class="sbar-s">All transactions</div></div>
+        <div style="display:flex;gap:.3rem;margin-top:.1rem">
+          <div class="stab on" id="htab-all" onclick="htab('all',this)">All</div>
+          <div class="stab" id="htab-sent" onclick="htab('sent',this)">Sent</div>
+          <div class="stab" id="htab-recv" onclick="htab('recv',this)">Received</div>
+        </div>
+      </div>
+      <div style="padding:.22rem .65rem;flex-shrink:0">
+        <input class="fi" style="margin:0;font-size:.54rem" placeholder="&#x1F50D; Search..." oninput="searchTx(this.value)">
+      </div>
+      <div class="scroll" id="hist-scroll"></div>
+    </div>
+    <div class="scr" id="scr-profile">
+      <div class="sbar"><div><div class="sbar-t">Profile</div><div class="sbar-s">Account &amp; settings</div></div></div>
+      <div class="scroll" id="profile-scroll"></div>
+    </div>
+  </div>
+  <nav id="nav">
+    <div class="nb on" onclick="goTab('home',this)"><div class="nb-i">&#x1F3E0;</div><div class="nb-l">Home</div></div>
+    <div class="nb" onclick="goTab('wallet',this)"><div class="nb-i">&#x1F4B0;</div><div class="nb-l">Wallet</div></div>
+    <div class="nb" onclick="goTab('pay',this)"><div class="nb-i">&#x1F4B3;</div><div class="nb-l">Pay</div></div>
+    <div class="nb" onclick="goTab('history',this)"><div class="nb-i">&#x1F4CB;</div><div class="nb-l">History</div></div>
+    <div class="nb" onclick="goTab('profile',this)"><div class="nb-i">&#x1F464;</div><div class="nb-l">Profile</div></div>
+  </nav>
+  <div id="ov" style="display:none;pointer-events:none" onclick="if(event.target===this)closeP()">
+    <div class="psheet">
+      <div class="phead">
+        <div class="ptitle" id="ptitle">Panel</div>
+        <div class="pclose" onclick="closeP()">&#x2715;</div>
+      </div>
+      <div class="pbody" id="pbody"></div>
+    </div>
+  </div>
+  <div id="cov" style="display:none;pointer-events:none">
+    <div class="csheet">
+      <div class="c-lbl">Confirm Payment</div>
+      <div class="c-amt" id="c-amt">&#x03C0; 0.00</div>
+      <div class="c-to" id="c-to">To: —</div>
+      <div class="c-btns">
+        <button class="btn bo" onclick="closeC()">Cancel</button>
+        <button class="btn bp" onclick="doSend()">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* FinPi · Copa-exact pattern · Mainnet · 2026
+   Abdullahi Bashir Abubakar */
+
+/* GLOBALS */
+var piUser = null;
+var txLog = JSON.parse(localStorage.getItem('fp_tx') || '[]');
+var contacts = JSON.parse(localStorage.getItem('fp_contacts') || '[]');
+var budgets = JSON.parse(localStorage.getItem('fp_budgets') || '[]');
+var goals = JSON.parse(localStorage.getItem('fp_goals') || '[]');
+var notifs = JSON.parse(localStorage.getItem('fp_notifs') || '[]');
+var profile = JSON.parse(localStorage.getItem('fp_profile') || '{}');
+var hidebal = localStorage.getItem('fp_hb') === '1';
+var curPtab = 'send';
+var curHtab = 'all';
+var pendingPay = null;
+var _APPROVE = '/approve';
+var _COMPLETE = '/complete';
+
+/* HELPERS */
+function toast(msg, type) {
+  var t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(t._t);
+  t._t = setTimeout(function() { t.className = ''; }, 2800);
+}
+
+function pi(n) { return '\u03C0 ' + Number(n || 0).toFixed(2); }
+
+function ago(d) {
+  try {
+    var ms = Date.now() - new Date(d), m = Math.floor(ms / 60000);
+    if (m < 1) return 'Just now';
+    if (m < 60) return m + 'm ago';
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + 'h ago';
+    return Math.floor(h / 24) + 'd ago';
+  } catch(e) { return ''; }
+}
+
+function saveTx() { localStorage.setItem('fp_tx', JSON.stringify(txLog)); }
+function saveC() { localStorage.setItem('fp_contacts', JSON.stringify(contacts)); }
+function saveB() { localStorage.setItem('fp_budgets', JSON.stringify(budgets)); }
+function saveG() { localStorage.setItem('fp_goals', JSON.stringify(goals)); }
+function saveN() { localStorage.setItem('fp_notifs', JSON.stringify(notifs)); }
+function saveP() { localStorage.setItem('fp_profile', JSON.stringify(profile)); }
+
+function addTx(type, amount, memo, status, meta) {
+  var tx = {
+    id: Date.now(), type: type, amount: Number(amount),
+    memo: memo || '', status: status || 'completed',
+    date: new Date().toISOString(), meta: meta || {}
+  };
+  txLog.unshift(tx);
+  saveTx();
+  pushNotif((type === 'sent' ? '&#x1F4B8; Sent ' : '&#x1F4E5; Received ') + pi(amount) + (memo ? ' \u2013 ' + memo : ''));
+}
+
+function pushNotif(msg) {
+  notifs.unshift({ id: Date.now(), msg: msg, date: new Date().toISOString() });
+  if (notifs.length > 60) notifs.pop();
+  saveN();
+  var d = document.getElementById('ndot');
+  if (d) d.style.display = 'block';
+}
+
+/* PANEL */
+function openP(title, html) {
+  document.getElementById('ptitle').textContent = title;
+  document.getElementById('pbody').innerHTML = html;
+  var ov = document.getElementById('ov');
+  ov.style.display = '';
+  ov.style.pointerEvents = '';
+  ov.classList.add('open');
+  /* Attach any post-render listeners */
+  var copyBtn = document.getElementById('copy-receipt-btn');
+  if (copyBtn) {
+    copyBtn.onclick = function() {
+      var rows = document.querySelectorAll('#pbody [data-field]');
+      var text = 'FinPi Receipt\n';
+      rows.forEach(function(r) { text += r.dataset.field + ': ' + r.textContent + '\n'; });
+      if (!text.trim()) {
+        /* Fallback: copy all text from pbody */
+        text = document.getElementById('pbody').innerText;
+      }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() { toast('Receipt copied', 's'); });
+      }
+    };
+  }
+}
+function closeP() {
+  var ov = document.getElementById('ov');
+  ov.classList.remove('open');
+  ov.style.display = 'none';
+  ov.style.pointerEvents = 'none';
+}
+
+/* CONFIRM */
+function openC(amt, to) {
+  document.getElementById('c-amt').textContent = pi(amt);
+  document.getElementById('c-to').textContent = 'To: @' + to;
+  var cv = document.getElementById('cov');
+  cv.style.display = '';
+  cv.style.pointerEvents = '';
+  cv.classList.add('open');
+}
+function closeC() {
+  var cv = document.getElementById('cov');
+  cv.classList.remove('open');
+  cv.style.display = 'none';
+  cv.style.pointerEvents = 'none';
+}
+
+/* NAV */
+function goTab(tab, btn) {
+  document.querySelectorAll('.scr').forEach(function(s) { s.classList.remove('on'); });
+  var el = document.getElementById('scr-' + tab);
+  if (el) el.classList.add('on');
+  document.querySelectorAll('.nb').forEach(function(b) { b.classList.remove('on'); });
+  if (btn) btn.classList.add('on');
+  if (tab === 'home')    renderHome();
+  if (tab === 'wallet')  renderWallet();
+  if (tab === 'pay')     renderPay();
+  if (tab === 'history') renderHist();
+  if (tab === 'profile') renderProfile();
+}
+
+/* HOME */
+function renderHome() {
+  var u = piUser || {}, name = u.username || 'Pioneer';
+  /* Pi SDK does not expose wallet balance — display honestly */
+  var bal = hidebal ? '\u2022\u2022\u2022\u2022\u2022\u2022' : 'Not available';
+  var recent = txLog.slice(0, 5).map(txRow).join('');
+  document.getElementById('home-scroll').innerHTML =
+    '<div class="bal-card">'
+      + '<div class="bal-lbl">Available Balance</div>'
+      + '<div class="bal-amt">' + bal + '</div>'
+      + '<div class="bal-addr">@' + name + '</div>'
+      + '<div class="bal-btns">'
+        + '<div class="bbal-btn p" onclick="goTab(\'pay\',document.querySelectorAll(\'.nb\')[2])">'
+          + '<div class="bbal-i">&#x1F4B8;</div><div class="bbal-l">Send Pi</div></div>'
+        + '<div class="bbal-btn s" onclick="toggleBal()">'
+          + '<div class="bbal-i">' + (hidebal ? '&#x1F441;' : '&#x1F576;') + '</div>'
+          + '<div class="bbal-l">' + (hidebal ? 'Show' : 'Hide') + '</div></div>'
+      + '</div>'
+    + '</div>'
+    + '<div class="slbl">Quick Actions</div>'
+    + '<div class="qa">'
+      + qb('&#x1F4B8;','Send','rgba(37,99,235,.18)',"goTab('pay',document.querySelectorAll('.nb')[2])")
+      + qb('&#x1F4E5;','Receive','rgba(13,148,136,.18)',"ptab('recv',null);goTab('pay',document.querySelectorAll('.nb')[2])")
+      + qb('&#x1F4CB;','History','rgba(200,169,81,.18)',"goTab('history',document.querySelectorAll('.nb')[3])")
+      + qb('&#x1F4CA;','Budget','rgba(239,68,68,.18)','openBudget()')
+      + qb('&#x1F9FE;','Invoice','rgba(16,185,129,.18)','openInvoice()')
+      + qb('&#x1F3EA;','Merchant','rgba(13,148,136,.22)','openMerchant()')
+      + qb('&#x1F916;','AI','rgba(124,58,237,.18)','openAI()')
+      + qb('&#x1F4B0;','Wallet','rgba(37,99,235,.22)',"goTab('wallet',document.querySelectorAll('.nb')[1])")
+    + '</div>'
+    + '<div class="slbl">Recent<span class="sact" onclick="goTab(\'history\',document.querySelectorAll(\'.nb\')[3])">See all</span></div>'
+    + (recent || '<div class="empty"><div class="empty-i">&#x1F4B0;</div><div class="empty-t">No transactions yet</div><div class="empty-s">Send or receive Pi to get started</div></div>');
+}
+
+function qb(ico, lbl, bg, fn) {
+  return '<div class="qa-b" onclick="' + fn + '">'
+    + '<div class="qa-i" style="background:' + bg + '">' + ico + '</div>'
+    + '<div class="qa-l">' + lbl + '</div></div>';
+}
+
+function toggleBal() {
+  hidebal = !hidebal;
+  localStorage.setItem('fp_hb', hidebal ? '1' : '0');
+  renderHome();
+}
+
+/* WALLET */
+function renderWallet() {
+  var u = piUser || {};
+  document.getElementById('wallet-scroll').innerHTML =
+    '<div class="bal-card">'
+      + '<div class="bal-lbl">Pi Balance</div>'
+      + '<div class="bal-amt">' + (hidebal ? '\u2022\u2022\u2022\u2022\u2022\u2022' : pi(0)) + '</div>'
+      + '<div class="bal-addr">@' + (u.username || 'Pioneer') + '</div>'
+    + '</div>'
+    + '<div class="slbl">Wallet Tools</div>'
+    + '<div class="ugrid">'
+      + uc('&#x1F4CB;','Activity','Tx log','renderHist();goTab(\'history\',document.querySelectorAll(\'.nb\')[3])','live')
+      + uc('&#x1F4F1;','QR Center','All QR types','openQR()','live')
+      + uc('&#x1F4CD;','Address Book','Saved contacts','openContacts()','live')
+      + uc('&#x2B50;','Favourites','Starred contacts','openFavs()','live')
+      + uc('&#x1F4B1;','Converter','Live Pi price','openConverter()','live')
+      + uc('&#x1F4C5;','Calendar','Financial calendar','openCalendar()','soon')
+    + '</div>';
+}
+
+/* PAY */
+function renderPay() { ptab(curPtab, null); }
+
+function ptab(tab, el) {
+  curPtab = tab;
+  if (el) {
+    document.querySelectorAll('#ptabs .stab').forEach(function(b) { b.classList.remove('on'); });
+    el.classList.add('on');
+  }
+  var u = piUser || {}, html = '';
+  if (tab === 'send') {
+    html = '<div style="padding:.45rem .65rem">'
+      + '<label class="fl">Recipient @username</label><input class="fi" id="s-to" placeholder="@pioneer">'
+      + '<label class="fl">Amount (Pi)</label><input class="fi" id="s-amt" type="number" step="0.01" min="0.001" placeholder="0.00">'
+      + '<label class="fl">Memo (optional)</label><input class="fi" id="s-memo" placeholder="Payment for...">'
+      + '<button class="btn bp" id="sbtn" onclick="initSend()">&#x03C0; Send Pi</button></div>';
+  } else if (tab === 'recv') {
+    var addr = u.username ? '@' + u.username : 'Sign in to see address';
+    html = '<div style="padding:.45rem .65rem;text-align:center">'
+      + '<div style="width:130px;height:130px;background:var(--glass);border:1px solid var(--border);border-radius:14px;margin:.5rem auto;display:flex;align-items:center;justify-content:center;font-size:3rem">&#x1F4F1;</div>'
+      + '<div style="font-family:var(--m);font-size:.62rem;color:var(--gold);margin:.4rem 0">' + addr + '</div>'
+      + '<button class="btn bo" onclick="copyAddr()">&#x1F4CB; Copy Address</button></div>';
+  } else if (tab === 'req') {
+    html = '<div style="padding:.45rem .65rem">'
+      + '<label class="fl">Request from @username</label><input class="fi" id="r-from" placeholder="@pioneer">'
+      + '<label class="fl">Amount (Pi)</label><input class="fi" id="r-amt" type="number" placeholder="0.00">'
+      + '<label class="fl">Reason</label><input class="fi" id="r-memo" placeholder="For...">'
+      + '<button class="btn bt" onclick="genReq()">&#x1F4CB; Generate Request</button></div>';
+  } else if (tab === 'contacts') {
+    var rows = contacts.map(function(c) {
+      return '<div class="tx">'
+        + '<div class="tx-ic r">&#x1F464;</div>'
+        + '<div class="tx-inf"><div class="tx-nm">@' + c.un + '</div><div class="tx-dt">' + (c.lbl || '') + '</div></div>'
+        + '<div class="stab on" style="cursor:pointer;margin:0" onclick="quickPay(\'' + c.un + '\')">Pay</div></div>';
+    }).join('');
+    html = '<div style="padding:.3rem .65rem"><button class="btn bo" onclick="openAddContact()">+ Add Contact</button></div>'
+      + (rows || '<div class="empty"><div class="empty-i">&#x1F4D2;</div><div class="empty-t">No contacts</div></div>');
+  } else if (tab === 'qr') {
+    html = '<div style="padding:.45rem .65rem;text-align:center">'
+      + '<div style="width:150px;height:150px;background:var(--glass);border:1px solid var(--border);border-radius:14px;margin:.5rem auto;display:flex;align-items:center;justify-content:center;font-size:3.5rem">&#x1F4F7;</div>'
+      + '<div style="font-size:.52rem;color:var(--t3);margin:.35rem 0">Scan to pay me Pi</div>'
+      + '<button class="btn bo" onclick="toast(\'Open in Pi Browser to scan\')">&#x1F4F7; Scan QR</button></div>';
+  }
+  document.getElementById('pay-scroll').innerHTML = html;
+}
+
+/* SEND */
+function initSend() {
+  var to = (document.getElementById('s-to').value || '').replace('@', '').trim();
+  var amt = parseFloat(document.getElementById('s-amt').value);
+  var memo = (document.getElementById('s-memo').value || '').trim();
+  if (!to) { toast('Enter recipient', 'e'); return; }
+  if (!amt || amt <= 0) { toast('Enter valid amount', 'e'); return; }
+  pendingPay = { to: to, amt: amt, memo: memo };
+  openC(amt, to);
+}
+
+function doSend() {
+  if (!pendingPay) return;
+  closeC();
+  var p = pendingPay; pendingPay = null;
+  var btn = document.getElementById('sbtn');
+
+  if (typeof Pi === 'undefined') {
+    toast('Open in Pi Browser to send Pi', 'e');
+    return;
+  }
+
+  /* Record as PENDING immediately — real status, not fabricated */
+  var txRef = 'FP-' + Date.now().toString(36).toUpperCase();
+  var txEntry = {
+    id: Date.now(),
+    finpi_ref: txRef,
+    type: 'sent',
+    amount: Number(p.amt),
+    memo: p.memo || '',
+    status: 'pending',
+    date: new Date().toISOString(),
+    meta: { to: p.to, paymentId: null, txid: null }
+  };
+  txLog.unshift(txEntry);
+  saveTx();
+  renderHist();
+
+  if (btn) { btn.disabled = true; btn.textContent = '\U0001F7E1 Processing...'; }
+
+  Pi.createPayment({
+    amount: p.amt,
+    memo: p.memo || 'FinPi Transfer',
+    metadata: { to: p.to, app: 'FinPi', ref: txRef }
+  }, {
+    onReadyForServerApproval: function(paymentId) {
+      /* Store real paymentId */
+      txEntry.meta.paymentId = paymentId;
+      txEntry.status = 'processing';
+      saveTx();
+      if (btn) btn.textContent = '\U0001F7E1 Approving...';
+      return fetch(_APPROVE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: paymentId })
+      }).then(function(r) { return r.json(); })
+        .then(function(d) { console.log('[FinPi] /approve response:', d); });
+    },
+    onReadyForServerCompletion: function(paymentId, txid) {
+      /* Store real txid from Pi Network */
+      txEntry.meta.paymentId = paymentId;
+      txEntry.meta.txid = txid;
+      txEntry.status = 'processing';
+      saveTx();
+      if (btn) btn.textContent = '\U0001F7E1 Completing...';
+      return fetch(_COMPLETE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: paymentId, txid: txid })
+      }).then(function(r) { return r.json(); })
+        .then(function(d) {
+          console.log('[FinPi] /complete response:', d);
+          /* Only mark COMPLETED after backend confirms */
+          if (d.completed || d.pi_status === 200) {
+            txEntry.status = 'completed';
+            txEntry.completed_at = new Date().toISOString();
+          } else {
+            txEntry.status = 'failed';
+          }
+          saveTx();
+          renderHist();
+          pushNotif('&#x1F4B8; Sent ' + pi(p.amt) + ' to @' + p.to);
+          toast(txEntry.status === 'completed'
+            ? '\U0001F7E2 Sent ' + pi(p.amt) + ' to @' + p.to
+            : '\U0001F534 Payment not confirmed', txEntry.status === 'completed' ? 's' : 'e');
+          if (btn) { btn.disabled = false; btn.textContent = '\u03C0 Send Pi'; }
+          openP('Payment Receipt', buildReceipt(String(txEntry.id)));
+        })
+        .catch(function(err) {
+          txEntry.status = 'failed';
+          saveTx();
+          renderHist();
+          toast('\U0001F534 Completion error: ' + err.message, 'e');
+          if (btn) { btn.disabled = false; btn.textContent = '\u03C0 Send Pi'; }
+        });
+    },
+    onCancel: function() {
+      txEntry.status = 'cancelled';
+      saveTx();
+      renderHist();
+      toast('Payment cancelled');
+      if (btn) { btn.disabled = false; btn.textContent = '\u03C0 Send Pi'; }
+    },
+    onError: function(err) {
+      console.error('[FinPi] Payment error:', err);
+      txEntry.status = 'failed';
+      txEntry.meta.error = err ? String(err) : 'unknown';
+      saveTx();
+      renderHist();
+      toast('\U0001F534 ' + (err ? String(err) : 'Payment failed'), 'e');
+      if (btn) { btn.disabled = false; btn.textContent = '\u03C0 Send Pi'; }
+    }
+  });
+}
+
+function onIncompletePayment(payment) { console.log('[FinPi] Incomplete:', payment); }
+function copyAddr() { var u = piUser || {}; if (navigator.clipboard && u.username) navigator.clipboard.writeText('@' + u.username).then(function() { toast('Address copied', 's'); }); }
+function quickPay(un) { document.getElementById('s-to').value = un; ptab('send', document.querySelector('#ptabs .stab')); goTab('pay', document.querySelectorAll('.nb')[2]); }
+function genReq() { var f = document.getElementById('r-from').value; var a = document.getElementById('r-amt').value; if (!f || !a) { toast('Fill all fields', 'e'); return; } toast('Request sent to @' + f.replace('@', ''), 's'); }
+
+/* HISTORY */
+function renderHist() {
+  var list = txLog.filter(function(tx) {
+    if (curHtab === 'sent') return tx.type === 'sent';
+    if (curHtab === 'recv') return tx.type === 'received';
+    return true;
+  });
+  document.getElementById('hist-scroll').innerHTML = list.length
+    ? list.map(txRow).join('')
+    : '<div class="empty"><div class="empty-i">&#x1F4CB;</div><div class="empty-t">No transactions</div></div>';
+}
+
+function txRow(tx) {
+  var isSent = tx.type === 'sent';
+  return '<div class="tx" onclick="openP(\'Receipt\',' + "buildReceipt('" + tx.id + "')" + ')">'
+    + '<div class="tx-ic ' + (isSent ? 's' : 'r') + '">' + (isSent ? '&#x1F4B8;' : '&#x1F4E5;') + '</div>'
+    + '<div class="tx-inf">'
+      + '<div class="tx-nm">' + (tx.meta.to || tx.meta.from || (isSent ? 'Sent' : 'Received')) + '</div>'
+      + '<div class="tx-dt">' + ago(tx.date) + (tx.memo ? ' \u00B7 ' + tx.memo : '') + '</div>'
+    + '</div>'
+    + '<div class="tx-am">'
+      + '<div class="tx-pi ' + (isSent ? 's' : 'r') + '">' + (isSent ? '-' : '+') + pi(tx.amount) + '</div>'
+      + '<div class="tx-st">' + tx.status + '</div>'
+    + '</div></div>';
+}
+
+function htab(filter, btn) {
+  curHtab = filter;
+  document.querySelectorAll('#scr-history .stab').forEach(function(b) { b.classList.remove('on'); });
+  if (btn) btn.classList.add('on');
+  renderHist();
+}
+
+function searchTx(q) {
+  if (!q) { renderHist(); return; }
+  var list = txLog.filter(function(tx) { return JSON.stringify(tx).toLowerCase().includes(q.toLowerCase()); });
+  document.getElementById('hist-scroll').innerHTML = list.length ? list.map(txRow).join('') : '<div class="empty"><div class="empty-i">&#x1F50D;</div><div class="empty-t">No results</div></div>';
+}
+
+/* RECEIPT */
+function buildReceipt(id) {
+  var tx = txLog.find(function(t) { return String(t.id) === String(id); });
+  if (!tx) return '<div class="empty"><div class="empty-t">Not found</div></div>';
+  var rows = [['Receipt','FP-'+String(tx.id).slice(-8)],['Type',tx.type.toUpperCase()],['Amount',pi(tx.amount)],['Memo',tx.memo||'\u2014'],['To/From',tx.meta.to||tx.meta.from||'\u2014'],['Status',tx.status],['Date',new Date(tx.date).toLocaleString()],['Network','Pi Mainnet'],['TxID',tx.meta.txid?tx.meta.txid.slice(0,18)+'...':'\u2014']];
+  return '<div style="font-family:var(--m);font-size:.5rem;line-height:2">'
+    + rows.map(function(r) { return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:.18rem 0"><span style="color:var(--t3)">' + r[0] + '</span><span>' + r[1] + '</span></div>'; }).join('')
+    + '</div><button class="btn bo" style="margin-top:.7rem" onclick="toast(\'Copied!\',\'s\')">&#x1F4CB; Copy</button>';
+}
+
+/* PROFILE */
+function renderProfile() {
+  var u = piUser || {}, name = u.username || 'Pioneer';
+  document.getElementById('profile-scroll').innerHTML =
+    '<div class="bal-card" style="text-align:center;padding:1.1rem .8rem">'
+      + '<div style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#1E3A8A,#2563EB);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:#fff;margin:0 auto .45rem">' + name[0].toUpperCase() + '</div>'
+      + '<div style="font-size:.82rem;font-weight:800">@' + name + '</div>'
+      + '<div style="font-size:.46rem;color:var(--t3);margin-top:.1rem">Pi Network Mainnet</div>'
+    + '</div>'
+    + '<div class="slbl">Finance</div>'
+    + mr('&#x1F4CA;','Budget Tracker','Monthly budgets','openBudget()')
+    + mr('&#x1F3AF;','Savings Goals','Financial goals','openGoals()')
+    + mr('&#x1F9FE;','Invoice Generator','Create invoices','openInvoice()')
+    + mr('&#x1F916;','AI Assistant','Financial advice','openAI()')
+    + '<div class="slbl">Business</div>'
+    + mr('&#x1F3EA;','Merchant Center','Business tools','openMerchant()')
+    + '<div class="slbl">Identity</div>'
+    + mr('&#x1F4B3;','FinPi Card','Virtual card','openCard()')
+    + mr('&#x1F464;','Identity Card','Digital ID','openID()')
+    + mr('&#x1F4F1;','Profile Setup','Edit profile','openSetup()')
+    + '<div class="slbl">Settings</div>'
+    + mr('&#x1F3A8;','Appearance','Themes & display','openAppearance()')
+    + mr('&#x1F512;','Security','PIN & devices','openSecurity()')
+    + mr('&#x2139;&#xFE0F;','About FinPi','Version info','openAbout()')
+    + '<div class="slbl">Legal</div>'
+    + mr('&#x1F4DC;','Privacy Policy','','openLegal(\'privacy-policy\')')
+    + mr('&#x1F4DC;','Terms of Service','','openLegal(\'terms-of-service\')')
+    + '<div style="padding:.4rem .65rem .2rem"><button class="btn bd" onclick="logOut()">&#x1F6AA; Sign Out</button></div>';
+}
+
+function mr(ico, title, sub, fn) {
+  return '<div class="mr" onclick="' + fn + '">'
+    + '<div class="mr-i">' + ico + '</div>'
+    + '<div style="flex:1"><div class="mr-t">' + title + '</div>' + (sub ? '<div class="mr-s">' + sub + '</div>' : '') + '</div>'
+    + '<div class="mr-a">&#x203A;</div></div>';
+}
+
+/* UTIL CARDS */
+function uc(ico, name, desc, fn, badge) {
+  return '<div class="uc" onclick="' + fn + '">'
+    + (badge ? '<span class="ubadge ' + badge + '">' + badge + '</span>' : '')
+    + '<div><div class="uc-i">' + ico + '</div><div class="uc-n">' + name + '</div><div class="uc-d">' + desc + '</div></div></div>';
+}
+
+/* NOTIFICATIONS */
+function openNotifs() {
+  var d = document.getElementById('ndot');
+  if (d) d.style.display = 'none';
+  openP('Notifications', notifs.length
+    ? notifs.map(function(n) {
+        return '<div style="padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.54rem;color:var(--t1)">' + n.msg
+          + '<div style="font-size:.4rem;color:var(--t3);margin-top:.06rem">' + ago(n.date) + '</div></div>';
+      }).join('')
+    : '<div class="empty"><div class="empty-i">&#x1F514;</div><div class="empty-t">No notifications</div></div>');
+}
+
+/* FEATURES */
+function openQR() {
+  openP('QR Center', '<div style="text-align:center;padding:.6rem 0">'
+    + '<div style="width:140px;height:140px;background:var(--glass);border:1px solid var(--border);border-radius:14px;margin:0 auto .4rem;display:flex;align-items:center;justify-content:center;font-size:3rem">&#x1F4F1;</div>'
+    + '<div style="font-family:var(--m);font-size:.6rem;color:var(--gold);margin:.4rem 0">@' + ((piUser||{}).username||'Pioneer') + '</div>'
+    + '<button class="btn bo" onclick="copyAddr()">&#x1F4CB; Copy Address</button></div>');
+}
+
+function openContacts() { ptab('contacts', null); goTab('pay', document.querySelectorAll('.nb')[2]); }
+
+function openFavs() {
+  var favs = contacts.filter(function(c) { return c.fav; });
+  openP('Favourites', favs.length
+    ? favs.map(function(c) { return '<div class="tx"><div class="tx-ic r">&#x2B50;</div><div class="tx-inf"><div class="tx-nm">@' + c.un + '</div></div><div class="stab on" style="cursor:pointer;margin:0" onclick="quickPay(\'' + c.un + '\')">Pay</div></div>'; }).join('')
+    : '<div class="empty"><div class="empty-i">&#x2B50;</div><div class="empty-t">No favourites</div><div class="empty-s">Star contacts to add here</div></div>');
+}
+
+function openConverter() {
+  openP('Pi Rate Center',
+    '<div style="padding:.3rem 0">'
+    + '<div id="rate-status" style="font-size:.48rem;color:var(--t3);text-align:center;margin-bottom:.5rem">&#x1F504; Fetching rate data...</div>'
+    + '<div id="rate-card" style="background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:.7rem;margin-bottom:.5rem;display:none">'
+      + '<div style="font-size:.42rem;color:var(--t3);letter-spacing:.1em;text-transform:uppercase">Pi / USD Reference Rate</div>'
+      + '<div id="rate-val" style="font-family:var(--m);font-size:1.5rem;font-weight:800;color:var(--gold);margin:.2rem 0">—</div>'
+      + '<div style="font-size:.4rem;color:var(--t3);line-height:1.7">'
+        + '<span id="rate-source">Source: —</span><br>'
+        + '<span id="rate-updated">Updated: —</span><br>'
+        + '<span id="rate-note" style="color:var(--orange)"></span>'
+      + '</div>'
+    + '</div>'
+    + '<label class="fl">Amount (Pi)</label>'
+    + '<input class="fi" id="cv-amt" type="number" placeholder="0.00" oninput="calcConv()">'
+    + '<div id="cv-result" style="font-family:var(--m);font-size:1.1rem;font-weight:700;color:var(--gold);margin:.3rem 0 .1rem">—</div>'
+    + '<div id="cv-note" style="font-size:.4rem;color:var(--t3)">Enter amount above</div>'
+    + '</div>');
+  fetchPiRate();
+}
+
+var _piRate = null;
+var _piRateSource = null;
+var _piRateTime = null;
+
+function fetchPiRate() {
+  var statusEl = document.getElementById('rate-status');
+  if (statusEl) statusEl.textContent = '\u1F504 Fetching from CoinGecko...';
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids=picoin&vs_currencies=usd&include_last_updated_at=true')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d && d.picoin && d.picoin.usd) {
+        _piRate = d.picoin.usd;
+        _piRateSource = 'CoinGecko (picoin/USD)';
+        _piRateTime = d.picoin.last_updated_at
+          ? new Date(d.picoin.last_updated_at * 1000).toLocaleString()
+          : new Date().toLocaleString();
+        showRate(_piRate, _piRateSource, _piRateTime, '');
+      } else {
+        showRateUnavailable('CoinGecko returned no Pi price data');
+      }
+    })
+    .catch(function() {
+      /* CoinGecko failed — try OKX */
+      fetch('https://www.okx.com/api/v5/market/ticker?instId=PI-USDT')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d && d.data && d.data[0] && d.data[0].last) {
+            _piRate = parseFloat(d.data[0].last);
+            _piRateSource = 'OKX Exchange (PI-USDT)';
+            _piRateTime = d.data[0].ts ? new Date(parseInt(d.data[0].ts)).toLocaleString() : new Date().toLocaleString();
+            showRate(_piRate, _piRateSource, _piRateTime, 'Note: PI-USDT represents exchange-listed Pi, which may differ from native Pi Network Pi.');
+          } else {
+            showRateUnavailable('OKX returned no data');
+          }
+        })
+        .catch(function() { showRateUnavailable('All rate sources unavailable'); });
+    });
+}
+
+function showRate(rate, source, updated, note) {
+  var card = document.getElementById('rate-card');
+  var status = document.getElementById('rate-status');
+  var val = document.getElementById('rate-val');
+  var src = document.getElementById('rate-source');
+  var upd = document.getElementById('rate-updated');
+  var nt = document.getElementById('rate-note');
+  if (card) card.style.display = 'block';
+  if (status) status.textContent = '';
+  if (val) val.textContent = '$' + rate.toFixed(4) + ' USD';
+  if (src) src.textContent = 'Source: ' + source;
+  if (upd) upd.textContent = 'Updated: ' + updated;
+  if (nt) nt.textContent = note || '';
+  calcConv();
+}
+
+function showRateUnavailable(reason) {
+  var status = document.getElementById('rate-status');
+  if (status) status.innerHTML = '<span style="color:var(--red)">Rate data unavailable</span><br><span style="font-size:.4rem">' + reason + '</span>';
+  _piRate = null;
+}
+
+function calcConv() {
+  var a = parseFloat((document.getElementById('cv-amt') || {}).value) || 0;
+  var res = document.getElementById('cv-result');
+  var note = document.getElementById('cv-note');
+  if (!res) return;
+  if (!_piRate) {
+    res.textContent = '—';
+    if (note) note.textContent = 'Rate unavailable';
+    return;
+  }
+  res.textContent = '~$' + (a * _piRate).toFixed(4) + ' USD';
+  if (note) note.textContent = 'Based on ' + _piRateSource + '. Not financial advice.';
+}
+
+function openCalendar() { openP('Financial Calendar', '<div class="empty"><div class="empty-i">&#x1F4C5;</div><div class="empty-t">Coming Soon</div><div class="empty-s">Track financial events and payment dates</div></div>'); }
+
+function openAddContact() {
+  openP('Add Contact', '<label class="fl">@Username</label><input class="fi" id="nc-un" placeholder="@pioneer">'
+    + '<label class="fl">Label (optional)</label><input class="fi" id="nc-lbl" placeholder="Friend, Business...">'
+    + '<button class="btn bp" onclick="saveContact()">Save Contact</button>');
+}
+function saveContact() {
+  var un = (document.getElementById('nc-un').value || '').replace('@', '').trim();
+  var lbl = (document.getElementById('nc-lbl').value || '').trim();
+  if (!un) { toast('Enter username', 'e'); return; }
+  contacts.push({ un: un, lbl: lbl, fav: false });
+  saveC(); closeP(); toast('Contact saved', 's');
+}
+
+function openBudget() {
+  var total = budgets.reduce(function(s, b) { return s + b.amt; }, 0);
+  openP('Budget Tracker',
+    '<div class="bal-card" style="text-align:center;margin-bottom:.5rem"><div class="bal-lbl">Total Budget</div><div class="bal-amt">' + pi(total) + '</div></div>'
+    + '<label class="fl">Budget Name</label><input class="fi" id="bn" placeholder="Monthly expenses">'
+    + '<label class="fl">Amount (Pi)</label><input class="fi" id="ba" type="number" placeholder="0.00">'
+    + '<button class="btn bp" onclick="addBudget()">+ Add Budget</button>'
+    + budgets.map(function(b) { return '<div class="mr"><div class="mr-i">&#x1F4CA;</div><div style="flex:1"><div class="mr-t">' + b.name + '</div><div class="mr-s">' + pi(b.amt) + '</div></div></div>'; }).join(''));
+}
+function addBudget() {
+  var n = document.getElementById('bn').value, a = parseFloat(document.getElementById('ba').value);
+  if (!n || !a) { toast('Fill all fields', 'e'); return; }
+  budgets.push({ id: Date.now(), name: n, amt: a }); saveB(); openBudget(); toast('Budget added', 's');
+}
+
+function openGoals() {
+  openP('Savings Goals',
+    '<label class="fl">Goal Name</label><input class="fi" id="gn" placeholder="New phone">'
+    + '<label class="fl">Target (Pi)</label><input class="fi" id="ga" type="number" placeholder="0.00">'
+    + '<button class="btn bt" onclick="addGoal()">+ Add Goal</button>'
+    + goals.map(function(g) {
+        var pct = Math.min(100, Math.round(((g.saved||0)/g.target)*100));
+        return '<div class="mr"><div style="flex:1"><div class="mr-t">' + g.name + '</div>'
+          + '<div style="background:var(--bg3);border-radius:3px;height:5px;margin:.25rem 0"><div style="background:var(--teal);width:'+pct+'%;height:5px;border-radius:3px"></div></div>'
+          + '<div class="mr-s">' + pi(g.saved||0) + ' / ' + pi(g.target) + '</div></div></div>';
+      }).join(''));
+}
+function addGoal() {
+  var n = document.getElementById('gn').value, a = parseFloat(document.getElementById('ga').value);
+  if (!n || !a) { toast('Fill all fields', 'e'); return; }
+  goals.push({ id: Date.now(), name: n, target: a, saved: 0 }); saveG(); openGoals(); toast('Goal added', 's');
+}
+
+function openInvoice() {
+  openP('Invoice Generator',
+    '<label class="fl">Client Name</label><input class="fi" id="ic" placeholder="Client name">'
+    + '<label class="fl">Service</label><input class="fi" id="is" placeholder="Service description">'
+    + '<label class="fl">Amount (Pi)</label><input class="fi" id="ia" type="number" placeholder="0.00">'
+    + '<label class="fl">Due Date</label><input class="fi" id="id" type="date">'
+    + '<button class="btn bp" onclick="genInvoice()">&#x1F9FE; Generate</button>'
+    + '<div id="inv-out"></div>');
+}
+function genInvoice() {
+  var c = document.getElementById('ic').value || 'Client';
+  var s = document.getElementById('is').value || 'Service';
+  var a = parseFloat(document.getElementById('ia').value) || 0;
+  var d = document.getElementById('id').value || '';
+  if (!a) { toast('Enter amount', 'e'); return; }
+  var no = 'INV-' + Date.now().toString(36).toUpperCase();
+  var txt = 'FinPi Invoice\nInv: ' + no + '\nClient: ' + c + '\nService: ' + s + '\nAmount: ' + pi(a) + (d ? '\nDue: ' + d : '') + '\nPayment: Pi Mainnet';
+  var out = document.getElementById('inv-out');
+  if (!out) return;
+  out.innerHTML = '<pre id="inv-txt" style="font-family:var(--m);font-size:.48rem;color:var(--t2);white-space:pre-wrap;line-height:1.9;background:var(--bg0);border-radius:var(--r);padding:.6rem;margin:.4rem 0">' + txt + '</pre>';
+  var btn = document.createElement('button');
+  btn.className = 'btn bo'; btn.textContent = 'Copy Invoice';
+  btn.onclick = function() {
+    var t = document.getElementById('inv-txt');
+    if (t && navigator.clipboard) navigator.clipboard.writeText(t.textContent).then(function() { toast('Copied!', 's'); });
+  };
+  out.appendChild(btn);
+}
+
+function openMerchant() {
+  openP('Merchant Center', '<div class="ugrid">'
+    + uc('&#x1F3EA;','Business Profile','Setup','openBizProfile()','live')
+    + uc('&#x1F4B1;','POS Mode','Point of sale',"toast('POS Mode');",'live')
+    + uc('&#x1F6D2;','Products','Catalogue',"toast('Products');",'live')
+    + uc('&#x1F9FE;','Invoices','Generator','closeP();openInvoice()','live')
+    + uc('&#x1F4C8;','Revenue','Analytics',"toast('Coming soon');",'soon')
+    + uc('&#x1F465;','Customers','List',"toast('Coming soon');",'soon')
+    + '</div>');
+}
+function openBizProfile() {
+  openP('Business Profile',
+    '<label class="fl">Business Name</label><input class="fi" id="biz-n" placeholder="My Business">'
+    + '<label class="fl">Category</label><input class="fi" id="biz-c" placeholder="Retail, Food, Tech...">'
+    + '<button class="btn bp" onclick="toast(\'Profile saved\',\'s\')">Save</button>');
+}
+
+function openAI() {
+  openP('FinPi AI Assistant',
+    '<div id="ai-log" style="min-height:60px;margin-bottom:.5rem;font-size:.54rem;line-height:1.85"></div>'
+    + '<div style="display:flex;gap:.28rem"><input class="fi" id="ai-q" placeholder="Ask about finance..." style="margin:0;flex:1">'
+    + '<button class="btn bp" style="width:auto;min-height:0;padding:.38rem .65rem;margin:0;font-size:.6rem" onclick="askAI()">Ask</button></div>');
+  document.getElementById('ai-log').innerHTML = '<div style="color:var(--teal)">FinPi AI: Hi @' + ((piUser||{}).username||'Pioneer') + '! Ask me about budgeting, payments, or savings.</div>';
+}
+function askAI() {
+  var inp = document.getElementById('ai-q'), q = (inp ? inp.value : '').trim();
+  if (!q) return;
+  var log = document.getElementById('ai-log');
+  if (log) log.innerHTML += '<div style="color:var(--t1);margin:.2rem 0">You: ' + q + '</div>';
+  if (inp) inp.value = '';
+  var ql = q.toLowerCase();
+  var ans = ql.includes('budget') ? 'Set a realistic monthly budget and track spending. FinPi alerts you at 80%, 90%, and 100%.'
+    : ql.includes('save') || ql.includes('goal') ? 'Set savings goals and contribute consistently. Small amounts add up over time.'
+    : ql.includes('send') || ql.includes('pay') ? 'Use Send Pi under Payments. Enter the recipient username, amount, and memo.'
+    : ql.includes('merchant') ? 'Open Merchant Center to setup your business profile and manage products.'
+    : ql.includes('invoice') ? 'Use Invoice Generator to create and share professional invoices.'
+    : 'I can help with budgeting, payments, savings goals, and merchant tools. What would you like to know?';
+  setTimeout(function() { if (log) log.innerHTML += '<div style="color:var(--teal);margin:.2rem 0">FinPi AI: ' + ans + '</div>'; }, 400);
+}
+
+function openCard() {
+  openP('FinPi Card',
+    '<div style="background:linear-gradient(135deg,#1E3A8A,#2563EB,#0D9488);border-radius:15px;padding:1.1rem;margin:.3rem 0;min-height:150px;position:relative">'
+    + '<div style="font-size:1rem;font-weight:900;color:#fff">Fin<span style="color:#1DE9B6">Pi</span></div>'
+    + '<div style="font-family:var(--m);font-size:.62rem;color:rgba(255,255,255,.65);margin:.75rem 0;letter-spacing:.2em">\u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 ' + String(Date.now()).slice(-4) + '</div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-end">'
+    + '<div><div style="font-size:.36rem;color:rgba(255,255,255,.45);letter-spacing:.08em">CARDHOLDER</div>'
+    + '<div style="font-size:.58rem;font-weight:700;color:#fff">@' + ((piUser||{}).username||'PIONEER') + '</div></div>'
+    + '<div style="font-size:.8rem;color:rgba(255,255,255,.4)">\u03C0</div></div></div>'
+    + '<div style="font-size:.46rem;color:var(--t3);text-align:center;margin-top:.45rem">Virtual card for Pi Network payments</div>');
+}
+
+function openID() {
+  var u = piUser || {}, name = u.username || 'Pioneer';
+  openP('Identity Card',
+    '<div style="background:linear-gradient(135deg,#0F1830,#162040);border:1px solid var(--border2);border-radius:13px;padding:.9rem;margin:.3rem 0">'
+    + '<div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.55rem">'
+    + '<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1E3A8A,#2563EB);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;flex-shrink:0">' + name[0].toUpperCase() + '</div>'
+    + '<div><div style="font-size:.7rem;font-weight:800;color:var(--t1)">@' + name + '</div>'
+    + '<div style="font-size:.42rem;color:var(--teal);margin-top:.08rem">Pi Network Mainnet</div></div></div>'
+    + '<div style="font-family:var(--m);font-size:.44rem;color:var(--t2);line-height:2">'
+    + '<div>NAME: ' + (profile.name || name) + '</div>'
+    + '<div>NETWORK: Pi Mainnet</div>'
+    + '<div>APP: FinPi v1.0</div>'
+    + '<div>STATUS: Pioneer</div></div></div>');
+}
+
+function openSetup() {
+  openP('Profile Setup',
+    '<label class="fl">Display Name</label><input class="fi" id="ps-n" value="' + (profile.name||'') + '" placeholder="Your name">'
+    + '<label class="fl">Email</label><input class="fi" id="ps-e" type="email" value="' + (profile.email||'') + '" placeholder="you@email.com">'
+    + '<label class="fl">Bio</label><input class="fi" id="ps-b" value="' + (profile.bio||'') + '" placeholder="Short bio...">'
+    + '<button class="btn bp" onclick="saveSetup()">Save Profile</button>');
+}
+function saveSetup() {
+  profile.name = document.getElementById('ps-n').value;
+  profile.email = document.getElementById('ps-e').value;
+  profile.bio = document.getElementById('ps-b').value;
+  saveP(); closeP(); toast('Profile saved', 's');
+}
+
+function openAppearance() {
+  var themes = [['Dark Blue','#060B14','#2563EB'],['Midnight','#000','#3B82F6'],['Ocean','#0c1a45','#0ea5e9'],['Forest','#0a1a0e','#10B981']];
+  var cur = localStorage.getItem('fp_theme') || 'dark-blue';
+  openP('Appearance',
+    '<div style="font-size:.54rem;font-weight:700;color:var(--t1);margin-bottom:.3rem">Theme</div>'
+    + themes.map(function(t) {
+        return '<div onclick="applyTheme(\'' + t[0] + '\',\'' + t[1] + '\',\'' + t[2] + '\')" style="display:flex;align-items:center;gap:.5rem;padding:.45rem .6rem;background:var(--glass);border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;margin-bottom:.25rem;touch-action:manipulation">'
+          + '<div style="width:22px;height:22px;border-radius:50%;background:' + t[1] + ';border:1px solid rgba(255,255,255,.2)"></div>'
+          + '<div style="width:22px;height:22px;border-radius:50%;background:' + t[2] + '"></div>'
+          + '<div style="font-size:.56rem;font-weight:600;color:var(--t1);flex:1">' + t[0] + '</div></div>';
+      }).join('')
+    + '<div style="font-size:.54rem;font-weight:700;color:var(--t1);margin:.55rem 0 .3rem">Text Size</div>'
+    + ['Small','Normal','Large'].map(function(s) {
+        return '<div onclick="applySize(\'' + s + '\')" style="display:inline-block;padding:.32rem .56rem;background:var(--glass);border:1px solid var(--border);border-radius:99px;cursor:pointer;margin:.12rem;font-size:.52rem;touch-action:manipulation">' + s + '</div>';
+      }).join(''));
+}
+function applyTheme(name, bg, accent) {
+  document.documentElement.style.setProperty('--bg0', bg);
+  document.documentElement.style.setProperty('--blue', accent);
+  localStorage.setItem('fp_theme', name);
+  toast('Theme: ' + name, 's');
+}
+function applySize(s) { document.body.style.fontSize = s==='Small'?'13px':s==='Large'?'17px':'15px'; toast('Text: ' + s, 's'); }
+
+function openSecurity() {
+  openP('Security',
+    mr('&#x1F510;','Transaction PIN','4-digit PIN',"toast('PIN setup');")
+    + mr('&#x23F1;','Session Timeout','Auto-lock',"toast('Session settings');")
+    + mr('&#x1F4F1;','Trusted Devices','Manage devices',"toast('Trusted devices');")
+    + mr('&#x1F512;','Trusted Addresses','Safe addresses',"toast('Trusted addresses');"));
+}
+
+function openAbout() {
+  openP('About FinPi',
+    '<div style="text-align:center;padding:.6rem 0">'
+    + '<div class="fp-icon" style="margin:.3rem auto .55rem"><span>F</span></div>'
+    + '<div style="font-size:.88rem;font-weight:900;color:var(--t1)">FinPi</div>'
+    + '<div style="font-size:.48rem;color:var(--t3);margin:.15rem 0 .5rem">Pi Financial Platform v1.0</div>'
+    + '<div style="font-size:.44rem;color:var(--t3);line-height:1.8">Built by Abdullahi Bashir Abubakar<br>Agricultural &amp; Biosystems Engineering<br>University of Maiduguri, Nigeria<br><br>Powered by Pi Network Mainnet</div></div>');
+}
+
+function openLegal(page) { window.location.href = '/legal/' + page + '.html'; }
+
+/* ── piLogin — COPA EXACT ── */
+function piLogin() {
+  var btn     = document.getElementById('loginBtn');
+  var btnText = document.getElementById('signin-txt');
+  var lmsg    = document.getElementById('lmsg');
+  if (btn)     { btn.disabled = true; btn.style.opacity = '0.7'; }
+  if (btnText) btnText.textContent = 'Authenticating...';
+  if (lmsg)    lmsg.textContent = 'Connecting to Pi Network...';
+  if (typeof Pi === 'undefined') {
+    setTimeout(function() {
+      piUser = { username: 'Pioneer' };
+      localStorage.setItem('fp_user', JSON.stringify(piUser));
+      launchApp();
+      toast('Demo mode \u2014 open in Pi Browser!');
+    }, 500);
+    return;
+  }
+  Pi.init({ version: '2.0', sandbox: false });
+  Pi.authenticate(['username', 'payments'], onIncompletePayment)
+    .then(function(auth) {
+      piUser = auth.user;
+      localStorage.setItem('fp_user', JSON.stringify(piUser));
+      launchApp();
+    })
+    .catch(function(err) {
+      console.error('[FinPi] Auth error:', err);
+      if (btn)     { btn.disabled = false; btn.style.opacity = '1'; }
+      if (btnText) btnText.textContent = 'Sign In with Pi';
+      if (lmsg)    lmsg.textContent = 'Try again';
+    });
+}
+
+function guestMode() {
+  piUser = { username: 'Guest', isGuest: true };
+  /* Do not persist guest session */
+  launchApp();
+}
+
+function launchApp() {
+  var lg = document.getElementById('login');
+  var ap = document.getElementById('app');
+  if (lg) lg.style.display = 'none';
+  if (ap) ap.style.display = 'flex';
+  var av = document.getElementById('hdr-av');
+  if (av && piUser) av.textContent = (piUser.username || 'F')[0].toUpperCase();
+  renderHome();
+}
+
+function logOut() {
+  piUser = null;
+  localStorage.removeItem('fp_user');
+  var lg = document.getElementById('login');
+  var ap = document.getElementById('app');
+  if (ap) ap.style.display = 'none';
+  if (lg) lg.style.display = 'flex';
+  var btn = document.getElementById('loginBtn');
+  var txt = document.getElementById('signin-txt');
+  var msg = document.getElementById('lmsg');
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  if (txt) txt.textContent = 'Sign In with Pi';
+  if (msg) msg.textContent = '';
+}
+
+/* ── window.load — COPA EXACT ── */
+window.addEventListener('load', function() {
+  window.addEventListener('online',  function() { var b = document.getElementById('offbar'); if (b) b.style.display = 'none'; });
+  window.addEventListener('offline', function() { var b = document.getElementById('offbar'); if (b) b.style.display = 'block'; });
+  var saved = localStorage.getItem('fp_user');
+  if (saved) {
+    try {
+      piUser = JSON.parse(saved);
+      launchApp();
+      return;
+    } catch(e) {}
+  }
+  piLogin();
+});
+
+</script>
+</body>
+</html>
