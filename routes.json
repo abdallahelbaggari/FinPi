@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "include": [
+    "/approve",
+    "/complete",
+    "/payment-recovery"
+  ],
+  "exclude": [
+    "/",
+    "/index.html",
+    "/manifest.json",
+    "/sw.js",
+    "/finpi-logo.svg",
+    "/validation-key.txt",
+    "/legal/*",
+    "/about/*"
+  ]
+}
