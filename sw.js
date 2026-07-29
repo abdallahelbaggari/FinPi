@@ -1,12 +1,10 @@
-/* FinPi Service Worker v2 */
-const CACHE = 'finpi-v2';
+/* FinPi Service Worker v3 — cache busted */
+const CACHE = 'finpi-v3';
 const STATIC = ['/', '/index.html', '/manifest.json', '/finpi-logo.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.addAll(STATIC))
-      .catch(() => {})
+    caches.open(CACHE).then(c => c.addAll(STATIC)).catch(() => {})
   );
   self.skipWaiting();
 });
@@ -22,7 +20,6 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-  /* Never cache API/payment routes */
   if (url.includes('/approve') || url.includes('/complete') ||
       url.includes('/payment-recovery') || url.includes('api.') ||
       url.includes('coingecko') || url.includes('okx.com') ||
