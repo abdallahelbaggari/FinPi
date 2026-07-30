@@ -10,7 +10,7 @@ export async function onRequestGet(context) {
   return new Response(JSON.stringify({
     success: true,
     message: "FinPi /approve endpoint is live",
-    app: "finpi.pages.dev",
+    app: "finpi-web.pages.dev",
     route: "/approve",
     network: "Pi Mainnet · sandbox:false",
     pi_api_key_present: !!key,
