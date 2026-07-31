@@ -440,6 +440,7 @@ select.fi option{background:var(--bg1);color:var(--t1)}
 
 
 
+
 /* FinPi · Pi Financial Platform · Mainnet · sandbox:false
    Abdullahi Bashir Abubakar · finpi-web.pages.dev · 2026 */
 
@@ -1849,18 +1850,28 @@ function piLogin() {
   if (btn)   { btn.disabled = true; btn.style.opacity = '0.7'; }
   if (btnTx) btnTx.textContent = 'Authenticating...';
   if (lmsg)  lmsg.textContent  = 'Connecting to Pi Network...';
+
   if (typeof Pi === 'undefined') {
-    setTimeout(function() { piUser = { username: 'Pioneer' }; launchApp(); toast('Demo mode'); }, 500);
+    setTimeout(function() {
+      piUser = { username: 'Pioneer' };
+      launchApp();
+      toast('Demo mode — payments disabled');
+    }, 500);
     return;
   }
+
   Pi.init({ version: '2.0', sandbox: false });
+
+  /* Must include 'payments' scope or Pi.createPayment() will fail */
   Pi.authenticate(['username', 'payments'], onIncompletePayment)
     .then(function(auth) {
       piUser = auth.user;
       localStorage.setItem('fp_user', JSON.stringify(piUser));
+      console.log('[FinPi] Authenticated with payments scope ✅', piUser.username);
       launchApp();
     })
     .catch(function(err) {
+      console.error('[FinPi] Authentication failed:', err ? err.message : err);
       if (btn)   { btn.disabled = false; btn.style.opacity = ''; }
       if (btnTx) btnTx.textContent = 'Sign in with Pi';
       if (lmsg)  lmsg.textContent  = 'Authentication failed. Try again.';
@@ -1882,24 +1893,39 @@ function logOut() {
 }
 
 function launchApp() {
-  /* CRITICAL: Pi.init() must be called every time the app launches,
-     including when restored from localStorage. Without this, Pi SDK
-     throws "not initialized" on Pi.createPayment(). */
+  /* Always init Pi SDK first */
   if (typeof Pi !== 'undefined') {
     try {
       Pi.init({ version: '2.0', sandbox: false });
-      console.log('[FinPi] Pi.init() called in launchApp ✅');
+      console.log('[FinPi] Pi.init() OK');
     } catch(e) {
       console.warn('[FinPi] Pi.init() error:', e ? e.message : e);
     }
-  } else {
-    console.warn('[FinPi] Pi SDK not available — demo mode');
+  }
+
+  /* CRITICAL: Must re-authenticate with 'payments' scope every session.
+     Even when restoring from localStorage, the Pi SDK requires a fresh
+     Pi.authenticate() call that includes the 'payments' scope before
+     Pi.createPayment() will work. Without this the SDK throws:
+     "Cannot create a payment without payments scope" */
+  if (typeof Pi !== 'undefined') {
+    Pi.authenticate(['username', 'payments'], onIncompletePayment)
+      .then(function(auth) {
+        if (auth && auth.user) {
+          piUser = auth.user;
+          localStorage.setItem('fp_user', JSON.stringify(piUser));
+          console.log('[FinPi] Re-authenticated with payments scope ✅', piUser.username);
+        }
+      })
+      .catch(function(err) {
+        console.warn('[FinPi] Re-auth warning (non-fatal):', err ? err.message : err);
+        /* Non-fatal — user is already logged in, payments may still work */
+      });
   }
 
   localStorage.setItem('fp_user', JSON.stringify(piUser));
   document.getElementById('login').style.display = 'none';
-  var app = document.getElementById('app');
-  app.style.display = 'flex';
+  document.getElementById('app').style.display = 'flex';
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(function(){});
@@ -3136,6 +3162,7 @@ window.addEventListener('load', function() {
   }
   piLogin();
 });
+
 
 
 
