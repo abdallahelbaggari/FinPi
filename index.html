@@ -441,6 +441,7 @@ select.fi option{background:var(--bg1);color:var(--t1)}
 
 
 
+
 /* FinPi · Pi Financial Platform · Mainnet · sandbox:false
    Abdullahi Bashir Abubakar · finpi-web.pages.dev · 2026 */
 
@@ -2096,13 +2097,25 @@ function openAbout() {
     + '<div style="font-size:.42rem;color:var(--t4);text-align:center;margin-top:.5rem;line-height:1.8">Not affiliated with Pi Network Inc.<br>All Pi payments are real Mainnet transactions.</div>');
 }
 function openLegal() {
-  openP('Legal & Policies',
-    mr('\u274C\uFE0F','Privacy Policy','How we handle your data',"navLegal('privacy-policy')")
-    + mr('\uD83D\uDCC4','Terms of Service','App usage terms',"navLegal('terms-of-service')")
-    + mr('\u26A0\uFE0F','Risk Disclosure','Pi payment risks',"navLegal('risk-disclosure')")
-    + mr('\uD83D\uDD12','Security Policy','Our security commitment',"navLegal('security-policy')")
-    + mr('\uD83D\uDC65','Community Guidelines','Usage standards',"navLegal('community-guidelines')")
-    + mr('\uD83D\uDD0D','Responsible Disclosure','Report vulnerabilities',"navLegal('responsible-disclosure')"));
+  /* Legal links — use location.href directly to avoid quote nesting issues */
+  var pages = [
+    ['\u274C\uFE0F', 'Privacy Policy',         'How we handle your data',       'privacy-policy'],
+    ['\uD83D\uDCC4', 'Terms of Service',        'App usage terms',               'terms-of-service'],
+    ['\u26A0\uFE0F', 'Risk Disclosure',         'Pi payment risks',              'risk-disclosure'],
+    ['\uD83D\uDD12', 'Security Policy',         'Our security commitment',       'security-policy'],
+    ['\uD83D\uDC65', 'Community Guidelines',    'Usage standards',               'community-guidelines'],
+    ['\uD83D\uDD0D', 'Responsible Disclosure',  'Report vulnerabilities',        'responsible-disclosure'],
+  ];
+  var rows = pages.map(function(p) {
+    var href = '/legal/' + p[3] + '.html';
+    return '<div onclick="window.location.href=\'' + href + '\'" style="display:flex;align-items:center;gap:.65rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:.75rem .85rem;cursor:pointer;touch-action:manipulation;min-height:60px;margin-bottom:.3rem;transition:background .1s" onpointerdown="this.style.background=\'rgba(255,255,255,.09)\'" onpointerup="this.style.background=\'rgba(255,255,255,.05)\'" onpointerleave="this.style.background=\'rgba(255,255,255,.05)\'">'
+      + '<div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">' + p[0] + '</div>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:.64rem;font-weight:700;color:#F0F6FF">' + p[1] + '</div>'
+        + '<div style="font-size:.44rem;color:rgba(240,246,255,.55);margin-top:.05rem">' + p[2] + '</div></div>'
+      + '<div style="color:rgba(240,246,255,.3);font-size:.9rem">\u203A</div>'
+    + '</div>';
+  }).join('');
+  openP('Legal & Policies', rows);
 }
 function navLegal(page) {
   window.location.href = '/legal/' + page + '.html';
@@ -3162,6 +3175,7 @@ window.addEventListener('load', function() {
   }
   piLogin();
 });
+
 
 
 
