@@ -443,6 +443,7 @@ select.fi option{background:var(--bg1);color:var(--t1)}
 
 
 
+
 /* FinPi · Pi Financial Platform · Mainnet · sandbox:false
    Abdullahi Bashir Abubakar · finpi-web.pages.dev · 2026 */
 
@@ -2098,31 +2099,57 @@ function openAbout() {
     + '<div style="font-size:.42rem;color:var(--t4);text-align:center;margin-top:.5rem;line-height:1.8">Not affiliated with Pi Network Inc.<br>All Pi payments are real Mainnet transactions.</div>');
 }
 function openLegal() {
-  /* Legal links — use location.href directly to avoid quote nesting issues */
-  var pages = [
-    ['\u274C\uFE0F', 'Privacy Policy',         'How we handle your data',       'privacy-policy'],
-    ['\uD83D\uDCC4', 'Terms of Service',        'App usage terms',               'terms-of-service'],
-    ['\u26A0\uFE0F', 'Risk Disclosure',         'Pi payment risks',              'risk-disclosure'],
-    ['\uD83D\uDD12', 'Security Policy',         'Our security commitment',       'security-policy'],
-    ['\uD83D\uDC65', 'Community Guidelines',    'Usage standards',               'community-guidelines'],
-    ['\uD83D\uDD0D', 'Responsible Disclosure',  'Report vulnerabilities',        'responsible-disclosure'],
-  ];
-  var rows = pages.map(function(p) {
-    var href = window.location.origin + '/legal/' + p[3] + '.html';
-    return '<div onclick="window.location.href=\'' + href + '\'" style="display:flex;align-items:center;gap:.65rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:.75rem .85rem;cursor:pointer;touch-action:manipulation;min-height:60px;margin-bottom:.3rem;transition:background .1s" onpointerdown="this.style.background=\'rgba(255,255,255,.09)\'" onpointerup="this.style.background=\'rgba(255,255,255,.05)\'" onpointerleave="this.style.background=\'rgba(255,255,255,.05)\'">'
-      + '<div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">' + p[0] + '</div>'
-      + '<div style="flex:1;min-width:0"><div style="font-size:.64rem;font-weight:700;color:#F0F6FF">' + p[1] + '</div>'
-        + '<div style="font-size:.44rem;color:rgba(240,246,255,.55);margin-top:.05rem">' + p[2] + '</div></div>'
-      + '<div style="color:rgba(240,246,255,.3);font-size:.9rem">\u203A</div>'
-    + '</div>';
-  }).join('');
-  openP('Legal & Policies', rows);
+  openP('Legal & Policies',
+    legalRow('\u274C\uFE0F', 'Privacy Policy',          'How we handle your data',      'privacy-policy')
+    + legalRow('\uD83D\uDCC4', 'Terms of Service',      'App usage terms',              'terms-of-service')
+    + legalRow('\u26A0\uFE0F', 'Risk Disclosure',       'Pi payment risks',             'risk-disclosure')
+    + legalRow('\uD83D\uDD12', 'Security Policy',       'Our security commitment',      'security-policy')
+    + legalRow('\uD83D\uDC65', 'Community Guidelines',  'Usage standards',              'community-guidelines')
+    + legalRow('\uD83D\uDD0D', 'Responsible Disclosure','Report vulnerabilities',       'responsible-disclosure')
+    + '<div style="font-size:.4rem;color:rgba(240,246,255,.35);text-align:center;margin-top:.6rem;line-height:1.9">Pages open in a new tab\u00B7 finpi-web.pages.dev</div>');
 }
-function navLegal(page) {
-  /* Use full URL to bypass SPA routing */
-  var url = window.location.origin + '/legal/' + page + '.html';
-  window.location.assign(url);
+function legalRow(ico, title, sub, page) {
+  return '<div style="display:flex;align-items:center;gap:.65rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:.75rem .85rem;cursor:pointer;touch-action:manipulation;min-height:60px;margin-bottom:.3rem" onclick="openLegalPage(\'' + page + '\')" onpointerdown="this.style.background=\'rgba(255,255,255,.09)\'" onpointerup="this.style.background=\'rgba(255,255,255,.05)\'" onpointerleave="this.style.background=\'rgba(255,255,255,.05)\'">'
+    + '<div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">' + ico + '</div>'
+    + '<div style="flex:1"><div style="font-size:.64rem;font-weight:700;color:#F0F6FF">' + title + '</div>'
+      + '<div style="font-size:.44rem;color:rgba(240,246,255,.55);margin-top:.05rem">' + sub + '</div></div>'
+    + '<div style="color:rgba(240,246,255,.3);font-size:.9rem">\u2197</div>'
+  + '</div>';
 }
+function openLegalPage(page) {
+  var url = 'https://finpi-web.pages.dev/legal/' + page + '.html';
+  /* Try window.open first (new tab) */
+  var w = window.open(url, '_blank');
+  /* If blocked (Pi Browser), fall back to showing content inline */
+  if (!w || w.closed || typeof w.closed === 'undefined') {
+    showLegalInline(page);
+  }
+}
+function showLegalInline(page) {
+  /* Fetch and display legal page content inside a panel */
+  fetch('/legal/' + page + '.html')
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+      /* Extract body content */
+      var body = html.match(/<div class="content">([\s\S]*?)<\/div>\s*<div class="footer">/);
+      var content = body ? body[1] : html.replace(/<[^>]+>/g, '').trim().slice(0, 3000);
+      var titles = {
+        'privacy-policy': 'Privacy Policy',
+        'terms-of-service': 'Terms of Service',
+        'risk-disclosure': 'Risk Disclosure',
+        'security-policy': 'Security Policy',
+        'community-guidelines': 'Community Guidelines',
+        'responsible-disclosure': 'Responsible Disclosure',
+      };
+      openP(titles[page] || page,
+        '<div style="font-size:.52rem;color:rgba(240,246,255,.85);line-height:1.9">' + content + '</div>'
+        + '<div style="font-size:.38rem;color:rgba(240,246,255,.3);margin-top:.8rem;text-align:center">finpi-web.pages.dev/legal/' + page + '.html</div>');
+    })
+    .catch(function() {
+      toast('Could not load page. Visit: finpi-web.pages.dev/legal/' + page + '.html');
+    });
+}
+
 
 function openSecurity() {
   var u = piUser||{};
@@ -3178,6 +3205,7 @@ window.addEventListener('load', function() {
   }
   piLogin();
 });
+
 
 
 
