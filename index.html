@@ -438,6 +438,8 @@ select.fi option{background:var(--bg1);color:var(--t1)}
 
 
 
+
+
 /* FinPi · Pi Financial Platform · Mainnet · sandbox:false
    Abdullahi Bashir Abubakar · finpi-web.pages.dev · 2026 */
 
@@ -1154,6 +1156,15 @@ function doSend() {
   });
 
   /* Set UI to sending AFTER calling Pi.createPayment */
+  /* Safety: re-init Pi SDK before createPayment */
+  try {
+    if (typeof Pi !== 'undefined') {
+      Pi.init({ version: '2.0', sandbox: false });
+    }
+  } catch(e) {
+    console.warn('[FinPi] Pre-payment Pi.init():', e ? e.message : e);
+  }
+
   try {
     Pi.createPayment({
       amount: p.amt,
@@ -1871,28 +1882,35 @@ function logOut() {
 }
 
 function launchApp() {
+  /* CRITICAL: Pi.init() must be called every time the app launches,
+     including when restored from localStorage. Without this, Pi SDK
+     throws "not initialized" on Pi.createPayment(). */
+  if (typeof Pi !== 'undefined') {
+    try {
+      Pi.init({ version: '2.0', sandbox: false });
+      console.log('[FinPi] Pi.init() called in launchApp ✅');
+    } catch(e) {
+      console.warn('[FinPi] Pi.init() error:', e ? e.message : e);
+    }
+  } else {
+    console.warn('[FinPi] Pi SDK not available — demo mode');
+  }
+
   localStorage.setItem('fp_user', JSON.stringify(piUser));
   document.getElementById('login').style.display = 'none';
   var app = document.getElementById('app');
   app.style.display = 'flex';
+
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   }
+
   if (_piRateInterval) clearInterval(_piRateInterval);
   _piRateInterval = setInterval(fetchPiRate, 300000);
   setTimeout(fetchPiRate, 800);
   goTab('home', document.querySelector('.nb'));
 }
 
-
-
-/* ═══════════════════════════════════════════════════════════════
-   FINPI COMPLETE FEATURE SET
-   All utility functions — real where possible, Coming Soon where not
-   Domain: finpi-web.pages.dev
-   ═══════════════════════════════════════════════════════════════ */
-
-/* ── HELPERS ── */
 function fmtDate(d) {
   if (!d) return '—';
   var dt = new Date(d);
@@ -3118,6 +3136,8 @@ window.addEventListener('load', function() {
   }
   piLogin();
 });
+
+
 
 
 
