@@ -442,6 +442,7 @@ select.fi option{background:var(--bg1);color:var(--t1)}
 
 
 
+
 /* FinPi · Pi Financial Platform · Mainnet · sandbox:false
    Abdullahi Bashir Abubakar · finpi-web.pages.dev · 2026 */
 
@@ -2107,7 +2108,7 @@ function openLegal() {
     ['\uD83D\uDD0D', 'Responsible Disclosure',  'Report vulnerabilities',        'responsible-disclosure'],
   ];
   var rows = pages.map(function(p) {
-    var href = '/legal/' + p[3] + '.html';
+    var href = window.location.origin + '/legal/' + p[3] + '.html';
     return '<div onclick="window.location.href=\'' + href + '\'" style="display:flex;align-items:center;gap:.65rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:.75rem .85rem;cursor:pointer;touch-action:manipulation;min-height:60px;margin-bottom:.3rem;transition:background .1s" onpointerdown="this.style.background=\'rgba(255,255,255,.09)\'" onpointerup="this.style.background=\'rgba(255,255,255,.05)\'" onpointerleave="this.style.background=\'rgba(255,255,255,.05)\'">'
       + '<div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">' + p[0] + '</div>'
       + '<div style="flex:1;min-width:0"><div style="font-size:.64rem;font-weight:700;color:#F0F6FF">' + p[1] + '</div>'
@@ -2118,7 +2119,9 @@ function openLegal() {
   openP('Legal & Policies', rows);
 }
 function navLegal(page) {
-  window.location.href = '/legal/' + page + '.html';
+  /* Use full URL to bypass SPA routing */
+  var url = window.location.origin + '/legal/' + page + '.html';
+  window.location.assign(url);
 }
 
 function openSecurity() {
@@ -3175,6 +3178,7 @@ window.addEventListener('load', function() {
   }
   piLogin();
 });
+
 
 
 
