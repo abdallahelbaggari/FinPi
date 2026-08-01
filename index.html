@@ -444,6 +444,7 @@ select.fi option{background:var(--bg1);color:var(--t1)}
 
 
 
+
 /* FinPi · Pi Financial Platform · Mainnet · sandbox:false
    Abdullahi Bashir Abubakar · finpi-web.pages.dev · 2026 */
 
@@ -2117,13 +2118,9 @@ function legalRow(ico, title, sub, page) {
   + '</div>';
 }
 function openLegalPage(page) {
-  var url = 'https://finpi-web.pages.dev/legal/' + page + '.html';
-  /* Try window.open first (new tab) */
-  var w = window.open(url, '_blank');
-  /* If blocked (Pi Browser), fall back to showing content inline */
-  if (!w || w.closed || typeof w.closed === 'undefined') {
-    showLegalInline(page);
-  }
+  /* Direct navigation — works in all Pi Browser versions */
+  /* The legal page has a SW unregister script to prevent interception */
+  window.location.href = 'https://finpi-web.pages.dev/legal/' + page + '.html';
 }
 function showLegalInline(page) {
   /* Fetch and display legal page content inside a panel */
@@ -3205,6 +3202,7 @@ window.addEventListener('load', function() {
   }
   piLogin();
 });
+
 
 
 
