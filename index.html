@@ -445,6 +445,7 @@ select.fi option{background:var(--bg1);color:var(--t1)}
 
 
 
+
 /* FinPi · Pi Financial Platform · Mainnet · sandbox:false
    Abdullahi Bashir Abubakar · finpi-web.pages.dev · 2026 */
 
@@ -2099,53 +2100,8 @@ function openAbout() {
     + '</div>'
     + '<div style="font-size:.42rem;color:var(--t4);text-align:center;margin-top:.5rem;line-height:1.8">Not affiliated with Pi Network Inc.<br>All Pi payments are real Mainnet transactions.</div>');
 }
-function openLegal() {
-  openP('Legal & Policies',
-    legalRow('\u274C\uFE0F', 'Privacy Policy',          'How we handle your data',      'privacy-policy')
-    + legalRow('\uD83D\uDCC4', 'Terms of Service',      'App usage terms',              'terms-of-service')
-    + legalRow('\u26A0\uFE0F', 'Risk Disclosure',       'Pi payment risks',             'risk-disclosure')
-    + legalRow('\uD83D\uDD12', 'Security Policy',       'Our security commitment',      'security-policy')
-    + legalRow('\uD83D\uDC65', 'Community Guidelines',  'Usage standards',              'community-guidelines')
-    + legalRow('\uD83D\uDD0D', 'Responsible Disclosure','Report vulnerabilities',       'responsible-disclosure')
-    + '<div style="font-size:.4rem;color:rgba(240,246,255,.35);text-align:center;margin-top:.6rem;line-height:1.9">Pages open in a new tab\u00B7 finpi-web.pages.dev</div>');
-}
-function legalRow(ico, title, sub, page) {
-  return '<div style="display:flex;align-items:center;gap:.65rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:.75rem .85rem;cursor:pointer;touch-action:manipulation;min-height:60px;margin-bottom:.3rem" onclick="openLegalPage(\'' + page + '\')" onpointerdown="this.style.background=\'rgba(255,255,255,.09)\'" onpointerup="this.style.background=\'rgba(255,255,255,.05)\'" onpointerleave="this.style.background=\'rgba(255,255,255,.05)\'">'
-    + '<div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">' + ico + '</div>'
-    + '<div style="flex:1"><div style="font-size:.64rem;font-weight:700;color:#F0F6FF">' + title + '</div>'
-      + '<div style="font-size:.44rem;color:rgba(240,246,255,.55);margin-top:.05rem">' + sub + '</div></div>'
-    + '<div style="color:rgba(240,246,255,.3);font-size:.9rem">\u2197</div>'
-  + '</div>';
-}
-function openLegalPage(page) {
-  /* Direct navigation — works in all Pi Browser versions */
-  /* The legal page has a SW unregister script to prevent interception */
-  window.location.href = 'https://finpi-web.pages.dev/legal/' + page + '.html';
-}
-function showLegalInline(page) {
-  /* Fetch and display legal page content inside a panel */
-  fetch('/legal/' + page + '.html')
-    .then(function(r) { return r.text(); })
-    .then(function(html) {
-      /* Extract body content */
-      var body = html.match(/<div class="content">([\s\S]*?)<\/div>\s*<div class="footer">/);
-      var content = body ? body[1] : html.replace(/<[^>]+>/g, '').trim().slice(0, 3000);
-      var titles = {
-        'privacy-policy': 'Privacy Policy',
-        'terms-of-service': 'Terms of Service',
-        'risk-disclosure': 'Risk Disclosure',
-        'security-policy': 'Security Policy',
-        'community-guidelines': 'Community Guidelines',
-        'responsible-disclosure': 'Responsible Disclosure',
-      };
-      openP(titles[page] || page,
-        '<div style="font-size:.52rem;color:rgba(240,246,255,.85);line-height:1.9">' + content + '</div>'
-        + '<div style="font-size:.38rem;color:rgba(240,246,255,.3);margin-top:.8rem;text-align:center">finpi-web.pages.dev/legal/' + page + '.html</div>');
-    })
-    .catch(function() {
-      toast('Could not load page. Visit: finpi-web.pages.dev/legal/' + page + '.html');
-    });
-}
+
+
 
 
 function openSecurity() {
@@ -3193,6 +3149,161 @@ document.addEventListener('visibilitychange', function() {
   }
 });
 
+function openLegal() {
+  openP('Legal & Policies',
+    legalRow('\u274C\uFE0F','Privacy Policy','How we handle your data','showPrivacyPolicy()')
+    + legalRow('\uD83D\uDCC4','Terms of Service','App usage terms','showTermsOfService()')
+    + legalRow('\u26A0\uFE0F','Risk Disclosure','Pi payment risks','showRiskDisclosure()')
+    + legalRow('\uD83D\uDD12','Security Policy','Our security commitment','showSecurityPolicy()')
+    + legalRow('\uD83D\uDC65','Community Guidelines','Usage standards','showCommunityGuidelines()')
+    + legalRow('\uD83D\uDD0D','Responsible Disclosure','Report vulnerabilities','showResponsibleDisclosure()'));
+}
+function legalRow(ico, title, sub, fn) {
+  return '<div style="display:flex;align-items:center;gap:.65rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:.75rem .85rem;cursor:pointer;touch-action:manipulation;min-height:60px;margin-bottom:.3rem" onclick="' + fn + '" onpointerdown="this.style.background=\'rgba(255,255,255,.09)\'" onpointerup="this.style.background=\'rgba(255,255,255,.05)\'" onpointerleave="this.style.background=\'rgba(255,255,255,.05)\'">'
+    + '<div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">' + ico + '</div>'
+    + '<div style="flex:1"><div style="font-size:.64rem;font-weight:700;color:#F0F6FF">' + title + '</div>'
+      + '<div style="font-size:.44rem;color:rgba(240,246,255,.55);margin-top:.05rem">' + sub + '</div></div>'
+    + '<div style="color:rgba(240,246,255,.3);font-size:.9rem">\u203A</div>'
+  + '</div>';
+}
+function legalContent(title, html) {
+  var s = '<div style="font-size:.88rem;color:#CBD5E1;line-height:1.85">';
+  s += '<div style="font-size:.68rem;color:rgba(240,246,255,.4);margin-bottom:1rem;line-height:1.8">Effective: 31 July 2026 &middot; finpi-web.pages.dev<br>&copy; 2026 FinPi &middot; finpi.app@gmail.com</div>';
+  s += html;
+  s += '<div style="font-size:.6rem;color:rgba(240,246,255,.3);margin-top:1.2rem;line-height:1.9;border-top:1px solid rgba(255,255,255,.07);padding-top:.8rem">&copy; 2026 FinPi. All rights reserved.<br>Independent third-party application. Not affiliated with Pi Network Inc.</div>';
+  s += '</div>';
+  openP(title, s);
+}
+function legalH(t){return '<div style="font-size:.78rem;font-weight:700;color:#93C5FD;margin:1.1rem 0 .35rem">' + t + '</div>';}
+function legalP(t){return '<p style="margin-bottom:.6rem">' + t + '</p>';}
+function legalW(t){return '<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:.7rem .85rem;margin:.6rem 0;font-size:.82rem;color:#FCA5A5;line-height:1.75">' + t + '</div>';}
+function legalN(t){return '<div style="background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.28);border-radius:8px;padding:.7rem .85rem;margin:.6rem 0;font-size:.82rem;color:#93C5FD;line-height:1.75">' + t + '</div>';}
+function legalUL(items){return '<ul style="padding-left:1.2rem;margin-bottom:.6rem">' + items.map(function(i){return '<li style="margin-bottom:.22rem;color:#CBD5E1">' + i + '</li>';}).join('') + '</ul>';}
+
+function showPrivacyPolicy() {
+  legalContent('Privacy Policy',
+    legalN('FinPi is an independent third-party application. Not owned, operated, sponsored, endorsed, or administered by Pi Network or the Pi Core Team.')
+    + legalH('1. Data We Collect')
+    + legalP('Pi Authentication: Pi username, account identifier, public wallet information where legitimately available.')
+    + legalW('FinPi does not request or store your Pi Wallet passphrase, private key, seed phrase, or wallet recovery phrase.')
+    + legalP('Transactions: Sender/recipient info, public wallet addresses, amounts, payment IDs, blockchain transaction IDs where available, dates, memos, receipts.')
+    + legalP('Financial Tools: Budgets, goals, invoices, contacts, and analytics you voluntarily enter \u2014 stored locally on your device.')
+    + legalH('2. Information We Never Request')
+    + legalW('FinPi will never ask for your Pi Wallet passphrase, private key, seed phrase, or wallet recovery phrase. Never provide these to anyone claiming to represent FinPi.')
+    + legalH('3. How We Use Information')
+    + legalUL(['Authenticate you via Pi SDK','Process Pi payments via Pi SDK','Display transaction history and generate receipts','Provide financial tools, budgets, goals, invoices','Maintain security and detect suspicious activity','Comply with applicable legal requirements'])
+    + legalH('4. Legal Basis for Processing')
+    + legalP('FinPi processes personal information only as necessary to provide requested services, maintain security, comply with legal obligations, and where applicable, with your consent.')
+    + legalH('5. Data Storage')
+    + legalP('Most FinPi data is stored locally on your device. Some information may be securely processed by FinPi infrastructure (Cloudflare) where necessary to provide requested services. Clear local data anytime via Profile \u2192 Settings \u2192 Clear Local Data.')
+    + legalH('6. International Data Transfers')
+    + legalP('FinPi and its service providers (Cloudflare) may process information in countries where their infrastructure operates. Where required by law, appropriate safeguards are used.')
+    + legalH('7. Data Security')
+    + legalP('FinPi uses: encrypted communications (HTTPS), Pi SDK authentication controls, Cloudflare secure infrastructure, and access controls. No internet service can guarantee absolute security.')
+    + legalH('8. Market and Rate Information')
+    + legalP('Pi rate data from external providers is for reference only. It may be delayed or inaccurate. FinPi does not guarantee any Pi value, exchange rate, or financial return.')
+    + legalH('9. Your Rights')
+    + legalP('You may request access, correction, or deletion of your information. Clear all local FinPi data anytime via Profile \u2192 Settings \u2192 Clear Local Data.')
+    + legalH('10. Contact')
+    + legalP('Email: finpi.app@gmail.com \u00B7 Website: finpi-web.pages.dev')
+    + legalW('Never send your Pi Wallet passphrase, private key, or seed phrase through any support channel.')
+  );
+}
+
+function showTermsOfService() {
+  legalContent('Terms of Service',
+    legalN('FinPi is an independent third-party application. Not owned, operated, sponsored, endorsed, or administered by Pi Network or the Pi Core Team.')
+    + legalH('1. About FinPi')
+    + legalP('FinPi provides financial utilities, payment functionality, and commerce tools within the Pi ecosystem. FinPi integrates with Pi Network technology where permitted and is not affiliated with Pi Network or the Pi Core Team.')
+    + legalH('2. Eligibility')
+    + legalP('You may use FinPi only if you are legally permitted, can legally agree to these Terms, and your use complies with applicable laws and Pi Network requirements.')
+    + legalH('3. Wallet Security')
+    + legalW('FinPi will never request your Pi Wallet passphrase, private key, seed phrase, or recovery phrase. If anyone claiming to represent FinPi asks for these credentials, do not provide them.')
+    + legalH('4. Payments')
+    + legalP('FinPi enables sending, receiving, and requesting Pi via Pi SDK. You are responsible for verifying the recipient, wallet address, amount, and all payment details before confirming. Blockchain transactions may be irreversible.')
+    + legalH('5. Pi Market Information')
+    + legalP('Pi rate information is for reference only. FinPi does not guarantee Pi\'s value, exchange rates, or investment returns. This is not financial advice.')
+    + legalH('6. Prohibited Activities')
+    + legalUL(['Fraud, scams, or impersonation','Requesting wallet passphrases or private keys','Illegal transactions or money laundering','Malware or interference with FinPi infrastructure','Circumventing security mechanisms'])
+    + legalH('7. Coming Soon Features')
+    + legalP('Features labelled Coming Soon are not yet available. FinPi will not represent an unimplemented feature as currently functioning.')
+    + legalH('8. Disclaimer')
+    + legalP('FinPi is provided "as is" and "as available." FinPi does not guarantee uninterrupted availability, accuracy of third-party data, or that all blockchain transactions will succeed.')
+    + legalH('9. Governing Law')
+    + legalP('These Terms are governed by applicable laws of the Federal Republic of Nigeria, subject to mandatory laws applicable to you.')
+    + legalH('10. Contact')
+    + legalP('Email: finpi.app@gmail.com \u00B7 Website: finpi-web.pages.dev')
+    + legalW('Never send your Pi Wallet passphrase, private key, or seed phrase through any support channel.')
+  );
+}
+
+function showRiskDisclosure() {
+  legalContent('Risk Disclosure',
+    legalW('Pi payments on Mainnet are irreversible once confirmed. Always verify recipient and amount before confirming.')
+    + legalH('Cryptocurrency Risk')
+    + legalP('Pi is a cryptocurrency. Its value can fluctuate significantly. Past performance does not indicate future results.')
+    + legalH('Market Data')
+    + legalP('Pi rate data is for reference only. It may be delayed or inaccurate and does not constitute financial advice.')
+    + legalH('Technology Risk')
+    + legalUL(['Network outages may affect payment processing','Pi SDK availability depends on Pi Network','Browser storage limitations may affect data'])
+    + legalH('No Financial Advice')
+    + legalP('Nothing in FinPi constitutes financial, investment, or legal advice.')
+  );
+}
+
+function showSecurityPolicy() {
+  legalContent('Security Policy',
+    legalW('FinPi never asks for your Pi passphrase, private key, seed phrase, or recovery phrase.')
+    + legalH('Authentication')
+    + legalP('FinPi uses Pi Network SDK for authentication. We never store your Pi passphrase, private key, or recovery phrase.')
+    + legalH('Security Measures')
+    + legalUL(['Encrypted communications (HTTPS)','Pi SDK authentication controls','Cloudflare secure infrastructure','Access controls and regular security improvements'])
+    + legalH('Your Responsibilities')
+    + legalUL(['Keep your Pi account credentials secure','Never share your passphrase or recovery phrase','Verify payment details before confirming','Log out on shared devices'])
+    + legalH('Reporting Issues')
+    + legalP('Email: finpi.app@gmail.com \u00B7 Never send wallet credentials when reporting.')
+  );
+}
+
+function showCommunityGuidelines() {
+  legalContent('Community Guidelines',
+    legalH('Respectful Use')
+    + legalP('Use FinPi responsibly and in accordance with Pi Network Community Standards.')
+    + legalH('Prohibited Uses')
+    + legalUL(['Fraudulent transactions','Payments for illegal goods or services','Requesting wallet passphrases or private keys','Reverse engineering FinPi for unauthorized purposes'])
+    + legalH('Business Use')
+    + legalP('FinPi merchant and invoice features are for legitimate business use only.')
+    + legalH('Compliance')
+    + legalP('Users must comply with applicable laws in their jurisdiction regarding cryptocurrency use.')
+  );
+}
+
+function showResponsibleDisclosure() {
+  legalContent('Responsible Disclosure',
+    legalN('We appreciate the security community helping improve FinPi.')
+    + legalH('Reporting')
+    + legalP('Email: finpi.app@gmail.com \u00B7 Include: description, steps to reproduce, and impact assessment.')
+    + legalH('What We Ask')
+    + legalUL(['Do not exploit vulnerabilities beyond proof of concept','Do not access user data without permission','Give reasonable time to address issues before disclosure'])
+    + legalH('What We Promise')
+    + legalUL(['Acknowledge receipt promptly','Work to address validated vulnerabilities','Credit researchers who follow responsible disclosure'])
+    + legalW('Never send wallet credentials when reporting security issues.')
+  );
+}
+
+function openLegalPage(page) {
+  var fns = {
+    'privacy-policy': showPrivacyPolicy,
+    'terms-of-service': showTermsOfService,
+    'risk-disclosure': showRiskDisclosure,
+    'security-policy': showSecurityPolicy,
+    'community-guidelines': showCommunityGuidelines,
+    'responsible-disclosure': showResponsibleDisclosure,
+  };
+  if (fns[page]) fns[page]();
+}
+
+
 window.addEventListener('load', function() {
   window.addEventListener('online',  function() { var b=document.getElementById('offbar'); if(b) b.style.display='none'; });
   window.addEventListener('offline', function() { var b=document.getElementById('offbar'); if(b) b.style.display='block'; });
@@ -3202,6 +3313,7 @@ window.addEventListener('load', function() {
   }
   piLogin();
 });
+
 
 
 
