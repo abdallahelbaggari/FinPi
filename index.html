@@ -446,6 +446,7 @@ select.fi option{background:var(--bg1);color:var(--t1)}
 
 
 
+
 /* FinPi · Pi Financial Platform · Mainnet · sandbox:false
    Abdullahi Bashir Abubakar · finpi-web.pages.dev · 2026 */
 
@@ -1898,33 +1899,22 @@ function logOut() {
 }
 
 function launchApp() {
-  /* Always init Pi SDK first */
+  /* Always init Pi SDK */
   if (typeof Pi !== 'undefined') {
-    try {
-      Pi.init({ version: '2.0', sandbox: false });
-      console.log('[FinPi] Pi.init() OK');
-    } catch(e) {
-      console.warn('[FinPi] Pi.init() error:', e ? e.message : e);
-    }
+    try { Pi.init({ version: '2.0', sandbox: false }); } catch(e) {}
   }
 
-  /* CRITICAL: Must re-authenticate with 'payments' scope every session.
-     Even when restoring from localStorage, the Pi SDK requires a fresh
-     Pi.authenticate() call that includes the 'payments' scope before
-     Pi.createPayment() will work. Without this the SDK throws:
-     "Cannot create a payment without payments scope" */
+  /* Re-authenticate with payments scope every session */
   if (typeof Pi !== 'undefined') {
     Pi.authenticate(['username', 'payments'], onIncompletePayment)
       .then(function(auth) {
         if (auth && auth.user) {
           piUser = auth.user;
           localStorage.setItem('fp_user', JSON.stringify(piUser));
-          console.log('[FinPi] Re-authenticated with payments scope ✅', piUser.username);
         }
       })
       .catch(function(err) {
-        console.warn('[FinPi] Re-auth warning (non-fatal):', err ? err.message : err);
-        /* Non-fatal — user is already logged in, payments may still work */
+        console.warn('[FinPi] Re-auth:', err ? err.message : err);
       });
   }
 
@@ -1932,8 +1922,29 @@ function launchApp() {
   document.getElementById('login').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
 
+  /* Register SW v7 and force update check */
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(function(){});
+    navigator.serviceWorker.register('/sw.js')
+      .then(function(reg) {
+        /* Force check for new SW version on every launch */
+        reg.update();
+        /* If a new SW is waiting, activate it immediately */
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        reg.addEventListener('updatefound', function() {
+          var newSW = reg.installing;
+          if (newSW) {
+            newSW.addEventListener('statechange', function() {
+              if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                /* New SW installed — will activate on next navigation */
+                console.log('[FinPi] New SW installed and ready');
+              }
+            });
+          }
+        });
+      })
+      .catch(function() {});
   }
 
   if (_piRateInterval) clearInterval(_piRateInterval);
@@ -3150,14 +3161,22 @@ document.addEventListener('visibilitychange', function() {
 });
 
 function openLegal() {
+  var externalBase = 'https://finpi-web.pages.dev/legal/';
   openP('Legal & Policies',
     legalRow('\u274C\uFE0F','Privacy Policy','How we handle your data','showPrivacyPolicy()')
     + legalRow('\uD83D\uDCC4','Terms of Service','App usage terms','showTermsOfService()')
     + legalRow('\u26A0\uFE0F','Risk Disclosure','Pi payment risks','showRiskDisclosure()')
     + legalRow('\uD83D\uDD12','Security Policy','Our security commitment','showSecurityPolicy()')
     + legalRow('\uD83D\uDC65','Community Guidelines','Usage standards','showCommunityGuidelines()')
-    + legalRow('\uD83D\uDD0D','Responsible Disclosure','Report vulnerabilities','showResponsibleDisclosure()'));
+    + legalRow('\uD83D\uDD0D','Responsible Disclosure','Report vulnerabilities','showResponsibleDisclosure()')
+    + '<div style="margin-top:.6rem;padding:.5rem .2rem;border-top:1px solid rgba(255,255,255,.07)">'
+      + '<div style="font-size:.42rem;color:rgba(240,246,255,.35);line-height:1.9;text-align:center">'
+        + '\u00A9 2026 FinPi \u00B7 finpi.app@gmail.com<br>'
+        + 'Independent third-party app \u00B7 Not affiliated with Pi Network Inc.'
+      + '</div>'
+    + '</div>');
 }
+
 function legalRow(ico, title, sub, fn) {
   return '<div style="display:flex;align-items:center;gap:.65rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:.75rem .85rem;cursor:pointer;touch-action:manipulation;min-height:60px;margin-bottom:.3rem" onclick="' + fn + '" onpointerdown="this.style.background=\'rgba(255,255,255,.09)\'" onpointerup="this.style.background=\'rgba(255,255,255,.05)\'" onpointerleave="this.style.background=\'rgba(255,255,255,.05)\'">'
     + '<div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">' + ico + '</div>'
@@ -3313,6 +3332,7 @@ window.addEventListener('load', function() {
   }
   piLogin();
 });
+
 
 
 
