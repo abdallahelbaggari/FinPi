@@ -1,16 +1,10 @@
-# FinPi Cloudflare Pages redirect rules
-# Legal pages — serve directly, never redirect to index.html
-/legal/privacy-policy.html       /legal/privacy-policy.html       200
-/legal/terms-of-service.html     /legal/terms-of-service.html     200
-/legal/risk-disclosure.html      /legal/risk-disclosure.html      200
-/legal/security-policy.html      /legal/security-policy.html      200
+/legal/privacy-policy.html /legal/privacy-policy.html 200
+/legal/terms-of-service.html /legal/terms-of-service.html 200
+/legal/risk-disclosure.html /legal/risk-disclosure.html 200
+/legal/security-policy.html /legal/security-policy.html 200
 /legal/community-guidelines.html /legal/community-guidelines.html 200
 /legal/responsible-disclosure.html /legal/responsible-disclosure.html 200
-
-# Approve/complete endpoints handled by Functions
-/approve                         /approve                         200
-/complete                        /complete                        200
-/payment-recovery                /payment-recovery                200
-
-# All other routes serve the SPA
-/*                               /index.html                      200
+/approve /approve 200
+/complete /complete 200
+/payment-recovery /payment-recovery 200
+/* /index.html 200
