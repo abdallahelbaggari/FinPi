@@ -1,5 +1,5 @@
-/* FinPi Service Worker v5 */
-const CACHE = 'finpi-v5';
+/* FinPi Service Worker v6 — legal pages completely excluded */
+const CACHE = 'finpi-v6';
 const STATIC = ['/index.html', '/manifest.json', '/finpi-logo.svg'];
 
 self.addEventListener('install', e => {
@@ -10,6 +10,7 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
+  /* Delete ALL old caches immediately */
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
@@ -19,13 +20,16 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
+  const path = new URL(url).pathname;
 
-  /* NEVER intercept these — let browser fetch directly */
+  /* NEVER intercept legal pages — let browser fetch directly from server */
+  if (path.startsWith('/legal/')) return;
+
+  /* Never intercept API/payment routes */
   if (
-    url.includes('/legal/') ||
-    url.includes('/approve') ||
-    url.includes('/complete') ||
-    url.includes('/payment-recovery') ||
+    path.startsWith('/approve') ||
+    path.startsWith('/complete') ||
+    path.startsWith('/payment-recovery') ||
     url.includes('coingecko') ||
     url.includes('okx.com') ||
     url.includes('gateio') ||
@@ -33,8 +37,8 @@ self.addEventListener('fetch', e => {
     e.request.method !== 'GET'
   ) return;
 
-  /* For index.html — network first */
-  if (url.endsWith('/') || url.endsWith('/index.html') || (!url.includes('.'))) {
+  /* index.html — always fetch fresh from network */
+  if (path === '/' || path === '/index.html') {
     e.respondWith(
       fetch(e.request)
         .then(res => {
@@ -48,7 +52,7 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  /* Assets — cache first */
+  /* Static assets — cache first */
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
@@ -58,6 +62,6 @@ self.addEventListener('fetch', e => {
         }
         return res;
       });
-    }).catch(() => caches.match('/index.html'))
+    }).catch(() => null)
   );
 });
