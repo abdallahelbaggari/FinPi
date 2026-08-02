@@ -447,7 +447,8 @@ select.fi option{background:var(--bg1);color:var(--t1)}
 
 
 
-/* FinPi · Pi Financial Platform · Mainnet · sandbox:false
+
+/* FinPi · Pi Financial Platform · Mainnet · Pi Mainnet
    Abdullahi Bashir Abubakar · finpi-web.pages.dev · 2026 */
 
 /* ── GLOBALS ── */
@@ -614,7 +615,7 @@ function walletTab(tab, el) {
   var bal       = hidebal ? '\u2022\u2022\u2022\u2022\u2022\u2022' : '\u03C0 0.000';
   var finpiId   = u.username ? 'FP-' + u.username.toUpperCase() : '\u2014';
   var stColor   = connected ? 'var(--green)' : 'var(--orange)';
-  var stLabel   = connected ? 'Connected \u00B7 Pi Mainnet' : (isGuest ? 'Guest Mode' : 'Not Connected');
+  var stLabel   = connected ? 'Connected · Pi Mainnet' : (isGuest ? 'Guest Mode' : 'Not Connected');
   var ws = document.getElementById('wallet-scroll');
   if (!ws) return;
 
@@ -861,8 +862,11 @@ function renderHome() {
         + '</div>'
       + '</div>'
       + '<div class="bal-amt">' + bal + '</div>'
+    + '<div class="bal-usd" style="font-family:var(--m);font-size:.72rem;font-weight:600;color:rgba(200,169,81,.75);margin:.06rem 0 .04rem">'
+      + (_piRate && _piRate > 0 ? '≈ $' + (_piRate).toFixed(4) + ' USD · 1π' : '— USD rate loading…')
+    + '</div>'
       + '<div class="bal-addr">@' + name + ' \u00B7 Pi Mainnet</div>'
-      + '<div class="bal-status"><div class="bal-dot"></div><div class="bal-net">Connected \u00B7 sandbox:false</div>'
+      + '<div class="bal-status"><div class="bal-dot"></div><div class="bal-net">Connected · Pi Mainnet</div>'
         + (_piRate&&_piRate>0 ? '<div style="margin-left:auto;font-size:.38rem;color:var(--gold);font-family:var(--m)">'+rateStr+'</div>' : '')
       + '</div>'
       + '<div class="bal-btns">'
@@ -1532,7 +1536,7 @@ function buildReceipt(id) {
   if (tx.meta && tx.meta.txid)      rows.push(['Txn ID',     '<span style="font-size:.38rem;font-family:var(--m)">' + tx.meta.txid.slice(0, 20) + '\u2026</span>']);
   rows.push(['Date',    fmtDate(tx.date)]);
   if (tx.completed_at) rows.push(['Completed', fmtDate(tx.completed_at)]);
-  rows.push(['Network', 'Pi Mainnet \u00B7 sandbox:false']);
+  rows.push(['Network', 'Pi Mainnet']);
   rows.push(['App',     'FinPi \u00B7 finpi-web.pages.dev']);
 
   /* Plain-text version for copy/share */
@@ -1775,7 +1779,7 @@ function renderProfile() {
       + '<div style="font-size:.95rem;font-weight:900;letter-spacing:-.02em">@' + name + '</div>'
       + (p.name ? '<div style="font-size:.55rem;color:var(--t2);margin-top:.1rem">' + p.name + '</div>' : '')
       + '<div style="font-size:.5rem;color:var(--teal);margin:.1rem 0;font-family:var(--m)">' + finpiId + '</div>'
-      + '<div style="font-size:.44rem;color:var(--t3);margin-top:.06rem">' + (isGuest?'Guest Mode':'Pi Mainnet · sandbox:false') + '</div>'
+      + '<div style="font-size:.44rem;color:var(--t3);margin-top:.06rem">' + (isGuest?'Guest Mode':'Pi Mainnet') + '</div>'
       + '<button class="btn bp btn-sm" style="margin-top:.65rem;min-height:40px" onclick="openSetup()">✏️ Edit Profile</button>'
     + '</div>'
 
@@ -2106,7 +2110,7 @@ function openAbout() {
     + '<div style="background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:.6rem .8rem;margin:.3rem 0">'
       + '<div class="receipt-row"><span class="receipt-key">Version</span><span class="receipt-val">1.0.0</span></div>'
       + '<div class="receipt-row"><span class="receipt-key">Network</span><span class="receipt-val" style="color:var(--teal)">Pi Mainnet</span></div>'
-      + '<div class="receipt-row"><span class="receipt-key">Mode</span><span class="receipt-val">sandbox:false</span></div>'
+      + '<div class="receipt-row"><span class="receipt-key">Mode</span><span class="receipt-val">Mainnet</span></div>'
       + '<div class="receipt-row" style="border:none"><span class="receipt-key">Developer</span><span class="receipt-val">Abdullahi Bashir Abubakar</span></div>'
     + '</div>'
     + '<div style="font-size:.42rem;color:var(--t4);text-align:center;margin-top:.5rem;line-height:1.8">Not affiliated with Pi Network Inc.<br>All Pi payments are real Mainnet transactions.</div>');
@@ -2896,7 +2900,7 @@ function openSystemStatus() {
     + [['FinPi App','Operational','green'],['Pi SDK','Operational','green'],['Payment Flow','Operational','green'],['Rate Data',_piRate?'Operational':'Checking...','piRate?\'green\':\'orange\'']].map(function(s){
         return '<div class="receipt-row"><span class="receipt-key">'+s[0]+'</span><span class="receipt-val" style="color:var(--'+s[2]+')">'+(s[2]==='green'?'✅ ':'⏳ ')+s[1]+'</span></div>';
       }).join('')
-    + '<div style="font-size:.4rem;color:var(--t4);margin-top:.5rem;line-height:1.8">FinPi · finpi-web.pages.dev · Pi Mainnet · sandbox:false</div>');
+    + '<div style="font-size:.4rem;color:var(--t4);margin-top:.5rem;line-height:1.8">FinPi · finpi-web.pages.dev · Pi Mainnet</div>');
 }
 
 /* ── FINPI CARD ── */
@@ -3161,7 +3165,6 @@ document.addEventListener('visibilitychange', function() {
 });
 
 function openLegal() {
-  var externalBase = 'https://finpi-web.pages.dev/legal/';
   openP('Legal & Policies',
     legalRow('\u274C\uFE0F','Privacy Policy','How we handle your data','showPrivacyPolicy()')
     + legalRow('\uD83D\uDCC4','Terms of Service','App usage terms','showTermsOfService()')
@@ -3169,10 +3172,10 @@ function openLegal() {
     + legalRow('\uD83D\uDD12','Security Policy','Our security commitment','showSecurityPolicy()')
     + legalRow('\uD83D\uDC65','Community Guidelines','Usage standards','showCommunityGuidelines()')
     + legalRow('\uD83D\uDD0D','Responsible Disclosure','Report vulnerabilities','showResponsibleDisclosure()')
-    + '<div style="margin-top:.6rem;padding:.5rem .2rem;border-top:1px solid rgba(255,255,255,.07)">'
-      + '<div style="font-size:.42rem;color:rgba(240,246,255,.35);line-height:1.9;text-align:center">'
+    + '<div style="margin-top:.65rem;padding:.55rem .2rem;border-top:1px solid rgba(255,255,255,.07);text-align:center">'
+      + '<div style="font-size:.42rem;color:rgba(240,246,255,.38);line-height:2">'
         + '\u00A9 2026 FinPi \u00B7 finpi.app@gmail.com<br>'
-        + 'Independent third-party app \u00B7 Not affiliated with Pi Network Inc.'
+        + 'Also available at: <span style="color:rgba(13,148,136,.8)">finpi-web.pages.dev/privacy-policy.html</span>'
       + '</div>'
     + '</div>');
 }
@@ -3224,7 +3227,7 @@ function showPrivacyPolicy() {
     + legalH('9. Your Rights')
     + legalP('You may request access, correction, or deletion of your information. Clear all local FinPi data anytime via Profile \u2192 Settings \u2192 Clear Local Data.')
     + legalH('10. Contact')
-    + legalP('Email: finpi.app@gmail.com \u00B7 Website: finpi-web.pages.dev')
+    + legalP('Email: finpi.app@gmail.com \u00B7 Website: finpi.pi')
     + legalW('Never send your Pi Wallet passphrase, private key, or seed phrase through any support channel.')
   );
 }
@@ -3251,7 +3254,7 @@ function showTermsOfService() {
     + legalH('9. Governing Law')
     + legalP('These Terms are governed by applicable laws of the Federal Republic of Nigeria, subject to mandatory laws applicable to you.')
     + legalH('10. Contact')
-    + legalP('Email: finpi.app@gmail.com \u00B7 Website: finpi-web.pages.dev')
+    + legalP('Email: finpi.app@gmail.com \u00B7 Website: finpi.pi')
     + legalW('Never send your Pi Wallet passphrase, private key, or seed phrase through any support channel.')
   );
 }
@@ -3332,6 +3335,7 @@ window.addEventListener('load', function() {
   }
   piLogin();
 });
+
 
 
 
