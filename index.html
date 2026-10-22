@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>/* Pi sandbox: true only when the app is opened inside the Pi Sandbox (desktop testing at sandbox.minepi.com); false in the Pi Browser. The same code runs as the mainnet and the testnet app: the network comes from the Pi app and its API key. */
+window.PI_SANDBOX=(function(){try{var r=document.referrer||'',a=location.ancestorOrigins?[].slice.call(location.ancestorOrigins).join(' '):'';return /sandbox\.minepi\.com/.test(r+' '+a);}catch(e){return false;}})();</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FinPi</title>
@@ -32,7 +35,7 @@ function signIn(){
     document.getElementById('st').textContent='Not in Pi Browser. Use guest mode.';
     return;
   }
-  Pi.init({version:'2.0',sandbox:true});
+  Pi.init({version:'2.0',sandbox: window.PI_SANDBOX});
   Pi.authenticate(['username','payments'],function(){})
     .then(function(a){
       localStorage.setItem('fp_user',JSON.stringify(a.user));
@@ -50,5 +53,6 @@ function guest(){
 // Auto-restore
 try{if(localStorage.getItem('fp_user')){window.location='/app.html';}}catch(e){}
 </script>
+<script>/* Testnet copy: same code, a clear label so nobody mistakes test Pi for real Pi */(function(){if(!/(^|[.-])testnet[.-]/i.test(location.hostname))return;document.title="[Testnet] "+document.title;var b=document.createElement("div");b.textContent="TESTNET";b.setAttribute("aria-label","Testnet: test Pi only");b.style.cssText="position:fixed;left:12px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:99999;padding:3px 10px;border-radius:999px;background:#B45309;color:#fff;font:800 11px/1.4 system-ui,sans-serif;letter-spacing:.06em;pointer-events:none;opacity:.92";(document.body||document.documentElement).appendChild(b);})();</script>
 </body>
 </html>
