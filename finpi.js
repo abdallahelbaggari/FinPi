@@ -336,6 +336,15 @@
     if (p.metadata && p.metadata.type === 'transfer') { var pd = get('pend', {}); if (!pd[p.identifier]) { pd[p.identifier] = { ts: Date.now() }; put('pend', pd); } }
     api('/recover', { paymentId: p.identifier }).then(function () { setTimeout(function () { sync(); checkPendingInApp(); }, 600); }).catch(function () {});
   }
+  /* An earlier payment was left unfinished (app closed, weak network): ask Pi for it again so /recover can
+     complete it (if it reached the blockchain) or cancel it (if it never did). Tried now and again after 2 minutes. */
+  var resolving = 0;
+  function resolvePending() {
+    if (Date.now() - resolving < 30000) return; resolving = Date.now();
+    var go = function () { authP = null; authAt = 0; try { signIn(true); } catch (e) {} };
+    go(); setTimeout(go, 130000);
+  }
+  window.fpResolvePending = function () { resolving = 0; resolvePending(); toast('Checking for an unfinished payment…'); };
   // One sign-in at a time: a second tap (or the automatic sign-in on opening) reuses the request already
   // waiting for Pi. A slow answer is not treated as a failure: FinPi signs in as soon as Pi replies.
   var authP = null, authAt = 0;
@@ -345,7 +354,7 @@
     if (btn && !silent) { btn.disabled = true; $('#signin-t').textContent = 'Signing in…'; }
     if (!authP || Date.now() - authAt >= 20000) {
       authAt = Date.now();
-      var attempt = Pi.authenticate(['username', 'payments'], onIncomplete).then(function (a) {
+      var attempt = Pi.authenticate(['username', 'payments', 'wallet_address'], onIncomplete).then(function (a) {
         if (authP === attempt) authP = null;
         if (S.token && !S.guest) return true; // already signed in by an earlier attempt
         S.user = { username: a.user.username, uid: a.user.uid }; S.token = a.accessToken; S.guest = false;
@@ -546,7 +555,7 @@
     var A = isG(to), lab = toLabel(to);
     var w = sheet('Paying ' + lab,
       '<div class="big"><div class="v">' + fpi(amt) + ' π</div><div class="c">' + esc(conv(amt)) + '</div><div class="w">To ' + esc(lab) + ' · ' + esc(narr) + '</div></div>' +
-      '<div class="steps"><div id="st1" class="on">Approve in Pi’s window</div><div id="st2">Confirming your payment</div><div id="st3">Delivering to ' + esc(lab) + '</div></div><div class="status" id="st-m">Waiting for your approval…</div>');
+      '<div class="steps"><div id="st1" class="on">Confirm payment</div><div id="st2">Confirming your payment</div><div id="st3">Delivering to ' + esc(lab) + '</div></div><div class="status" id="st-m">Waiting for your approval…</div>');
     var refused = false, tries = 0, curPid = '';
     function step(n, m, cls) { for (var i = 1; i <= 3; i++) { var e = $('#st' + i); if (e) e.className = i < n ? 'done' : i === n ? 'on' : ''; } var s = $('#st-m'); if (s) { s.className = 'status' + (cls ? ' ' + cls : ''); s.innerHTML = m; } }
     function finish(row) {
@@ -588,7 +597,9 @@
           }).catch(function () { step(2, 'Connection problem. Your payment is recorded; FinPi finishes it automatically when you reopen the app.', 'err'); });
         },
         onCancel: function (cp) { dropPending(cp || curPid); if (!refused) step(1, 'You cancelled. Nothing was paid.', 'err'); },
-        onError: function (e) { if (!refused) step(1, '✕ ' + esc((e && e.message) || 'Payment error') + '. Nothing was paid.', 'err'); }
+        onError: function (e) { if (refused) return; var m = String((e && e.message) || 'Payment error').replace(/\.+$/, '');
+          if (/pending payment/i.test(m)) { resolvePending(); step(1, 'An earlier payment is being finished automatically. Nothing was paid. Please try again in 2 minutes.', 'err'); }
+          else step(1, '✕ ' + esc(m) + '. Nothing was paid.', 'err'); }
       });
     } catch (e) { step(1, '✕ ' + esc(e.message || e), 'err'); }
   }
@@ -1000,7 +1011,7 @@
         row('bell', 'Phone notifications', get('push', false) ? 'On' : 'Off', 'push') + row('pie', 'Monthly budget', get('budget', 0) ? fpi(get('budget', 0)) + ' π' : 'Not set', 'budget') + row('card', 'Wallet address', get('addr', '') ? short(get('addr', '')) : 'Not added', 'addr-set') + '</div>' +
         '<div class="sec"><h2>Tools</h2></div><div class="list">' + row('users', 'Contacts', contacts().length ? contacts().length + ' saved' : 'People you pay often', 'contacts') + row('bell', 'Payment reminders', rems().length ? rems().length + ' active' : 'Rent, fees and regular payments', 'rems') + row('act', 'Price alerts', alerts().filter(function (a) { return !a.hit; }).length ? alerts().filter(function (a) { return !a.hit; }).length + ' active' : 'Know when Pi reaches your price', 'alerts') + row('rcpt', 'Monthly statement', 'PDF of your payments', 'statement') + row('info', 'Welcome tour', 'See how FinPi works', 'tour') + '</div>' +
         '<div class="sec"><h2>Security &amp; support</h2></div><div class="list">' +
-        row('shield', 'Security center', 'Limits, safety and how FinPi works', 'security') + row('heart', sup ? 'You are a Supporter' : 'Become a Supporter', sup ? 'Thank you!' : '1 π · badge only, no reward', 'supporter') +
+        row('shield', 'Security center', 'Limits, safety and how FinPi works', 'security') + row('act', 'Resolve a pending payment', 'Finishes or clears an unfinished payment', 'resolvepend') + row('heart', sup ? 'You are a Supporter' : 'Become a Supporter', sup ? 'Thank you!' : '1 π · badge only, no reward', 'supporter') +
         row('mail', 'Help & contact', SUPPORT, 'help') + '</div>' +
         '<div class="sec"><h2>Legal</h2></div><div class="list">' + lrow('Terms of Service', 'terms-of-service.html') + lrow('Privacy Policy', 'privacy-policy.html') + lrow('Risk Disclosure', 'risk-disclosure.html') + '</div>' +
         (signedIn() ? '<button type="button" class="btn danger" data-act="signout" style="margin-top:18px">' + ic('out') + 'Sign out</button>' : '') +
@@ -1438,6 +1449,7 @@
       };
       var t = $('#ps-t', w); if (t) t.onclick = function () { addNote('bell', 'FinPi test', 'Notifications are working.', 'test-' + Date.now()); toast('Test sent'); };
     },
+    resolvepend: function () { window.fpResolvePending(); },
     security: function () {
       sheet('Security center', '<div class="note ok">' + ic('shield') + '<span>FinPi never asks for your passphrase, never holds a balance for you and cannot move Pi from your wallet.</span></div>' +
         '<div class="card" style="margin-top:12px"><h3>How transfers work</h3><p>You approve each payment in Pi’s own window. FinPi’s software then delivers it within seconds through Pi Network’s official payments, or refunds you automatically if delivery is impossible. Before any retry it checks the Pi blockchain, so nothing is ever paid twice. No person reviews, holds or reverses transfers.</p></div>' +
