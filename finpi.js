@@ -7,14 +7,48 @@
   var $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
   var K = 'fp_v1_';
   function get(k, d) { try { var v = localStorage.getItem(K + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
-  function put(k, v) { try { localStorage.setItem(K + k, JSON.stringify(v)); } catch (e) {} }
+  /* storage: if the phone's browser storage is full, the oldest receipts that are already backed up are trimmed
+     (they stay in the server history) and the save is retried, so nothing new is ever lost */
+  function put(k, v) {
+    try { localStorage.setItem(K + k, JSON.stringify(v)); if (k === 'name' || k === 'nameType') setTimeout(function () { try { HK.dirty.forEach(function (f) { f(); }); } catch (e) {} }, 0); return true; } catch (e) {}
+    try {
+      ['errlog', 'price', 'fx', 'payers'].forEach(function (x) { if (x !== k) localStorage.removeItem(K + x); });
+      var N = JSON.parse(localStorage.getItem(K + 'notes') || '[]'); if (k !== 'notes' && N.length > 15) localStorage.setItem(K + 'notes', JSON.stringify(N.slice(0, 15)));
+    } catch (e3) {}
+    var keepF = [0.6, 0.35, 0.15, 0.05];
+    for (var i = 0; i < keepF.length; i++) {
+      try {
+        var R = k === 'rcpts' ? v : JSON.parse(localStorage.getItem(K + 'rcpts') || '[]');
+        if (Array.isArray(R) && R.length > 20) { var cut = Math.max(20, Math.floor(R.length * keepF[i])), keep = R.slice(0, cut).concat(R.slice(cut).filter(function (r) { return !r.hs; })); if (k === 'rcpts') v = keep; else localStorage.setItem(K + 'rcpts', JSON.stringify(keep)); }
+        localStorage.setItem(K + k, JSON.stringify(v)); return true;
+      } catch (e2) {}
+    }
+    return false;
+  }
   function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  /* errors never break the app: they are noted on this phone and the screen keeps working */
+  var errN = 0;
+  function guardErr(m) {
+    try { var L = JSON.parse(localStorage.getItem(K + 'errlog') || '[]'); L.unshift({ t: Date.now(), m: String(m || '').slice(0, 200) }); localStorage.setItem(K + 'errlog', JSON.stringify(L.slice(0, 20))); } catch (e) {}
+    if (!errN++) { setTimeout(function () { errN = 0; }, 30000); try { var a = document.getElementById('app'); if (a && !a.hidden && window.toast) toast('Something did not load. Please try again.'); } catch (e) {} }
+  }
+  addEventListener('error', function (e) { if (e && e.filename && !/finpi|qr\.js/.test(e.filename)) return; guardErr(e && e.message); });
+  addEventListener('unhandledrejection', function (e) { try { guardErrQuiet(e.reason && (e.reason.message || e.reason)); } catch (x) {} });
+  function guardErrQuiet(m) { try { var L = JSON.parse(localStorage.getItem(K + 'errlog') || '[]'); L.unshift({ t: Date.now(), m: 'async: ' + String(m || '').slice(0, 200) }); localStorage.setItem(K + 'errlog', JSON.stringify(L.slice(0, 20))); } catch (e) {} }
+  /* one tap, one action: a second tap on the same button within 0.7 s is ignored (no double payments or double files) */
+  var lastTap = { el: null, t: 0 };
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.btn, .tile, .qa button, .bz-a, .bz-mini button, [data-act], [data-f]'); if (!b) return;
+    var n = Date.now(); if (b === lastTap.el && n - lastTap.t < 700) { e.stopPropagation(); e.preventDefault(); return; } lastTap = { el: b, t: n };
+  }, true);
   var TEST = /(^|[.-])testnet[.-]/i.test(location.hostname), NETN = TEST ? 'Pi Testnet' : 'Pi Mainnet', NETQ = TEST ? 'test' : 'main';
   var HORIZON = TEST ? 'https://api.testnet.minepi.com' : 'https://api.mainnet.minepi.com';
   var SANDBOX = (function () { try { var r = document.referrer || '', a = location.ancestorOrigins ? [].slice.call(location.ancestorOrigins).join(' ') : ''; return /sandbox\.minepi\.com/.test(r + ' ' + a); } catch (e) { return false; } })();
   var SUPPORT = 'finpi.app@gmail.com', USER_RE = /^[A-Za-z0-9_.-]{2,40}$/;
   var CATS = ['Food', 'Transport', 'Shopping', 'Bills', 'Family', 'Business', 'Gifts', 'Charity', 'Other'];
-  var S = { user: null, token: null, guest: false, tab: 'home', p: null, fx: null, cfg: { enabled: false, payments: null, fee: 0.01, max: 0, daily: 0 }, filter: 'all', seg: 'tx', sort: 'new', extra: [], hMore: false, month: 0, wal: null };
+  var S = { per: 'all', q: '', from: '', to: '', page: 60, user: null, token: null, guest: false, tab: 'home', p: null, fx: null, cfg: { enabled: false, payments: null, fee: 0.01, max: 0, daily: 0 }, filter: 'all', seg: 'tx', sort: 'new', extra: [], hMore: false, month: 0, wal: null };
+  var HK = { rcpt: [], spec: [], rows: [], html: {}, signin: [], repair: [], dirty: [] };
+  function hook(k) { var f = HK.html[k]; try { return f ? f() : ''; } catch (e) { return ''; } }
   var r7 = function (n) { return Math.round(Number(n) * 1e7) / 1e7; };
   var me = function () { return S.user && S.user.username || ''; };
   var signedIn = function () { return !!(S.user && S.token); };
@@ -56,6 +90,12 @@
     star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
     ext: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
     warn: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    sort: '<line x1="4" y1="6" x2="14" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/><polyline points="17 8 20 5 23 8"/><line x1="20" y1="5" x2="20" y2="19"/>',
+    grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>',
+    zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    chevd: '<polyline points="6 9 12 15 18 9"/>',
+    cloud: '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><polyline points="9 14 11.5 16.5 16 12"/>',
     tag: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>'
   };
   function ic(n, st) { return '<svg class="ic" viewBox="0 0 24 24"' + (st ? ' style="' + st + '"' : '') + ' aria-hidden="true">' + (P[n] || '') + '</svg>'; }
@@ -78,7 +118,8 @@
     if (S.fx && S.fx[c] && S.fx.USD) return p.usd * S.fx[c] / S.fx.USD;
     if (c === 'SAR') return p.sar; if (c === 'NGN') return p.ngn; return null;
   }
-  function conv(a) { var c = curr(), r = rateIn(c), u = rateIn('USD'); if (!(a > 0) || !u) return ''; return '≈ ' + money(a * u, 'USD') + (r && c !== 'USD' ? ' · ' + money(a * r, c) : ''); }
+  function cur2() { var t = get('cur2', ''); return t && t !== curr() && t !== 'USD' ? t : ''; }
+  function conv(a) { var c = curr(), r = rateIn(c), u = rateIn('USD'), t = cur2(), rt = t ? rateIn(t) : 0; if (!(a > 0) || !u) return ''; return '≈ ' + money(a * u, 'USD') + (r && c !== 'USD' ? ' · ' + money(a * r, c) : '') + (rt ? ' · ' + money(a * rt, t) : ''); }
   function ago(t) { var s = Math.max(0, (Date.now() - t) / 1000); return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
   function short(a) { a = String(a || ''); return a.length > 16 ? a.slice(0, 6) + '…' + a.slice(-6) : a; }
   function spark(arr, w, h, col, area) {
@@ -132,8 +173,8 @@
       var url = location.origin + d.file + '?dl=1', a = document.createElement('a'); a.href = url; a.download = d.name || name; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
       if (quiet) return;
       var img = /^image\//.test(type), w = sheet('Saved to your phone',
-        '<p class="sh-sub">' + (img ? 'Your receipt image is in your phone’s <b>Downloads</b> and <b>Gallery</b>.' : 'Your ' + esc(what) + ' is in your phone’s <b>Downloads</b> folder.') + '</p>' +
-        '<button type="button" class="btn" data-x="open">' + ic(img ? 'rcpt' : 'down') + (img ? 'Open the receipt image' : 'Download again') + '</button>' +
+        '<p class="sh-sub">' + (img ? 'Your ' + esc(what) + ' image is in your phone’s <b>Downloads</b> and <b>Gallery</b>.' : 'Your ' + esc(what) + ' is in your phone’s <b>Downloads</b> folder.') + '</p>' +
+        '<button type="button" class="btn" data-x="open">' + ic(img ? 'rcpt' : 'down') + (img ? 'Open the image' : 'Download again') + '</button>' +
         '<p class="small muted" style="text-align:center;margin-top:10px">Not there? ' + (img ? 'Open the image, then press and hold it to save.' : 'Tap Download again.') + '</p>');
       $('[data-x="open"]', w).onclick = function () { if (img) location.href = d.page; else { var b = document.createElement('a'); b.href = url; b.download = d.name || name; document.body.appendChild(b); b.click(); b.remove(); } };
     }, function () { blobSave(blob, name); toast(what.charAt(0).toUpperCase() + what.slice(1) + ' saved to Downloads'); });
@@ -152,8 +193,9 @@
   function shareImage(blob, name, title, text, short) {
     var f = null; try { f = new File([blob], name, { type: 'image/jpeg' }); } catch (e) {}
     var fallback = function () {
-      saveFile(blob, name, 'image/jpeg', 'receipt', true);
-      var w = sheet('Share the receipt image', '<p class="sh-sub">The receipt image is saved to your phone’s <b>Gallery</b>. Open WhatsApp (or any app), tap attach, choose <b>Gallery</b> and pick the FinPi receipt.</p>' +
+      var wh = String(title || 'FinPi receipt').replace(/^FinPi /, '').toLowerCase();
+      saveFile(blob, name, 'image/jpeg', wh, true);
+      var w = sheet('Share the ' + wh + ' image', '<p class="sh-sub">The ' + esc(wh) + ' image is saved to your phone’s <b>Gallery</b>. Open WhatsApp (or any app), tap attach, choose <b>Gallery</b> and pick the FinPi ' + esc(wh) + '.</p>' +
         '<button type="button" class="btn" data-x="lk">' + ic('link') + 'Share as a link instead</button>');
       $('[data-x="lk"]', w).onclick = function () { closeSheets(); shareLink(blob, name, 'image/jpeg', title, short); };
     };
@@ -179,11 +221,19 @@
   function notes() { return get('notes', []); }
   function addNote(icn, t, b, tag) {
     var n = notes(); if (tag && n.some(function (x) { return x.tag === tag; })) return;
-    n.unshift({ ic: icn, t: t, b: b, ts: Date.now(), read: false, tag: tag || '' }); put('notes', n.slice(0, 60)); bellDot();
+    n.unshift({ ic: icn, t: t, b: b, ts: Date.now(), read: false, tag: tag || '' }); put('notes', n.slice(0, 60)); bellDot(); try { headsUp(icn, t, b); } catch (e) {}
     if (get('push', false) && 'Notification' in window && Notification.permission === 'granted') {
       var opt = { body: b, icon: 'icons/icon-192.png', badge: 'icons/favicon-32.png', tag: tag || undefined };
       try { navigator.serviceWorker && navigator.serviceWorker.ready.then(function (r) { r.showNotification(t, opt); }).catch(function () { try { new Notification(t, opt); } catch (e) {} }); } catch (e) {}
     }
+  }
+  function ntCls(i) { return { req: 'in', check: 'in', send: 'out', undo: 'rf', warn: 'bad', inv: 'iv', tag: 'rf', bell: 'iv', heart: 'sp', refresh: 'tl', act: 'iv' }[i] || 'out'; }
+  var huT = null;
+  function headsUp(icn, t, b) {
+    var a = $('#app'); if (!a || a.hidden) return;
+    var h = $('#hu'); if (!h) { h = document.createElement('button'); h.type = 'button'; h.id = 'hu'; h.setAttribute('aria-live', 'polite'); document.body.insertBefore(h, document.body.firstChild); h.onclick = function () { h.classList.remove('on'); if (A.notifs) A.notifs(); }; }
+    h.innerHTML = '<span class="ico nt ' + ntCls(icn) + '">' + ic(icn || 'bell') + '</span><span class="grow"><b>' + esc(t) + '</b><small>' + esc(b) + '</small></span>';
+    h.classList.remove('on'); void h.offsetWidth; h.classList.add('on'); clearTimeout(huT); huT = setTimeout(function () { h.classList.remove('on'); }, 4200);
   }
   function bellDot() { var d = $('#bell-dot'); if (d) d.hidden = !notes().some(function (x) { return !x.read; }); }
 
@@ -193,7 +243,7 @@
   function saveRcpt(r) {
     var R = rcpts(); if (r.txid && R.some(function (x) { return x.txid === r.txid; })) return false;
     var c = curr(); r.usd = r.usd || rateIn('USD'); r.lc = c; r.lr = rateIn(c); r.net = r.net || NETN; r.ts = r.ts || Date.now(); r.saved = Date.now();
-    R.unshift(r); R.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); put('rcpts', R.slice(0, LCAP)); try { remMatch(r); } catch (e) {} hSoon(); return true;
+    R.unshift(r); R.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); put('rcpts', R.slice(0, LCAP)); try { remMatch(r); } catch (e) {} HK.rcpt.forEach(function (f) { try { f(r); } catch (e) {} }); hSoon(); return true;
   }
   /* ── full history, backed up on the server for this Pi account (never lost, no size limit) ── */
   function hKey(r) { var t = String(r.txid || '').toLowerCase(); if (/^[a-f0-9]{64}$/.test(t)) return 'tx:' + t + (r.kind === 'refund' ? ':r' : '') + (r.dir ? ':' + r.dir : ''); var f = String(r.ref || r.pid || ''); return f ? 'ref:' + f : ''; }
@@ -279,6 +329,7 @@
     if (r.kind === 'wallet') { if (r.from) rows.push(['Sender address', r.from, 1]); if (inn ? r.to : r.addr) rows.push(['Recipient address', inn ? r.to : r.addr, 1]); }
     else if (r.addr) rows.push([inn || r.kind === 'refund' ? 'Your address' : 'Recipient address', r.addr, 1]);
     if (r.txid) rows.push(['Transaction ID', r.txid, 1]);
+    HK.rows.forEach(function (f) { try { f(rows, r); } catch (e) {} });
     var cls = r.kind === 'refund' ? 'rf' : r.kind === 'supporter' ? 'sp' : inn ? 'in' : '';
     var w = sheet('Transaction details',
       '<div class="txd"><span class="ico ' + cls + '">' + ic(r.kind === 'refund' ? 'undo' : r.kind === 'supporter' ? 'heart' : inn ? 'req' : 'send') + '</span><p class="small">' + esc(rcType(r)) + '</p>' +
@@ -291,7 +342,7 @@
       '<div class="sec" style="margin-top:20px"><h2>Receipt</h2></div><div id="rc-prev" class="empty">Preparing receipt…</div>' +
       '');
     $$('[data-cp]', w).forEach(function (b) { b.onclick = function () { copy(rows[+b.dataset.cp][1]); }; });
-    var cvP = fontsReady().then(function () { return window.FPReceipt ? FPReceipt.canvas(spec(r)) : null; });
+    var cvP = fontsReady().then(function () { return window.FPReceipt ? FPReceipt.canvas(HK.spec.reduce(function (sp, f) { try { return f(sp, r) || sp; } catch (e) { return sp; } }, spec(r))) : null; });
     cvP.then(function (cv) { var p = $('#rc-prev', w); if (!p) return; if (!cv) { p.textContent = 'Receipt image unavailable.'; return; } p.className = ''; p.innerHTML = '<img class="rc-img" alt="FinPi receipt" src="' + cv.toDataURL('image/png') + '">'; });
     var name = rcName(r), text = 'FinPi receipt · ' + rcType(r) + ' · ' + fpi(r.amount) + ' π · ' + d.toLocaleDateString('en-GB') + (v ? '\nVerify on the Pi blockchain: ' + v : '');
     var jpg = cvP.then(function (cv) { return cv ? new Promise(function (ok) { cv.toBlob(ok, 'image/jpeg', 0.92); }) : null; });
@@ -385,7 +436,18 @@
     $('#av').textContent = signedIn() ? me().charAt(0) : 'G';
     $('#netb').hidden = !TEST; bellDot(); render(S.tab);
   }
-  function afterSignIn() { register(); historySync(); loadCfg().then(function () { sync(); if (pendingCode) { var c = pendingCode; pendingCode = null; openCode(c); } }); }
+  function askPush() {
+    if (get('pushAsk', false) || get('push', false) || !('Notification' in window) || Notification.permission === 'denied') return;
+    setTimeout(function () {
+      if ($('.sh-wrap') || $('#app').hidden || get('pushAsk', false)) return; put('pushAsk', true);
+      if (Notification.permission === 'granted') { put('push', true); return; }
+      var w = sheet('Payment notifications', '<div class="np-hero">' + ic('bell') + '</div><p class="sh-sub" style="text-align:center">Get notified when you receive Pi, an invoice is paid, a payment is due or a refund is made.</p>' +
+        '<button type="button" class="btn" id="np-on">' + ic('bell') + 'Turn on notifications</button><button type="button" class="btn ghost" id="np-no">Not now</button>');
+      $('#np-on', w).onclick = function () { Notification.requestPermission().then(function (p) { if (p === 'granted') { put('push', true); toast('Notifications on'); } else toast('You can turn them on later in Profile'); closeSheets(); render(S.tab); }).catch(function () { closeSheets(); }); };
+      $('#np-no', w).onclick = function () { closeSheets(); };
+    }, 6000);
+  }
+  function afterSignIn() { askPush(); HK.signin.forEach(function (f) { try { f(); } catch (e) {} }); register(); historySync(); loadCfg().then(function () { sync(); if (pendingCode) { var c = pendingCode; pendingCode = null; openCode(c); } }); }
 
   /* ── transfers: server status, registration, sync ── */
   function loadCfg() {
@@ -407,7 +469,7 @@
     if (!t.refund_txid) return false; learnAddr(t.refund_addr);
     var tl = t.to_kind === 'address' || !t.to ? short(t.to_addr) : '@' + t.to;
     var ok = saveRcpt({ kind: 'refund', dir: 'in', amount: t.amount, other: tl, narr: t.narr, pid: t.pid, txid: t.refund_txid, addr: t.refund_addr, ts: t.done_ts || Date.now(), me: me() });
-    if (ok) addNote('undo', 'Refunded automatically', fpi(t.amount) + ' π returned to you: your transfer to ' + tl + ' could not be delivered.', 'ref-' + t.pid);
+    if (ok && Date.now() - (t.done_ts || Date.now()) < 864e5) addNote('undo', 'Refunded automatically', fpi(t.amount) + ' π returned to you: your transfer to ' + tl + ' could not be delivered.', 'ref-' + t.pid);
     return ok;
   }
   function sync() {
@@ -416,7 +478,7 @@
       if (!d || !d.ok) return; var ch = 0;
       (d.items || []).forEach(function (t) {
         if (t.status === 'paid') {
-          if (saveTransfer(t, t.dir)) { ch++; if (t.dir === 'in') { var m = fpi(t.amount) + ' π from @' + t.from + (t.narr ? ' · ' + t.narr : ''); addNote('req', 'You received Pi', m, 'in-' + t.pid); toast('You received ' + fpi(t.amount) + ' π'); } }
+          if (saveTransfer(t, t.dir)) { ch++; if (t.dir === 'in' && Date.now() - (t.done_ts || Date.now()) < 864e5) { var m = fpi(t.amount) + ' π from @' + t.from + (t.narr ? ' · ' + t.narr : ''); addNote('req', 'You received Pi', m, 'in-' + t.pid); } }
         } else if (t.status === 'refunded' && t.dir === 'out') { if (saveRefund(t)) ch++; }
         else if (t.dir === 'out' && /^(failed|received|paying|refunding|refund_failed|refund_needed)$/.test(t.status)) {
           api('/transfer', { a: 'payout', paymentId: t.pid }).then(function (x) { if (x && x.ok && x.row) { if (saveTransfer(x.row, 'out')) rerender(); } else if (x && x.refunded && x.row && saveRefund(x.row)) rerender(); }).catch(function () {});
@@ -425,7 +487,7 @@
       if (ch) rerender();
     }).catch(function () {});
   }
-  function rerender() { if (!$('.sh-wrap') && !$('#app').hidden) render(S.tab); }
+  function rerender() { if ($('.sh-wrap') || $('#app').hidden) return; var ae = document.activeElement; if (ae && ae.id === 'act-q') return actPaint(); render(S.tab); }
 
   /* ── send flow ── */
   function guardPay() {
@@ -458,7 +520,7 @@
       '<label class="l" for="s-x">Narration</label><input class="in" id="s-x" maxlength="80" placeholder="What is it for? e.g. Rent, groceries, gift">' +
       '<div class="sum" id="s-sum" hidden></div>' +
       '<button type="button" class="btn" id="s-go">Continue</button>' +
-      '<p class="small muted" style="margin-top:12px;text-align:center">' + ic('lock', 'width:14px;height:14px;vertical-align:-2px') + (S.cfg.enabled && S.cfg.max ? ' You approve every payment yourself. Up to ' + S.cfg.max + ' π per payment.' : ' You approve every payment yourself.') + '</p>');
+      '<p class="small muted" style="margin-top:12px;text-align:center">' + ic('lock', 'width:14px;height:14px;vertical-align:-2px') + (S.cfg.enabled && S.cfg.max ? ' Up to ' + S.cfg.max + ' π per payment · recorded on the Pi blockchain' : ' Recorded on the Pi blockchain with a verified receipt') + '</p>');
     var u = $('#s-u', w), g = $('#s-g', w), a = $('#s-a', w), h = $('#s-uh', w), ok = null, tm = null, cat = pre.cat || '';
     function setKind(k) {
       kind = k; ok = null; h.innerHTML = '';
@@ -516,7 +578,7 @@
     sum();
     $('#s-go', w).onclick = function () {
       var v = r7(a.value), x = $('#s-x', w).value.trim(), btn = this, to = ok;
-      if (!to) return toast(kind === 'addr' ? 'Enter a valid Pi wallet address' : 'Enter a FinPi user’s @username');
+      if (!to) return toast(kind === 'addr' ? 'Enter a valid Pi wallet address' : 'Enter the Pioneer’s @username');
       if (!(v >= 0.01)) return toast('The smallest payment is 0.01 π');
       if (!x) return toast('Add a narration: what is this payment for?');
       if (isG(to) && !S.cfg.enabled) return review(to, v, x, cat, { wallet: true, first: get('payees', []).indexOf(to) < 0 });
@@ -533,7 +595,10 @@
     if (!pre.u) setTimeout(function () { (kind === 'addr' ? g : u).focus(); }, 120);
   }
   function review(to, amt, narr, cat, o) {
-    var A = isG(to), warn = [];
+    var A = isG(to), warn = [], lc = String(to).toLowerCase();
+    var dup = rcpts().filter(function (r) { return r.dir === 'out' && r.kind !== 'refund' && Date.now() - (r.ts || 0) < 30 * 60e3 && Math.abs(Number(r.amount) - amt) < 1e-7 && (A ? r.addr === to : String(r.other || '').toLowerCase() === '@' + lc); })[0]
+      || pendingList().filter(function (q) { return String(q.to).toLowerCase() === lc && Math.abs(Number(q.amt) - amt) < 1e-7; })[0];
+    if (dup) warn.push('<div class="note warn">' + ic('warn') + '<span>You already sent <b>' + fpi(amt) + ' π</b> to ' + esc(toLabel(to)) + ' at ' + new Date(dup.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '. Check this is not a repeat payment.</span></div>');
     if (A) warn.push('<div class="note warn">' + ic('warn') + '<span>You are sending to a <b>wallet address</b>. Check every character with the person. Pi sent to a wrong address cannot be recovered.</span></div>');
     if (o.first) warn.push('<div class="note warn">' + ic('warn') + '<span>First time paying ' + (A ? 'this address' : '<b>@' + esc(to) + '</b>') + '. Only send to people and businesses you know and trust. FinPi staff will never ask you to send Pi.</span></div>');
     warn.push('<div class="note gray">' + ic('info') + '<span>Blockchain payments cannot be reversed.</span></div>');
@@ -687,7 +752,7 @@
   }
   /* add a receipt from a transaction ID (a payment made in Pi Wallet) */
   function addTxSheet(p) {
-    var w = sheet(p ? 'Add the transaction ID' : 'Get a receipt', '<p class="sh-sub">' + (p ? 'In Pi Wallet, open the payment and copy its transaction ID (64 letters and numbers).' : 'Paste the transaction ID of any Pi payment you sent or received. FinPi reads it from the Pi blockchain and makes a professional receipt.') + '</p>' +
+    var w = sheet(p ? 'Add the transaction ID' : 'Get a receipt', '<p class="sh-sub">' + (p ? 'In Pi Wallet, open the payment and copy its transaction ID (64 letters and numbers).' : 'Paste the transaction ID of any Pi payment you sent or received.') + '</p>' +
       '<label class="l" for="tx-i">Transaction ID</label><textarea class="in num" id="tx-i" rows="2" maxlength="80" spellcheck="false" style="font-size:14px;resize:none" placeholder="64 letters and numbers"></textarea><div class="hint" id="tx-h"></div>' +
       '<button type="button" class="btn" id="tx-go">' + ic('search') + 'Find payment</button><div id="tx-r"></div>', { stack: true });
     $('#tx-go', w).onclick = function () {
@@ -739,7 +804,7 @@
   function requestSheet(isLink) {
     if (needTarget(isLink ? 'Payment links' : 'Request Pi')) return;
     var to = myTarget();
-    var w = sheet(isLink ? 'Create payment link' : 'Request Pi', '<p class="sh-sub">' + (isLink ? 'Leave the amount empty to let the payer choose.' : 'Create a payment code. The payer scans it with FinPi, checks the details and pays you.') + '</p>' +
+    var w = sheet(isLink ? 'Create payment link' : 'Request Pi', '<p class="sh-sub">' + (isLink ? 'Leave the amount empty to let the payer choose.' : 'A payment code with the amount, ready to scan.') + '</p>' +
       '<label class="l" for="q-a">Amount' + (isLink ? ' (optional)' : '') + '</label><div class="amt"><input id="q-a" type="number" inputmode="decimal" placeholder="0.00"><span>π</span></div><div class="hint num" id="q-c"></div>' +
       '<label class="l" for="q-x">What is it for?</label><input class="in" id="q-x" maxlength="80" placeholder="e.g. Rent, groceries, shop payment">' +
       '<button type="button" class="btn" id="q-go">' + ic(isLink ? 'link' : 'qr') + (isLink ? 'Create link' : 'Create payment code') + '</button>', { stack: !!isLink });
@@ -755,37 +820,20 @@
   function loadJsQR() { if (window.jsQR) return Promise.resolve(); if (!jsqrP) jsqrP = new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'vendor/jsqr.js?v=1'; s.onload = ok; s.onerror = function () { jsqrP = null; no(); }; document.head.appendChild(s); }); return jsqrP; }
   function decodeImageData(d) { try { var q = window.jsQR && jsQR(d.data, d.width, d.height, { inversionAttempts: 'attemptBoth' }); return q ? q.data : ''; } catch (e) { return ''; } }
   function scanSheet() {
-    var stream = null, raf = 0, done = false, cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
-    var w = sheet('Scan QR code', '<p class="sh-sub">Point the camera at a FinPi payment code or a Pi wallet address QR.</p>' +
-      '<div class="scan"><video id="sc-v" playsinline muted></video><div class="scan-f"></div><div class="scan-m" id="sc-m">Starting camera…</div></div>' +
-      '<label class="btn ghost" style="cursor:pointer">' + ic('down') + 'Scan a photo from the gallery<input type="file" id="sc-f" accept="image/*" hidden></label>', { onClose: stop });
-    function stop() { done = true; cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); }
+    var stop = null;
+    var w = sheet('Scan QR code', '<p class="sh-sub">Payment code, Pi wallet address or FinPi receipt.</p>' + scanBox('sc-b') +
+      '<label class="btn ghost" style="cursor:pointer">' + ic('down') + 'Scan a photo from the gallery<input type="file" id="sc-f" accept="image/*" hidden></label>', { onClose: function () { if (stop) stop(); } });
+    var box = $('#sc-b', w), msg = $('.scan-m', box);
+    function finish(fn) { if (stop) stop(); scanOk(); setTimeout(function () { w.remove(); fn(); }, 220); }
     function found(t) {
-      var c = parseCode(t); if (!c) { $('#sc-m', w) && ($('#sc-m', w).textContent = 'This QR code is not a Pi payment code.'); return false; }
-      stop(); w.remove(); if (navigator.vibrate) try { navigator.vibrate(60); } catch (e) {} openCode(c); return true;
+      var c = parseCode(t);
+      if (!c) { var rv = /receipt\.html|blockexplorer|#tx=/i.test(t) ? rxTx(t) : null; if (rv) { finish(function () { verifySheet(rv); }); return true; } msg.textContent = 'This QR code is not a Pi payment code or receipt.'; return false; }
+      finish(function () { openCode(c); }); return true;
     }
-    var v = $('#sc-v', w), msg = $('#sc-m', w);
-    loadJsQR().then(function () {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { msg.textContent = 'Camera is not available here. Scan a photo instead.'; return; }
-      return navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false }).then(function (s) {
-        if (done) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
-        stream = s; v.srcObject = s; v.play(); msg.textContent = 'Looking for a QR code…';
-        var last = 0;
-        (function tick(ts) {
-          if (done) return; raf = requestAnimationFrame(tick);
-          if (ts - last < 180 || v.readyState < 2) return; last = ts;
-          var W = v.videoWidth, H = v.videoHeight, k = Math.min(1, 720 / Math.max(W, H)); cv.width = W * k; cv.height = H * k;
-          cx.drawImage(v, 0, 0, cv.width, cv.height); var t = decodeImageData(cx.getImageData(0, 0, cv.width, cv.height)); if (t) found(t);
-        })(0);
-      });
-    }).catch(function () { msg.textContent = 'Camera permission was not given. You can scan a photo instead.'; });
+    stop = qrScan(box, found);
     $('#sc-f', w).onchange = function () {
-      var f = this.files && this.files[0]; if (!f) return; msg.textContent = 'Reading photo…';
-      loadJsQR().then(function () {
-        var img = new Image(), u = URL.createObjectURL(f);
-        img.onload = function () { var k = Math.min(1, 1400 / Math.max(img.width, img.height)); cv.width = img.width * k; cv.height = img.height * k; cx.drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(u); var t = decodeImageData(cx.getImageData(0, 0, cv.width, cv.height)); if (!t || !found(t)) msg.textContent = t ? 'This QR code is not a Pi payment code.' : 'No QR code found in this photo. Try a clearer one.'; };
-        img.src = u;
-      }).catch(function () { msg.textContent = 'Could not load the scanner. Check your connection.'; });
+      var f = this.files && this.files[0]; this.value = ''; if (!f) return; msg.textContent = 'Reading photo…';
+      qrFromFile(f).then(function (t) { if (!t) { msg.textContent = 'No QR code found in this photo. Use a clear, uncropped image.'; return; } found(t); }).catch(function () { msg.textContent = 'Could not read this photo.'; });
     };
   }
 
@@ -872,9 +920,132 @@
     };
     var rm = $('#ad-rm', w); if (rm) rm.onclick = function () { put('addr', ''); S.wal = null; closeSheets(); render(S.tab); toast('Address removed'); };
   }
-  function verifySheet() {
-    var w = sheet('Verify a payment', '<p class="sh-sub">Paste a transaction ID from a receipt to check it on the public Pi blockchain.</p><label class="l" for="vf-i">Transaction ID</label><textarea class="in num" id="vf-i" rows="2" maxlength="64" spellcheck="false" style="font-size:14px;resize:none" placeholder="64 letters and numbers"></textarea><button type="button" class="btn" id="vf-go">' + ic('check') + 'Verify</button>');
-    $('#vf-go', w).onclick = function () { var v = $('#vf-i', w).value.trim().toLowerCase(); if (!/^[a-f0-9]{64}$/.test(v)) return toast('A transaction ID has 64 letters and numbers'); location.href = 'receipt.html#tx=' + v + '&net=' + NETQ; };
+  /* ── Verify receipt: scan or upload any receipt (or type its transaction ID) and compare it with the Pi blockchain ── */
+  function rxTx(t) {
+    t = String(t || ''); var m = /(?:^|[^a-f0-9])([a-f0-9]{64})(?![a-f0-9])/i.exec(t); if (!m) return null;
+    var n = /net=(test|main)/i.exec(t); return { tx: m[1].toLowerCase(), net: n ? n[1].toLowerCase() : /testnet/i.test(t) ? 'test' : NETQ };
+  }
+  function vChecks() { return get('vchk', []); }
+  /* ── QR engine: the phone's built-in detector when available, otherwise jsQR on a centre crop and the full frame,
+     both colour polarities, continuous focus and torch. Photos are read at several sizes and regions. ── */
+  var BD = null, bdP = null;
+  function bdReady() {
+    if (bdP) return bdP;
+    bdP = Promise.resolve().then(function () { if (!('BarcodeDetector' in window)) return null; return BarcodeDetector.getSupportedFormats().then(function (f) { if (f.indexOf('qr_code') >= 0) BD = new BarcodeDetector({ formats: ['qr_code'] }); return BD; }); }).catch(function () { return null; });
+    return bdP;
+  }
+  function scanBox(id) { return '<div class="scan" id="' + id + '"><video playsinline muted></video><div class="scan-f"><i></i><i></i><i></i><i></i><b class="scan-l"></b></div><button type="button" class="scan-t" hidden aria-label="Torch">' + ic('zap') + '</button><div class="scan-m">Starting camera…</div></div>'; }
+  function scanOk() { try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {} try { if (window.FinPi && FinPi.fx) FinPi.fx('scan'); } catch (e) {} }
+  function qrScan(box, onText) {
+    var v = $('video', box), msg = $('.scan-m', box), tb = $('.scan-t', box), stream = null, track = null, raf = 0, done = false, busy = false, n = 0, last = 0;
+    var cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+    function stop() { done = true; cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); }
+    function hit(t) { if (done || !t) return; if (onText(t) === false) return; box.classList.add('ok'); stop(); }
+    function jsq(full) {
+      var W = v.videoWidth, H = v.videoHeight; if (!W) return '';
+      var sx = 0, sy = 0, sw = W, sh = H, tgt = 960;
+      if (!full) { var m = Math.min(W, H) * .72; sx = (W - m) / 2; sy = (H - m) / 2; sw = sh = m; tgt = 640; }
+      var k = Math.min(1, tgt / Math.max(sw, sh)); cv.width = Math.round(sw * k); cv.height = Math.round(sh * k);
+      cx.drawImage(v, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+      try { var d = cx.getImageData(0, 0, cv.width, cv.height), q = jsQR(d.data, d.width, d.height, { inversionAttempts: n % 4 === 3 ? 'attemptBoth' : 'dontInvert' }); return q ? q.data : ''; } catch (e) { return ''; }
+    }
+    Promise.all([loadJsQR().catch(function () {}), bdReady()]).then(function () {
+      if (done) return;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { msg.textContent = 'Camera is not available here. Use a photo instead.'; return; }
+      return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }).then(function (st) {
+        if (done) { st.getTracks().forEach(function (t) { t.stop(); }); return; }
+        stream = st; track = st.getVideoTracks()[0]; v.srcObject = st; v.play().catch(function () {});
+        try {
+          var cap = track.getCapabilities ? track.getCapabilities() : {};
+          if (cap.focusMode && cap.focusMode.indexOf('continuous') >= 0) track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () {});
+          if (cap.torch && tb) { tb.hidden = false; var on = false; tb.onclick = function () { on = !on; track.applyConstraints({ advanced: [{ torch: on }] }).catch(function () {}); tb.classList.toggle('on', on); }; }
+        } catch (e) {}
+        box.classList.add('scanning'); msg.textContent = 'Point the camera at the QR code';
+        (function tick(ts) {
+          if (done) return; raf = requestAnimationFrame(tick);
+          if (busy || ts - last < 110 || v.readyState < 2) return; last = ts; n++;
+          if (BD) { busy = true; BD.detect(v).then(function (c) { busy = false; if (c && c[0] && c[0].rawValue) hit(c[0].rawValue); else if (window.jsQR && n % 3 === 0) hit(jsq(true)); }).catch(function () { busy = false; BD = null; }); }
+          else if (window.jsQR) hit(jsq(n % 2 === 0));
+        })(0);
+      });
+    }).catch(function (e) { msg.textContent = e && e.name === 'NotAllowedError' ? 'Allow camera access, or use a photo instead.' : 'The camera could not start. Use a photo instead.'; });
+    return stop;
+  }
+  function qrFromFile(f) {
+    return Promise.all([loadJsQR().catch(function () {}), bdReady()]).then(function () {
+      return new Promise(function (ok) {
+        var img = new Image(), u = URL.createObjectURL(f);
+        img.onload = function () {
+          URL.revokeObjectURL(u);
+          function tryJs() {
+            var cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true }), t = '', W = img.naturalWidth, H = img.naturalHeight;
+            var R = [[0, 0, W, H], [0, H * .5, W, H * .5], [0, H * .35, W, H * .45], [W * .08, H * .08, W * .84, H * .84], [0, 0, W, H * .5]];
+            [1600, 1100, 2400, 800].some(function (mx) { return R.some(function (r) { var k = Math.min(1, mx / Math.max(r[2], r[3])); cv.width = Math.max(1, Math.round(r[2] * k)); cv.height = Math.max(1, Math.round(r[3] * k)); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(img, r[0], r[1], r[2], r[3], 0, 0, cv.width, cv.height); t = window.jsQR ? decodeImageData(cx.getImageData(0, 0, cv.width, cv.height)) : ''; return !!t; }); });
+            ok(t);
+          }
+          if (BD) BD.detect(img).then(function (c) { if (c && c[0] && c[0].rawValue) ok(c[0].rawValue); else tryJs(); }).catch(tryJs); else tryJs();
+        };
+        img.onerror = function () { URL.revokeObjectURL(u); ok(''); };
+        img.src = u;
+      });
+    });
+  }
+  function verifySheet(pre) {
+    var stopCam = null, mode = 'scan';
+    var w = sheet('Verify receipt',
+      '<div class="seg vr-seg" role="tablist"><button type="button" data-vm="scan" class="on">' + ic('qr', 'width:17px;height:17px;vertical-align:-3px') + ' Scan</button><button type="button" data-vm="photo">' + ic('down', 'width:17px;height:17px;vertical-align:-3px') + ' Photo</button><button type="button" data-vm="type">' + ic('edit', 'width:17px;height:17px;vertical-align:-3px') + ' Enter</button></div>' +
+      '<div id="vr-scan" class="vr-p">' + scanBox('vr-b') + '</div>' +
+      '<div id="vr-photo" class="vr-p" hidden><label class="vr-drop">' + ic('rcpt') + '<b>Upload receipt image</b><small>Screenshot or photo from your gallery</small><input type="file" id="vr-f" accept="image/*" hidden></label><p class="small muted" id="vr-pm" style="text-align:center;margin-top:8px"></p></div>' +
+      '<div id="vr-type" class="vr-p" hidden><label class="l" for="vr-t">Transaction ID</label><textarea class="in num" id="vr-t" rows="2" maxlength="200" spellcheck="false" autocapitalize="none" placeholder="64 letters and numbers" style="font-size:14px;resize:none"></textarea>' +
+      '<div class="two bz-two"><div><label class="l" for="vr-a">Amount on receipt</label><div class="amt sm"><input id="vr-a" type="number" inputmode="decimal" placeholder="Optional"><span>π</span></div></div><div><label class="l" for="vr-c">Verification code</label><input class="in num" id="vr-c" maxlength="14" autocapitalize="characters" spellcheck="false" placeholder="FP-XXXXX-XXXXX"></div></div>' +
+      '<button type="button" class="btn" id="vr-go">' + ic('check') + 'Verify</button></div>' +
+      '<div id="vr-out"></div>' +
+      '<div id="vr-hist"></div>', { onClose: function () { if (stopCam) stopCam(); } });
+    function setMode(m) {
+      mode = m; $$('[data-vm]', w).forEach(function (b) { b.classList.toggle('on', b.dataset.vm === m); });
+      ['scan', 'photo', 'type'].forEach(function (k) { $('#vr-' + k, w).hidden = k !== m; });
+      if (stopCam) { stopCam(); stopCam = null; }
+      if (m === 'scan') stopCam = qrScan($('#vr-b', w), function (t) { var r = rxTx(t); if (!r) { $('#vr-b .scan-m', w).textContent = 'This QR code is not a payment receipt.'; return false; } scanOk(); setTimeout(function () { setMode('type'); $('#vr-t', w).value = r.tx; check(r); }, 250); return true; });
+    }
+    $$('[data-vm]', w).forEach(function (b) { b.onclick = function () { setMode(b.dataset.vm); }; });
+    $('#vr-f', w).onchange = function () {
+      var f = this.files && this.files[0]; if (!f) return; var pm = $('#vr-pm', w); pm.textContent = 'Reading receipt…'; this.value = '';
+      qrFromFile(f).then(function (t) { var r = rxTx(t); if (!r) { pm.textContent = t ? 'The QR code in this image is not a payment receipt.' : 'No QR code found. Use a clear, uncropped receipt image, or enter the transaction ID.'; return; } pm.textContent = ''; setMode('type'); $('#vr-t', w).value = r.tx; check(r); })
+        .catch(function () { pm.textContent = 'Could not read this image. Check your connection and try again.'; });
+    };
+    $('#vr-go', w).onclick = function () { var r = rxTx($('#vr-t', w).value); if (!r) return toast('Enter the 64-character transaction ID'); check(r); };
+    $('#vr-c', w).oninput = function () { var v = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); if (v !== this.value) this.value = v; };
+    function hist() {
+      var L = vChecks(); $('#vr-hist', w).innerHTML = L.length ? '<div class="day">Recent checks</div><div class="list">' + L.slice(0, 12).map(function (c, i) { return '<button type="button" class="li" data-vh="' + i + '"><span class="ico ' + (c.ok ? 'in' : 'rf') + '">' + ic(c.ok ? 'check' : 'warn') + '</span><span class="grow"><b class="num">' + (c.amt != null ? fpi(c.amt) + ' π' : 'Not found') + '</b><small class="num">' + esc(c.tx.slice(0, 10) + '…' + c.tx.slice(-6)) + ' · ' + new Date(c.ts).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + '</small></span><span class="vr-b ' + (c.ok ? 'ok' : 'bad') + '">' + (c.ok ? 'Genuine' : 'Not genuine') + '</span></button>'; }).join('') + '</div>' : '';
+      $$('[data-vh]', w).forEach(function (b) { b.onclick = function () { var c = vChecks()[+b.dataset.vh]; setMode('type'); $('#vr-t', w).value = c.tx; check({ tx: c.tx, net: c.net }); }; });
+    }
+    function check(r) {
+      var out = $('#vr-out', w), wantA = r7($('#vr-a', w).value), wantC = $('#vr-c', w).value.trim().toUpperCase(), netN = r.net === 'test' ? 'Pi Testnet' : 'Pi Mainnet';
+      out.innerHTML = '<div class="vr-res wait"><div class="vr-i">' + ic('refresh') + '</div><b>Checking the Pi blockchain…</b></div>';
+      api('/verify?tx=' + r.tx + '&net=' + r.net).then(function (d) {
+        var L = vChecks().filter(function (c) { return c.tx !== r.tx; }), rec = { tx: r.tx, net: r.net, ts: Date.now(), ok: false, amt: null };
+        if (!d || !d.ok || !d.tx || !d.tx.ok || !(d.tx.payments || []).length) {
+          out.innerHTML = '<div class="vr-res bad"><div class="vr-i">' + ic('x') + '</div><b>Not genuine</b><p>' + esc(d && d.tx && !d.tx.ok ? 'This transaction failed. No Pi was moved.' : (d && d.error) || 'This transaction is not on the ' + netN + '.') + '</p></div>';
+        } else {
+          var t = d.tx, P = t.payments, tot = r7(P.reduce(function (a, q) { return a + parseFloat(q.amount || 0); }, 0)), p0 = P[0];
+          var aOk = !(wantA > 0) || Math.abs(wantA - tot) < 1e-7, cOk = !wantC || !t.seal || wantC === t.seal, ok = aOk && cOk;
+          rec.ok = ok; rec.amt = tot;
+          var rows = [['Amount', fpi(tot) + ' π' + (conv(tot) ? ' · ' + conv(tot).replace('≈ ', '≈') : '')], ['From', p0.from], ['To', p0.to], ['Memo', t.memo || '—'], ['Date', new Date(t.at).toLocaleString([], { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })], ['Network', netN], ['Transaction ID', t.hash]];
+          out.innerHTML = '<div class="vr-res ' + (ok ? 'ok' : 'bad') + '"><div class="vr-i">' + ic(ok ? 'check' : 'warn') + '</div><b>' + (ok ? 'Genuine payment' : 'Receipt does not match') + '</b><p>' + (ok ? 'Recorded on the ' + netN + '.' : 'The payment exists, but the receipt shows different details.') + '</p>' +
+            '<div class="vr-amt num">' + fpi(tot) + ' π</div></div>' +
+            (wantA > 0 || wantC ? '<div class="vr-cmp">' + (wantA > 0 ? '<div class="' + (aOk ? 'ok' : 'bad') + '">' + ic(aOk ? 'check' : 'x') + '<span>Amount on receipt <b class="num">' + fpi(wantA) + ' π</b> ' + (aOk ? 'matches' : 'does not match') + '</span></div>' : '') + (wantC ? '<div class="' + (cOk ? 'ok' : 'bad') + '">' + ic(cOk ? 'check' : 'x') + '<span>Verification code <b class="num">' + esc(wantC) + '</b> ' + (!t.seal ? 'cannot be checked right now' : cOk ? 'matches' : 'does not match') + '</span></div>' : '') + '</div>' : '') +
+            (t.seal ? '<div class="vr-seal"><span>Verification code</span><b class="num">' + esc(t.seal) + '</b></div>' : '') +
+            '<div class="list txd-rows" style="margin-top:12px">' + rows.map(function (x) { return '<div class="txr"><span>' + esc(x[0]) + '</span><b class="' + (/From|To|Transaction/.test(x[0]) ? 'num mono' : '') + '">' + esc(x[1] || '—') + '</b></div>'; }).join('') + '</div>' +
+            '<div class="two"><button type="button" class="btn ghost" data-x="vsh">' + ic('share') + 'Share result</button><a class="btn ghost" href="receipt.html#tx=' + t.hash + '&net=' + r.net + '">' + ic('ext') + 'Open verify page</a></div>';
+          var sh = $('[data-x="vsh"]', out); if (sh) sh.onclick = function () { shareText('FinPi payment check', (ok ? 'Genuine payment' : 'Receipt does not match') + ' · ' + fpi(tot) + ' π on the ' + netN + (t.seal ? ' · Code ' + t.seal : '') + '\n' + location.origin + '/receipt.html#tx=' + t.hash + '&net=' + r.net); };
+        }
+        L.unshift(rec); put('vchk', L.slice(0, 50)); hist();
+        try { if (navigator.vibrate) navigator.vibrate(rec.ok ? [40] : [120, 60, 120]); } catch (e) {}
+        setTimeout(function () { try { out.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }, 60);
+      }).catch(function () { out.innerHTML = '<div class="vr-res bad"><div class="vr-i">' + ic('warn') + '</div><b>No connection</b><p>Check your internet and try again.</p></div>'; });
+    }
+    hist();
+    if (pre && pre.tx) { setMode('type'); $('#vr-t', w).value = pre.tx; check(pre); } else setMode(pre && pre.mode || 'scan');
   }
 
   /* ── price & currency sheets ── */
@@ -885,24 +1056,27 @@
       '<div class="chart" style="margin-top:8px">' + spark(s, 300, 150, '#1D4ED8', .22) + '</div>' +
       '<div class="stats"><div><small>7-day low</small><b>' + money(mn, 'USD', 4) + '</b></div><div><small>7-day high</small><b>' + money(mx, 'USD', 4) + '</b></div><div><small>In ' + esc(c) + '</small><b>' + (r ? money(r, c, r < 1 ? 4 : 2) : '—') + '</b></div></div>' ;
   }
-  function curSheet() {
+  function curSheet(travel) {
     var codes = S.fx ? Object.keys(S.fx).filter(function (c) { return /^[A-Z]{3}$/.test(c); }) : ['USD', 'NGN', 'SAR'];
     if (codes.indexOf('USD') < 0) codes.push('USD');
     var list = codes.map(function (c) { return { c: c, n: cname(c) }; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
-    var cur = curr();
-    var w = sheet('Your currency', '<p class="sh-sub">FinPi shows Pi values in this currency. Payments are always in Pi.</p><div class="to" style="margin-top:6px">' + ic('search', 'color:var(--mute)') + '<input id="cu-q" placeholder="Search currency" autocomplete="off"></div><div class="list cur-list" id="cu-l"></div>');
+    var cur = travel ? get('cur2', '') : curr();
+    var w = sheet(travel ? 'Travel currency' : 'Your currency', '<p class="sh-sub">' + (travel ? 'Show Pi values in the currency of the country you are visiting, next to your own.' : 'Pi values are shown in this currency. Payments are always in Pi.') + '</p>' + (travel && cur ? '<button type="button" class="btn ghost" id="cu-off">' + ic('x') + 'Turn off travel currency</button>' : '') + '<div class="to" style="margin-top:6px">' + ic('search', 'color:var(--mute)') + '<input id="cu-q" placeholder="Search currency" autocomplete="off"></div><div class="list cur-list" id="cu-l"></div>');
     function draw() {
       var q = $('#cu-q', w).value.trim().toLowerCase();
       $('#cu-l', w).innerHTML = list.filter(function (x) { return !q || x.c.toLowerCase().indexOf(q) >= 0 || x.n.toLowerCase().indexOf(q) >= 0; }).slice(0, 80).map(function (x) {
         var r = rateIn(x.c); return '<button type="button" class="li' + (x.c === cur ? ' on' : '') + '" data-cu="' + x.c + '"><span class="grow"><b>' + esc(x.n) + '</b><small>' + x.c + '</small></span><span class="amt-r"><b class="num">' + (r ? money(r, x.c, r < 1 ? 4 : 2) : '') + '</b><small>per π</small></span></button>';
       }).join('') || '<div class="empty">No currency found</div>';
-      $$('[data-cu]', w).forEach(function (b) { b.onclick = function () { put('cur', b.dataset.cu); closeSheets(); toast('Currency: ' + cname(b.dataset.cu)); render(S.tab); paintPrice(); }; });
+      $$('[data-cu]', w).forEach(function (b) { b.onclick = function () { put(travel ? 'cur2' : 'cur', b.dataset.cu); closeSheets(); toast((travel ? 'Travel currency: ' : 'Currency: ') + cname(b.dataset.cu)); render(S.tab); paintPrice(); }; });
     }
     $('#cu-q', w).oninput = draw; draw();
+    var off = $('#cu-off', w); if (off) off.onclick = function () { put('cur2', ''); closeSheets(); toast('Travel currency off'); render(S.tab); };
   }
   function cvCalc(from) {
     var p = S.p; if (!p || !p.usd) return; var c = curr(), r = rateIn(c), pi = $('#cv-pi'), us = $('#cv-usd'), lo = $('#cv-loc'); if (!pi) return;
-    var v = from === 'pi' ? parseFloat(pi.value) : from === 'usd' ? parseFloat(us.value) / p.usd : (r ? parseFloat(lo.value) / r : NaN);
+    var t2 = cur2(), r2 = t2 ? rateIn(t2) : 0, tr = $('#cv-tr');
+    var v = from === 'pi' ? parseFloat(pi.value) : from === 'usd' ? parseFloat(us.value) / p.usd : from === 'tr' ? (r2 ? parseFloat(tr.value) / r2 : NaN) : (r ? parseFloat(lo.value) / r : NaN);
+    if (tr && from !== 'tr') { var vv = from === 'pi' ? parseFloat(pi.value) : from === 'usd' ? parseFloat(us.value) / p.usd : (r ? parseFloat(lo.value) / r : NaN); tr.value = vv > 0 && r2 ? (vv * r2).toFixed(vv * r2 >= 100 ? 0 : 2) : ''; }
     if (!(v >= 0)) v = 0;
     if (from !== 'pi') pi.value = v ? +v.toFixed(4) : '';
     if (from !== 'usd') us.value = v ? (v * p.usd).toFixed(2) : '';
@@ -915,9 +1089,10 @@
     var m = monthRange(off), o = { out: 0, inn: 0, n: 0, cats: {} };
     rcpts().forEach(function (r) {
       if (r.ts < m[0] || r.ts >= m[1]) return; o.n++;
+      if (r.kind === 'refund') { o.out -= Number(r.amount); return; }
       if (r.dir === 'in') o.inn += Number(r.amount); else { o.out += Number(r.amount); var c = r.kind === 'supporter' ? 'Other' : (r.cat || 'Other'); o.cats[c] = (o.cats[c] || 0) + Number(r.amount); }
     });
-    o.out = r7(o.out); o.inn = r7(o.inn); return o;
+    o.out = r7(Math.max(0, o.out)); o.inn = r7(o.inn); return o;
   }
   function monthHTML() {
     var s = monthStats(0), b = get('budget', 0), u = rateIn('USD'), pct = b ? Math.min(100, s.out / b * 100) : 0;
@@ -930,7 +1105,7 @@
   function hour() { var h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
   function txRow(r, i) {
     var inn = r.dir === 'in', cls = r.kind === 'refund' ? 'rf' : r.kind === 'supporter' ? 'sp' : inn ? 'in' : '';
-    return '<button type="button" class="li" data-rc="' + i + '"><span class="ico ' + cls + '">' + ic(r.kind === 'refund' ? 'undo' : r.kind === 'supporter' ? 'heart' : inn ? 'req' : 'send') + '</span><span class="grow"><b>' + esc(rcptTitle(r)) + '</b><small>' + esc((r.narr ? r.narr + ' · ' : '') + new Date(r.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) + '</small></span><span class="amt-r"><b class="' + (inn ? 'pos' : '') + '">' + (inn ? '+' : '−') + fpi(r.amount) + ' π</b><small>' + (r.cat && !inn ? esc(r.cat) : 'Verified') + '</small></span></button>';
+    return '<button type="button" class="li" data-rc="' + i + '"><span class="ico tx ' + (cls || 'out') + '">' + ic(r.kind === 'refund' ? 'undo' : r.kind === 'supporter' ? 'heart' : inn ? 'req' : 'send') + '</span><span class="grow"><b>' + esc(rcptTitle(r)) + '</b><small>' + esc((r.narr ? r.narr + ' · ' : '') + new Date(r.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) + '</small></span><span class="amt-r"><b class="' + (inn ? 'pos' : '') + '">' + (inn ? '+' : '−') + fpi(r.amount) + ' π</b><small>' + (r.cat && !inn ? esc(r.cat) : 'Verified') + '</small></span></button>';
   }
   function pendingList() {
     var pd = get('pend', {}), R = rcpts();
@@ -947,79 +1122,235 @@
       '<button type="button" class="btn" data-x="chk">' + ic('refresh') + 'Check now</button>');
     $('[data-x="chk"]', w).onclick = function () { closeSheets(); toast('Checking…'); checkPendingInApp(); };
   }
-  var TIPS = ['FinPi staff will never ask you to send Pi or share your passphrase.', 'Check the @username and amount on the final screen before you approve.', 'A receipt is genuine only if its QR code checks out on the Pi blockchain.', 'Your passphrase and secret key (starting with S) are for you alone. Never type them into any app.'];
+  var TIPS = ['FinPi staff will never ask you to send Pi or share your passphrase.', 'Check the @username and amount before you confirm.', 'A receipt is genuine only if its QR code checks out on the Pi blockchain.', 'Your passphrase and secret key (starting with S) are for you alone. Never type them into any app.'];
   var T = {
     home: function () {
       var R = rcpts();
-      return '<div class="hello"><h1>' + hour() + (signedIn() ? ', @' + esc(me()) : '') + '</h1><p>' + (signedIn() ? 'Here is your Pi today.' : 'You are exploring. Sign in to send and receive Pi.') + '</p></div>' +
-        '<div class="hero" data-act="price" data-p="hero" role="button" tabindex="0" aria-label="Pi price details">' + heroHTML() + '</div>' +
+      return '<div class="band"><div class="hello"><h1>' + hour() + (signedIn() ? ', @' + esc(me()) : '') + '</h1><p>' + (signedIn() ? 'Here is your Pi today.' : 'You are exploring. Sign in to send and receive Pi.') + '</p></div>' +
+        '<div class="hero" data-act="price" data-p="hero" role="button" tabindex="0" aria-label="Pi price details">' + heroHTML() + '</div></div>' +
         '<div class="qa"><button type="button" data-act="send"><i>' + ic('send') + '</i>Send</button><button type="button" data-act="request"><i class="t">' + ic('req') + '</i>Request</button><button type="button" data-act="scan"><i class="n">' + ic('qr') + '</i>Scan</button><button type="button" data-act="receive"><i class="a">' + ic('card') + '</i>Receive</button></div>' +
-        dueHTML() + '<div class="sec"><h2>Overview</h2></div><div class="card" data-p="month">' + monthHTML() + '</div>' +
+        dueHTML() + '<div class="sec"><h2>Services</h2><button type="button" data-tab="pay">All services</button></div>' + svcGrid(HOME_SVC.map(svcById), 'home') + hook('home') + '<div class="sec"><h2>Overview</h2></div><div class="card" data-p="month">' + monthHTML() + '</div>' +
         '<div class="sec"><h2>Recent activity</h2>' + (R.length ? '<button type="button" data-tab="activity">See all</button>' : '') + '</div>' +
         (pendingList().length ? '<div class="list" style="margin-bottom:10px">' + pendingList().slice(0, 3).map(pendRow).join('') + '</div>' : '') +
         (R.length ? '<div class="list">' + R.slice(0, 4).map(txRow).join('') + '</div>' : pendingList().length ? '' : '<div class="list"><div class="empty">' + ic('act') + '<div>No payments yet. Your receipts appear here.</div></div></div>') +
-        '<div class="note" style="margin-top:16px">' + ic('shield') + '<span>' + TIPS[new Date().getDate() % TIPS.length] + '</span></div>';
+        trustHTML();
     },
     pay: function () {
-      var on = S.cfg.enabled, pl = contacts().map(function (c) { return c.to; }).concat(get('payees', [])).filter(function (p, i, L) { return (isG(p) || userSends()) && L.map(function (q) { return q.toLowerCase(); }).indexOf(p.toLowerCase()) === i; });
-      return '<div class="ph"><h1>Send &amp; receive</h1><p>Send, request and receive Pi, with a receipt for every payment.</p></div>' +
-        '<div class="tiles" style="margin-top:14px">' +
-        '<button type="button" class="tile" data-act="send"><i>' + ic('send') + '</i><b>Send Pi</b><small>' + (on ? (S.cfg.usernames ? 'To a @username or a wallet address' : 'To any Pi wallet address') : 'From your Pi Wallet to any address') + '</small></button>' +
-        '<button type="button" class="tile" data-act="request"><i class="t">' + ic('req') + '</i><b>Request Pi</b><small>A payment code with the amount</small></button>' +
-        '<button type="button" class="tile" data-act="scan"><i class="n">' + ic('qr') + '</i><b>Scan to pay</b><small>A payment code or wallet QR</small></button>' +
-        '<button type="button" class="tile" data-act="receive"><i class="a">' + ic('card') + '</i><b>Receive Pi</b><small>' + (on && S.cfg.usernames ? 'Your @username and wallet address' : 'Your wallet address and QR code') + '</small></button></div>' +
-        (pl.length ? '<div class="sec"><h2>Pay again</h2><button type="button" data-act="contacts">Contacts</button></div><div class="chips">' + pl.slice(0, 8).map(function (p) { return '<button type="button" class="chip" data-act="send-to" data-u="' + esc(p) + '">' + esc(cName(p) || toLabel(p)) + '</button>'; }).join('') + '</div>' : '') +
-        '<div class="sec"><h2>More ways to pay</h2></div><div class="tiles">' +
-        '<button type="button" class="tile" data-act="links"><i>' + ic('link') + '</i><b>Payment links</b><small>Share a link or QR to get paid</small></button>' +
-        '<button type="button" class="tile" data-act="split"><i class="t">' + ic('users') + '</i><b>Split a bill</b><small>Share a cost and request each part</small></button>' +
-        '<button type="button" class="tile" data-act="contacts"><i class="n">' + ic('user') + '</i><b>Contacts</b><small>People you pay often</small></button>' +
-        '<button type="button" class="tile" data-act="rems"><i class="a">' + ic('bell') + '</i><b>Reminders</b><small>Rent, fees and regular payments</small></button></div>' +
-        '<div class="sec"><h2>Tools</h2></div>' +
-        '<div class="tiles"><button type="button" class="tile" data-act="get-rcpt"><i class="n">' + ic('rcpt') + '</i><b>Get a receipt</b><small>For any Pi payment, from its transaction ID</small></button><button type="button" class="tile" data-act="verify"><i class="a">' + ic('check') + '</i><b>Verify a payment</b><small>Check any transaction on the blockchain</small></button></div>';
+      var pl = contacts().map(function (c) { return c.to; }).concat(get('payees', [])).filter(function (p, i, L) { return (isG(p) || userSends()) && L.map(function (q) { return q.toLowerCase(); }).indexOf(p.toLowerCase()) === i; });
+      return '<div class="ph"><h1>Services</h1><p>Payments, business, receipts and tools.</p></div>' +
+        '<div class="act-q sv-q">' + ic('search') + '<input class="in" id="sv-q" type="search" autocomplete="off" placeholder="Search services"></div>' +
+        (pl.length ? '<div class="sec sv-again"><h2>Pay again</h2><button type="button" data-act="contacts">Contacts</button></div><div class="chips sv-again">' + pl.slice(0, 8).map(function (p) { return '<button type="button" class="chip" data-act="send-to" data-u="' + esc(p) + '">' + esc(cName(p) || toLabel(p)) + '</button>'; }).join('') + '</div>' : '') +
+        SVC_G.map(function (g) { var L = SVC.filter(function (x) { return x.g === g[0]; }); return '<div class="sv-grp" data-g="' + g[0] + '"><div class="sec"><h2>' + g[1] + '</h2></div>' + svcGrid(L) + '</div>'; }).join('') +
+        '<div class="sv-none" hidden><div class="list"><div class="empty">' + ic('search') + '<div>No service found.</div></div></div></div>';
     },
     wallet: function () {
       var c = curr();
       return '<div class="ph"><h1>Wallet</h1><p>Live Pi rate in any currency, converter and blockchain tools.</p></div>' +
         '<div class="card" data-p="wchart">' + wChartHTML() + '</div>' +
         '<div class="sec"><h2>Converter</h2><button type="button" data-act="currency">' + esc(c) + ' ▾</button></div>' +
-        '<div class="card conv"><label><span>π</span><input id="cv-pi" type="number" inputmode="decimal" value="1" aria-label="Pi"></label><label><span>USD</span><input id="cv-usd" type="number" inputmode="decimal" aria-label="US dollars"></label>' + (c !== 'USD' ? '<label><span>' + esc(c) + '</span><input id="cv-loc" type="number" inputmode="decimal" aria-label="' + esc(cname(c)) + '"></label>' : '') + '</div>' +
-        '<div class="sec"><h2>Tools</h2></div><div class="tiles"><button type="button" class="tile" data-act="get-rcpt"><i class="n">' + ic('rcpt') + '</i><b>Get a receipt</b><small>For any Pi payment, from its transaction ID</small></button><button type="button" class="tile" data-act="verify"><i>' + ic('check') + '</i><b>Verify a payment</b><small>Check a transaction on the blockchain</small></button><button type="button" class="tile" data-act="check-addr"><i class="t">' + ic('search') + '</i><b>Check an address</b><small>Balance and payments of any Pi address</small></button><button type="button" class="tile" data-act="receive"><i class="a">' + ic('qr') + '</i><b>My QR code</b><small>Your wallet address to get paid</small></button><button type="button" class="tile" data-act="alerts"><i class="t">' + ic('bell') + '</i><b>Price alerts</b><small>Know when Pi reaches your price</small></button><button type="button" class="tile" data-act="statement"><i>' + ic('rcpt') + '</i><b>Statement</b><small>Monthly PDF of your payments</small></button></div>' +
-        '<div class="note gray" style="margin-top:14px">' + ic('info') + '<span>FinPi never sees your passphrase. You approve every payment yourself, and every payment is recorded on the Pi blockchain.</span></div>';
+        '<div class="card conv"><label><span>π</span><input id="cv-pi" type="number" inputmode="decimal" value="1" aria-label="Pi"></label><label><span>USD</span><input id="cv-usd" type="number" inputmode="decimal" aria-label="US dollars"></label>' + (c !== 'USD' ? '<label><span>' + esc(c) + '</span><input id="cv-loc" type="number" inputmode="decimal" aria-label="' + esc(cname(c)) + '"></label>' : '') + (cur2() ? '<label class="cv-tr"><span>' + esc(cur2()) + '</span><input id="cv-tr" type="number" inputmode="decimal" aria-label="' + esc(cname(cur2())) + '"></label>' : '') + '</div>' + '<button type="button" class="lnk" data-act="travel" style="margin:8px 4px 0">' + ic('globe', 'width:15px;height:15px;vertical-align:-3px') + ' ' + (cur2() ? 'Travel currency: ' + esc(cname(cur2())) : 'Add a travel currency') + '</button>' +
+        '<div class="sec"><h2>Tools</h2></div><div class="tiles"><button type="button" class="tile" data-act="get-rcpt"><i class="n">' + ic('rcpt') + '</i><b>Get a receipt</b><small>For any Pi payment, from its transaction ID</small></button><button type="button" class="tile" data-act="verify"><i>' + ic('check') + '</i><b>Verify receipt</b><small>Scan, upload or enter any receipt</small></button><button type="button" class="tile" data-act="check-addr"><i class="t">' + ic('search') + '</i><b>Check an address</b><small>Balance and payments of any Pi address</small></button><button type="button" class="tile" data-act="receive"><i class="a">' + ic('qr') + '</i><b>My QR code</b><small>Your wallet address to get paid</small></button><button type="button" class="tile" data-act="alerts"><i class="t">' + ic('bell') + '</i><b>Price alerts</b><small>Know when Pi reaches your price</small></button><button type="button" class="tile" data-act="statement"><i>' + ic('rcpt') + '</i><b>Statement</b><small>Monthly PDF of your payments</small></button></div>' +
+        trustHTML();
     },
     activity: function () {
       var R = rcpts();
       var head = '<div class="ph"><h1>Activity</h1><p>All your payments and receipts.</p></div><div class="seg" role="tablist"><button type="button" data-seg="tx" class="' + (S.seg === 'tx' ? 'on' : '') + '">Transactions</button><button type="button" data-seg="ins" class="' + (S.seg === 'ins' ? 'on' : '') + '">Insights</button></div>';
       if (S.seg === 'ins') return head + insightsHTML();
-      var f = S.filter, F = R.map(function (r, i) { return [r, i]; }).concat(S.extra.map(function (r, i) { return [r, 'x' + i]; })).filter(function (x) { var r = x[0]; return f === 'all' || (f === 'out' && r.dir === 'out') || (f === 'in' && r.dir === 'in' && r.kind !== 'refund') || (f === 'ref' && r.kind === 'refund'); });
-      F.sort(function (a, b) { return S.sort === 'old' ? (a[0].ts || 0) - (b[0].ts || 0) : (b[0].ts || 0) - (a[0].ts || 0); });
-      var out = '', day = '';
-      F.forEach(function (x) { var d = new Date(x[0].ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); if (d !== day) { if (day) out += '</div>'; out += '<div class="day">' + d + '</div><div class="list">'; day = d; } out += txRow(x[0], x[1]); });
-      if (day) out += '</div>';
-      return head + '<div class="chips" style="margin-top:12px">' + [['all', 'All'], ['out', 'Sent'], ['in', 'Received'], ['ref', 'Refunds']].map(function (x) { return '<button type="button" class="chip' + (f === x[0] ? ' on' : '') + '" data-flt="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
-        '<div class="sortbar"><span>' + F.length + ' payment' + (F.length === 1 ? '' : 's') + (signedIn() ? ' · backed up' : '') + '</span><button type="button" data-sort="1">' + (S.sort === 'old' ? 'Oldest first ▴' : 'Newest first ▾') + '</button></div>' +
-        (pendingList().length && (f === 'all' || f === 'out') ? '<div class="day">Processing</div><div class="list">' + pendingList().map(pendRow).join('') + '</div>' : '') +
-        (out || (pendingList().length && (f === 'all' || f === 'out') ? '' : '<div class="list" style="margin-top:14px"><div class="empty">' + ic('rcpt') + '<div>Nothing here yet.</div></div></div>')) +
-        (S.hMore && signedIn() ? '<button type="button" class="btn ghost" data-older="1" style="margin-top:4px">Load older history</button>' : '') +
-        (R.length ? '<div class="two" style="margin-top:4px"><button type="button" class="btn" data-act="statement">' + ic('rcpt') + 'Statement PDF</button><button type="button" class="btn ghost" data-act="csv">' + ic('down') + 'Export CSV</button></div>' : '');
+      return head + '<div class="act-tools"><div class="act-q">' + ic('search') + '<input class="in" id="act-q" type="search" autocomplete="off" placeholder="Search payments" value="' + esc(S.q || '') + '"></div>' +
+        '<div class="seg act-seg" role="tablist">' + FLT.map(function (x) { return '<button type="button" data-flt="' + x[0] + '" class="' + (S.filter === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+        '<div class="act-bar"><button type="button" class="act-pill" data-actper="1">' + ic('cal') + '<span>' + esc(perLabel()) + '</span>' + ic('chevd') + '</button><button type="button" class="act-pill" data-sort="1">' + ic('sort') + '<span>' + SORTS[S.sort] + '</span>' + ic('chevd') + '</button></div></div>' +
+        '<div id="act-l">' + actList() + '</div>';
     },
     profile: function () {
       var sup = get('supporter', false);
       return '<div class="pcard"><div class="avatar">' + esc(signedIn() ? me().charAt(0) : 'G') + '</div><div class="grow"><b>' + (signedIn() ? '@' + esc(me()) : 'Guest') + '</b><small>' + (get('name', '') ? esc(get('name', '')) + ' · ' : '') + NETN + '</small>' + (sup ? '<div class="badge">' + ic('star') + 'FinPi Supporter</div>' : '') + '</div></div>' +
         (!signedIn() ? '<button type="button" class="btn" data-act="signin" style="margin-top:14px"><span class="pi-dot">π</span>Sign in with Pi</button>' : '') +
         '<div class="sec"><h2>Settings</h2></div><div class="list">' +
-        row('edit', 'Name on receipts', get('name', '') || 'Not set', 'name') + row('globe', 'Currency', cname(curr()) + ' (' + curr() + ')', 'currency') +
-        row('bell', 'Phone notifications', get('push', false) ? 'On' : 'Off', 'push') + row('pie', 'Monthly budget', get('budget', 0) ? fpi(get('budget', 0)) + ' π' : 'Not set', 'budget') + row('card', 'Wallet address', get('addr', '') ? short(get('addr', '')) : 'Not added', 'addr-set') + '</div>' +
-        '<div class="sec"><h2>Tools</h2></div><div class="list">' + row('users', 'Contacts', contacts().length ? contacts().length + ' saved' : 'People you pay often', 'contacts') + row('bell', 'Payment reminders', rems().length ? rems().length + ' active' : 'Rent, fees and regular payments', 'rems') + row('act', 'Price alerts', alerts().filter(function (a) { return !a.hit; }).length ? alerts().filter(function (a) { return !a.hit; }).length + ' active' : 'Know when Pi reaches your price', 'alerts') + row('rcpt', 'Monthly statement', 'PDF of your payments', 'statement') + row('info', 'Welcome tour', 'See how FinPi works', 'tour') + '</div>' +
-        '<div class="sec"><h2>Security &amp; support</h2></div><div class="list">' +
-        row('shield', 'Security center', 'Limits, safety and how FinPi works', 'security') + row('act', 'Resolve a pending payment', 'Finishes or clears an unfinished payment', 'resolvepend') + row('heart', sup ? 'You are a Supporter' : 'Become a Supporter', sup ? 'Thank you!' : '1 π · badge only, no reward', 'supporter') +
-        row('mail', 'Help & contact', SUPPORT, 'help') + '</div>' +
+        row('edit', 'Name on receipts', get('name', '') ? NTYPE[nType()].l + ' · ' + get('name', '') : 'Your name, business, store or shop', 'name') + row('globe', 'Currency', cname(curr()) + ' (' + curr() + ')', 'currency') +
+        row('bell', 'Notifications', !('Notification' in window) ? 'In-app alerts on' : get('push', false) ? 'Phone and in-app alerts' : 'In-app alerts on', 'push') + row('pie', 'Monthly budget', get('budget', 0) ? fpi(get('budget', 0)) + ' π' : 'Not set', 'budget') + row('card', 'Wallet address', get('addr', '') ? short(get('addr', '')) : 'Not added', 'addr-set') + hook('settings') + '</div>' +
+        '<div class="sec"><h2>Support</h2></div><div class="list">' + row('info', 'Welcome tour', 'A quick look at FinPi', 'tour') +
+        row('shield', 'Trust center', 'Payments, limits and records', 'security') + row('refresh', 'Repair app', 'Refresh FinPi and restore your data', 'repair') + row('act', 'Resolve a pending payment', 'Finishes or clears an unfinished payment', 'resolvepend') + row('heart', sup ? 'You are a Supporter' : 'Become a Supporter', sup ? 'Thank you!' : '1 π · badge only, no reward', 'supporter') +
+        row('mail', 'Help & contact', 'Contact the FinPi team', 'help') + '</div>' +
         '<div class="sec"><h2>Legal</h2></div><div class="list">' + lrow('Terms of Service', 'terms-of-service.html') + lrow('Privacy Policy', 'privacy-policy.html') + lrow('Risk Disclosure', 'risk-disclosure.html') + '</div>' +
         (signedIn() ? '<button type="button" class="btn danger" data-act="signout" style="margin-top:18px">' + ic('out') + 'Sign out</button>' : '') +
-        '<p class="small muted" style="text-align:center;margin-top:16px">FinPi 1.0.0 · ' + NETN + ' · finpi.pi</p>';
+        '<p class="small muted" style="text-align:center;margin-top:16px">FinPi 1.1.0 · ' + NETN + ' · finpi.pi</p>';
       function row(i, t, s, a) { return '<button type="button" class="li" data-act="' + a + '"><span class="ico">' + ic(i) + '</span><span class="grow"><b>' + esc(t) + '</b><small>' + esc(s) + '</small></span><span class="go">' + ic('chev') + '</span></button>'; }
       function lrow(t, h) { return '<a class="li" href="' + h + '"><span class="ico">' + ic('rcpt') + '</span><span class="grow"><b>' + t + '</b></span><span class="go">' + ic('chev') + '</span></a>'; }
     }
   };
+  var PER = [['all', 'All time'], ['today', 'Today'], ['7d', '7 days'], ['30d', '30 days'], ['month', 'This month'], ['last', 'Last month'], ['custom', 'Custom']];
+  var SORTS = { new: 'Newest first', old: 'Oldest first', big: 'Largest first', small: 'Smallest first' };
+  var FLT = [['all', 'All'], ['out', 'Sent'], ['in', 'Received'], ['ref', 'Refunds']];
+  function dShort(v) { var d = new Date(v + 'T00:00:00'); return isNaN(d) ? v : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+  function perLabel() { if (S.per === 'custom') return (S.from ? dShort(S.from) : 'Start') + ' – ' + (S.to ? dShort(S.to) : 'Today'); return PER.filter(function (x) { return x[0] === S.per; })[0][1]; }
+  function perSheet() {
+    var w = sheet('Period', '<div class="list pick">' + PER.filter(function (x) { return x[0] !== 'custom'; }).map(function (x) { return '<button type="button" class="li' + (S.per === x[0] ? ' on' : '') + '" data-pp="' + x[0] + '"><span class="grow"><b>' + x[1] + '</b></span>' + (S.per === x[0] ? ic('check') : '') + '</button>'; }).join('') + '</div>' +
+      '<div class="day">Custom range</div><div class="two act-dt"><label><span>From</span><input class="in" type="date" id="pp-f" value="' + esc(S.from || '') + '" max="' + dIso(Date.now()) + '"></label><label><span>To</span><input class="in" type="date" id="pp-t" value="' + esc(S.to || '') + '" max="' + dIso(Date.now()) + '"></label></div>' +
+      '<button type="button" class="btn" id="pp-go">' + ic('cal') + 'Show this range</button>');
+    $$('[data-pp]', w).forEach(function (b) { b.onclick = function () { S.per = b.dataset.pp; S.page = 60; closeSheets(); render('activity'); }; });
+    $('#pp-go', w).onclick = function () { var f = $('#pp-f', w).value, t = $('#pp-t', w).value; if (!f && !t) return toast('Choose a start or end date'); S.per = 'custom'; S.from = f; S.to = t; S.page = 60; closeSheets(); render('activity'); };
+  }
+  function sortSheet() {
+    var w = sheet('Sort', '<div class="list pick">' + Object.keys(SORTS).map(function (k) { return '<button type="button" class="li' + (S.sort === k ? ' on' : '') + '" data-so="' + k + '"><span class="grow"><b>' + SORTS[k] + '</b></span>' + (S.sort === k ? ic('check') : '') + '</button>'; }).join('') + '</div>');
+    $$('[data-so]', w).forEach(function (b) { b.onclick = function () { S.sort = b.dataset.so; closeSheets(); render('activity'); }; });
+  }
+  function dIso(t) { var d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function perRange() {
+    var t = new Date(); t.setHours(0, 0, 0, 0); var d0 = t.getTime(), n = Date.now() + 864e5, m = new Date(d0); m.setDate(1);
+    if (S.per === 'today') return [d0, n]; if (S.per === '7d') return [d0 - 6 * 864e5, n]; if (S.per === '30d') return [d0 - 29 * 864e5, n];
+    if (S.per === 'month') return [m.getTime(), n];
+    if (S.per === 'last') { var e = m.getTime(); m.setMonth(m.getMonth() - 1); return [m.getTime(), e]; }
+    if (S.per === 'custom') { var f = /^\d{4}-\d\d-\d\d$/.test(S.from || '') ? new Date(S.from + 'T00:00:00').getTime() : 0, to = /^\d{4}-\d\d-\d\d$/.test(S.to || '') ? new Date(S.to + 'T00:00:00').getTime() + 864e5 : n; return f > to ? [to - 864e5, f + 864e5] : [f, to]; }
+    return [0, 9e15];
+  }
+  function actRows() {
+    var f = S.filter, q = String(S.q || '').trim().toLowerCase().replace(/^@/, ''), rg = perRange();
+    var F = rcpts().map(function (r, i) { return [r, i]; }).concat(S.extra.map(function (r, i) { return [r, 'x' + i]; })).filter(function (x) {
+      var r = x[0]; if (!((r.ts || 0) >= rg[0] && (r.ts || 0) < rg[1])) return false;
+      if (!(f === 'all' || (f === 'out' && r.dir === 'out') || (f === 'in' && r.dir === 'in' && r.kind !== 'refund') || (f === 'ref' && r.kind === 'refund'))) return false;
+      if (q) { var hay = [r.other, r.narr, r.cat, r.txid, r.pid, r.addr, r.from, String(r.amount), fpi(r.amount), rcptTitle(r)].join(' ').toLowerCase(); if (hay.indexOf(q) < 0) return false; }
+      return true;
+    });
+    var k = S.sort; F.sort(function (a, b) { var A = a[0], B = b[0]; return k === 'old' ? (A.ts || 0) - (B.ts || 0) : k === 'big' ? B.amount - A.amount || (B.ts || 0) - (A.ts || 0) : k === 'small' ? A.amount - B.amount || (B.ts || 0) - (A.ts || 0) : (B.ts || 0) - (A.ts || 0); });
+    return F;
+  }
+  function actList() {
+    var F = actRows(), inn = 0, out = 0, f = S.filter, lim = S.page || 60, byDay = S.sort === 'new' || S.sort === 'old';
+    F.forEach(function (x) { var r = x[0], a = Number(r.amount) || 0; if (r.kind === 'refund') { if (f === 'ref') inn += a; else out -= a; } else if (r.dir === 'in') inn += a; else out += a; }); out = Math.max(0, out);
+    var html = '', groups = [], cur = null;
+    F.slice(0, lim).forEach(function (x) {
+      var key = byDay ? new Date(x[0].ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '';
+      if (!cur || cur.k !== key) { cur = { k: key, rows: [], net: 0 }; groups.push(cur); }
+      cur.rows.push(x); cur.net += (x[0].dir === 'in' ? 1 : -1) * (Number(x[0].amount) || 0);
+    });
+    groups.forEach(function (g) { html += (g.k ? '<div class="day act-day"><span>' + g.k + '</span><b class="num ' + (g.net >= 0 ? 'pos' : '') + '">' + (g.net >= 0 ? '+' : '−') + fpi(Math.abs(r7(g.net))) + ' π</b></div>' : '<div style="height:12px"></div>') + '<div class="list anim">' + g.rows.map(function (x) { return txRow(x[0], x[1]); }).join('') + '</div>'; });
+    var showPend = pendingList().length && (f === 'all' || f === 'out') && !S.q && (S.per === 'all' || perRange()[1] > Date.now());
+    var fl = FLT.filter(function (x) { return x[0] === f; })[0][1];
+    return '<div class="act-card"><div class="act-k">' + ic('cal', 'width:15px;height:15px') + '<span>' + esc(perLabel()) + (f !== 'all' ? ' · ' + fl : '') + (S.q ? ' · “' + esc(S.q) + '”' : '') + '</span></div>' +
+      '<div class="act-row"><div><small>Received</small><b class="num">' + (inn ? '+' : '') + fpi(r7(inn)) + ' π</b></div><div><small>Sent</small><b class="num">' + (out ? '−' : '') + fpi(r7(out)) + ' π</b></div><div><small>Payments</small><b class="num">' + F.length + '</b></div></div>' +
+      (signedIn() ? '<button type="button" class="act-bk" data-act="backup">' + ic('cloud', 'width:15px;height:15px') + 'Backed up to your Pi account</button>' : '') + '</div>' +
+      (showPend ? '<div class="day act-day"><span>Processing</span></div><div class="list anim">' + pendingList().map(pendRow).join('') + '</div>' : '') +
+      (html || (showPend ? '' : '<div class="list" style="margin-top:14px"><div class="empty">' + ic('rcpt') + '<div>' + (rcpts().length ? 'No payments match.' : 'No payments yet.') + '</div></div></div>')) +
+      (F.length > lim ? '<button type="button" class="btn ghost" data-more="1" style="margin-top:12px">Show more · ' + (F.length - lim) + ' left</button>' : '') +
+      (S.hMore && signedIn() && F.length <= lim ? '<button type="button" class="btn ghost" data-older="1" style="margin-top:12px">Load older history</button>' : '') +
+      (F.length ? '<div class="two" style="margin-top:4px"><button type="button" class="btn" data-act="statement">' + ic('rcpt') + 'Statement PDF</button><button type="button" class="btn ghost" data-act="csv">' + ic('down') + 'Export CSV</button></div>' : '');
+  }
+  function actPaint() { var l = $('#act-l'); if (l) l.innerHTML = actList(); else render('activity'); }
+  /* ── services: one list, used by Home, the Services tab and search ── */
+  var SVC_G = [['pay', 'Payments'], ['get', 'Get paid'], ['biz', 'Business'], ['rec', 'Receipts & records'], ['plan', 'Planning'], ['wal', 'Wallet tools'], ['help', 'Help']];
+  var SVC = [
+    { id: 'send', n: 'Send Pi', s: 'To a @username or wallet address', i: 'send', c: 'b', g: 'pay', a: 'send' },
+    { id: 'request', n: 'Request Pi', s: 'Payment code with the amount', i: 'req', c: 't', g: 'pay', a: 'request' },
+    { id: 'scan', n: 'Scan to pay', s: 'Payment code or wallet QR', i: 'qr', c: 'n', g: 'pay', a: 'scan' },
+    { id: 'receive', n: 'Receive Pi', s: 'Your @username and address', i: 'card', c: 'a', g: 'pay', a: 'receive' },
+    { id: 'contacts', n: 'Contacts', s: 'People you pay often', i: 'user', c: 'b', g: 'pay', a: 'contacts' },
+    { id: 'links', n: 'Payment links', s: 'Share a link to get paid', i: 'link', c: 'b', g: 'get', a: 'links' },
+    { id: 'myqr', n: 'My Pi QR', s: 'Poster to print or share', i: 'qr', c: 't', g: 'get', a: 'myqr' },
+    { id: 'invoice', n: 'Invoices', s: 'Paid automatically on arrival', i: 'inv', c: 'n', g: 'get', a: 'invs' },
+    { id: 'split', n: 'Split a bill', s: 'Request each share', i: 'users', c: 'a', g: 'get', a: 'split' },
+    { id: 'sale', n: 'Quick sale', s: 'Charge a customer by QR', i: 'card', c: 'g', g: 'biz', a: 'sale' },
+    { id: 'prod', n: 'Products', s: 'Catalog, prices and stock', i: 'tag', c: 'a', g: 'biz', a: 'prods' },
+    { id: 'biz', n: 'Dashboard', s: 'Sales and outstanding', i: 'bars', c: 'b', g: 'biz', a: 'biz' },
+    { id: 'newinv', n: 'New invoice', s: 'Items, tax and due date', i: 'plus', c: 'n', g: 'biz', a: 'inv-new' },
+    { id: 'cust', n: 'Customers', s: 'Who pays you', i: 'users', c: 't', g: 'biz', a: 'cust' },
+    { id: 'recur', n: 'Recurring', s: 'Weekly or monthly invoices', i: 'repeat', c: 'a', g: 'biz', a: 'recur' },
+    { id: 'bizreport', n: 'Business report', s: 'One-page PDF for any period', i: 'bars', c: 'n', g: 'biz', a: 'bizreport' },
+    { id: 'reports', n: 'Reports', s: 'Sales and invoices CSV', i: 'down', c: 'b', g: 'biz', a: 'reports' },
+    { id: 'bizprof', n: 'Business profile', s: 'Name, logo, tax ID, store, shop', i: 'store', c: 'n', g: 'biz', a: 'bizprof' },
+    { id: 'rname', n: 'Name on receipts', s: 'Name, business, store or shop', i: 'edit', c: 'k', g: 'biz', a: 'name' },
+    { id: 'verify', n: 'Verify receipt', s: 'Scan, upload or enter', i: 'check', c: 'g', g: 'rec', a: 'verify' },
+    { id: 'getrcpt', n: 'Get a receipt', s: 'From a transaction ID', i: 'tag', c: 'b', g: 'rec', a: 'get-rcpt' },
+    { id: 'statement', n: 'Statement', s: 'Monthly PDF', i: 'rcpt', c: 'n', g: 'rec', a: 'statement' },
+    { id: 'activity', n: 'Activity', s: 'Any period, search, sort', i: 'act', c: 't', g: 'rec', tab: 'activity' },
+    { id: 'csv', n: 'Export CSV', s: 'Your payments as a file', i: 'down', c: 'a', g: 'rec', a: 'csv' },
+    { id: 'rems', n: 'Reminders', s: 'Rent, fees, regular payments', i: 'bell', c: 'a', g: 'plan', a: 'rems' },
+    { id: 'budget', n: 'Budget', s: 'Monthly spending limit', i: 'pie', c: 't', g: 'plan', a: 'budget' },
+    { id: 'insights', n: 'Insights', s: 'Where your Pi goes', i: 'bars', c: 'b', g: 'plan', a: 'insights' },
+    { id: 'alerts', n: 'Price alerts', s: 'When Pi reaches your price', i: 'act', c: 'n', g: 'plan', a: 'alerts' },
+    { id: 'wallet', n: 'Pi rate', s: 'Live rate and converter', i: 'conv', c: 'b', g: 'wal', tab: 'wallet' },
+    { id: 'checkaddr', n: 'Check address', s: 'Any Pi wallet address', i: 'search', c: 't', g: 'wal', a: 'check-addr' },
+    { id: 'addr', n: 'My address', s: 'Your Pi wallet address', i: 'card', c: 'n', g: 'wal', a: 'addr-set' },
+    { id: 'currency', n: 'Currency', s: 'Show values in your currency', i: 'globe', c: 'a', g: 'wal', a: 'currency' },
+    { id: 'travel', n: 'Travel currency', s: 'Values in the country you visit', i: 'globe', c: 't', g: 'wal', a: 'travel' },
+    { id: 'trust', n: 'Trust center', s: 'Payments, limits, records', i: 'shield', c: 'b', g: 'help', a: 'security' },
+    { id: 'repair', n: 'Repair app', s: 'Refresh and restore data', i: 'refresh', c: 't', g: 'help', a: 'repair' },
+    { id: 'pending', n: 'Pending payment', s: 'Finish or clear it', i: 'undo', c: 'a', g: 'help', a: 'resolvepend' },
+    { id: 'help', n: 'Help & contact', s: 'We reply quickly', i: 'mail', c: 'n', g: 'help', a: 'help' }
+  ];
+  var HOME_SVC = ['sale', 'verify', 'invoice', 'myqr', 'links', 'split', 'biz', 'more'];
+  function svcById(id) { return id === 'more' ? { id: 'more', n: 'All services', i: 'grid', c: 'k', tab: 'pay' } : SVC.filter(function (x) { return x.id === id; })[0]; }
+  function svcGrid(L, kind) {
+    return '<div class="sv-grid' + (kind ? ' ' + kind : '') + '">' + L.filter(Boolean).map(function (x) {
+      return '<button type="button" class="sv c-' + x.c + '" ' + (x.tab ? 'data-tab="' + x.tab + '"' : 'data-act="' + x.a + '"') + ' data-k="' + esc((x.n + ' ' + (x.s || '') + ' ' + x.g).toLowerCase()) + '"><i>' + ic(x.i) + '</i><b>' + esc(x.n) + '</b></button>';
+    }).join('') + '</div>';
+  }
+  function svcFilter(q) {
+    q = String(q || '').trim().toLowerCase(); var any = false;
+    $$('#view .sv-grp').forEach(function (g) { var n = 0; $$('.sv', g).forEach(function (b) { var on = !q || b.dataset.k.indexOf(q) >= 0; b.hidden = !on; if (on) n++; }); g.hidden = !n; if (n) any = true; });
+    $$('#view .sv-again').forEach(function (e) { e.hidden = !!q; }); var no = $('#view .sv-none'); if (no) no.hidden = any;
+  }
+  /* ── the name shown on receipts, invoices and the QR poster: a person, business, store or shop ── */
+  var NTYPE = { name: { l: 'Name', p: 'Your full name' }, business: { l: 'Business name', p: 'e.g. Global Trading Ltd' }, store: { l: 'Store name', p: 'e.g. City Market Store' }, shop: { l: 'Shop name', p: 'e.g. Corner Fashion Shop' } };
+  function nType() { var t = get('nameType', ''); return NTYPE[t] ? t : 'name'; }
+  function setName(v, t) {
+    put('name', v); put('nameType', t);
+    if (t !== 'name') { var b = get('biz', {}) || {}; if (b.name !== v) { b.name = v; if (window.FinPi && FinPi.kit && FinPi.kit.bizPut) FinPi.kit.bizPut(b); else put('biz', b); } }
+  }
+  function nameSheet(after) {
+    var t = nType();
+    var w = sheet('Name on receipts', '<div class="chips" id="nm-t">' + Object.keys(NTYPE).map(function (k) { return '<button type="button" class="chip' + (k === t ? ' on' : '') + '" data-nt="' + k + '">' + NTYPE[k].l + '</button>'; }).join('') + '</div>' +
+      '<label class="l" for="nm-i" id="nm-l">' + NTYPE[t].l + '</label><input class="in" id="nm-i" maxlength="60" value="' + esc(get('name', '')) + '" placeholder="' + esc(NTYPE[t].p) + '">' +
+      '<div class="nm-prev"><span>On receipts</span><b id="nm-pv"></b></div>' +
+      '<button type="button" class="btn" id="nm-go">' + ic('check') + 'Save</button>');
+    var i = $('#nm-i', w);
+    function pv() { var v = i.value.trim(); $('#nm-pv', w).textContent = (v || NTYPE[t].l) + (me() ? ' (@' + me() + ')' : ''); }
+    $$('[data-nt]', w).forEach(function (b) { b.onclick = function () { t = b.dataset.nt; $$('[data-nt]', w).forEach(function (x) { x.classList.toggle('on', x === b); }); $('#nm-l', w).textContent = NTYPE[t].l; i.placeholder = NTYPE[t].p; pv(); }; });
+    i.oninput = pv; pv();
+    $('#nm-go', w).onclick = function () { var v = i.value.trim().replace(/\s+/g, ' '); if (v && v.length < 2) return toast('Enter at least 2 letters'); setName(v, t); closeSheets(); render(S.tab); toast(v ? NTYPE[t].l + ' saved' : 'Name removed'); if (after) after(); };
+  }
+  function trustChips() { return '<button type="button" data-act="verify">' + ic('check') + 'Verified on the Pi blockchain</button><button type="button" data-act="backup">' + ic('cloud') + (signedIn() ? 'Backed up to your Pi account' : 'Backup after sign-in') + '</button><button type="button" data-tab="activity">' + ic('rcpt') + 'Receipt for every payment</button>'; }
+  function backupSheet() {
+    if (needSignIn('Sign in with Pi to back up your payments and business records.')) return;
+    var R = rcpts(), done = R.filter(function (r) { return r.hs; }).length, bi = HK.bizInfo ? HK.bizInfo() : null;
+    var w = sheet('Backup', '<div class="bk-hero"><div class="bk-i">' + ic('cloud') + '</div><b>Backed up to your Pi account</b><small>@' + esc(me()) + ' · ' + NETN + '</small></div>' +
+      '<div class="list" style="margin-top:12px"><div class="txr"><span>Payments and receipts</span><b>' + done + ' of ' + R.length + ' saved</b></div>' + (bi ? '<div class="txr"><span>Business records</span><b>' + (bi.items ? bi.items + ' items · ' : '') + (bi.up ? 'saved ' + ago(bi.up) : 'nothing to save yet') + '</b></div>' : '') +
+      '<div class="txr"><span>Restore</span><b>Automatic on any phone after sign-in</b></div></div>' +
+      '<button type="button" class="btn" id="bk-go">' + ic('refresh') + 'Back up now</button><button type="button" class="btn ghost" data-act="repair">' + ic('cloud') + 'Restore from backup</button>');
+    $('#bk-go', w).onclick = function () {
+      var b = this; b.disabled = true; b.textContent = 'Backing up…';
+      Promise.all([hPush(), HK.bizPush ? HK.bizPush(true) : null]).then(function () { closeSheets(); toast('Backup complete'); backupSheet(); }).catch(function () { b.disabled = false; b.textContent = 'Back up now'; toast('No connection. Try again.'); });
+    };
+  }
+  function trustHTML() { return '<div class="trust">' + trustChips() + '</div>'; }
+  /* Repair app: clears temporary files and cached screens, checks saved data and restores history and business
+     records from the backup. Payments, receipts and business records are kept. */
+  function repairSheet() {
+    var w = sheet('Repair app', '<p class="sh-sub">Refreshes FinPi and restores your data. Your payments, receipts and business records are kept.</p>' +
+      '<div class="list rp-l">' + ['Clear temporary files', 'Check saved data', 'Restore from backup', 'Restart FinPi'].map(function (t, i) { return '<div class="li" data-rs="' + i + '"><span class="ico">' + ic('refresh') + '</span><span class="grow"><b>' + t + '</b></span><span class="rp-s"></span></div>'; }).join('') + '</div>' +
+      '<button type="button" class="btn" id="rp-go">' + ic('refresh') + 'Repair now</button>');
+    function step(i, st) { var r = $('[data-rs="' + i + '"]', w); if (!r) return; r.classList.toggle('busy', st === 'busy'); r.classList.toggle('done', st === 'done'); $('.ico', r).innerHTML = ic(st === 'done' ? 'check' : 'refresh'); }
+    $('#rp-go', w).onclick = function () {
+      var b = this; b.disabled = true; b.textContent = 'Repairing…'; var t0 = Date.now();
+      step(0, 'busy');
+      var p0 = Promise.all([
+        window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : null,
+        navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }) : null
+      ]).catch(function () {});
+      p0.then(function () {
+        upCache = {}; ['price', 'fx', 'errlog'].forEach(function (k) { try { localStorage.removeItem(K + k); } catch (e) {} });
+        step(0, 'done'); step(1, 'busy'); var bad = 0;
+        try { for (var i = localStorage.length - 1; i >= 0; i--) { var k = localStorage.key(i); if (k && k.indexOf(K) === 0) { try { JSON.parse(localStorage.getItem(k)); } catch (e) { localStorage.removeItem(k); bad++; } } } } catch (e) {}
+        var R = rcpts(), seen = {}, clean = R.filter(function (r) { if (!r || !(Number(r.amount) > 0) || !r.ts) { bad++; return false; } var h = hKey(r) || JSON.stringify(r); if (seen[h]) { bad++; return false; } seen[h] = 1; return true; });
+        if (clean.length !== R.length) put('rcpts', clean);
+        step(1, 'done'); step(2, 'busy');
+        if (!signedIn()) return null;
+        hBusy = false; return Promise.all([new Promise(function (ok) { hPush().then(function () { return api('/history', { a: 'pull', accessToken: S.token, limit: 500 }); }).then(function (d) { if (d && d.ok) { S.hMore = !!d.more; hMerge(d.items || []); } }).catch(function () {}).then(ok); })].concat(HK.repair.map(function (f) { try { return f(); } catch (e) { return null; } })));
+      }).then(function () {
+        step(2, 'done'); step(3, 'busy');
+        setTimeout(function () { step(3, 'done'); toast('FinPi repaired'); setTimeout(function () { location.replace(location.pathname + '?r=' + Date.now().toString(36)); }, 600); }, Math.max(300, 1400 - (Date.now() - t0)));
+      });
+    };
+  }
   function insightsHTML() {
     var s = monthStats(S.month), m = monthRange(S.month)[2], b = get('budget', 0), u = rateIn('USD'), c = curr(), r = rateIn(c);
     var cats = Object.keys(s.cats).map(function (k) { return [k, s.cats[k]]; }).sort(function (a, b2) { return b2[1] - a[1]; }), top = cats.length ? cats[0][1] : 0;
@@ -1034,9 +1365,10 @@
 
   function render(tab) {
     S.tab = tab; var v = $('#view'); if (!v) return;
-    v.innerHTML = T[tab]();
+    try { v.innerHTML = T[tab](); } catch (e) { guardErr(e && e.message); v.innerHTML = '<div class="list" style="margin-top:20px"><div class="empty">' + ic('refresh') + '<div>This screen did not load.</div><button type="button" class="btn" data-act="repair" style="margin-top:14px">' + ic('refresh') + 'Repair app</button></div></div>'; }
     $$('#tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tab); b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'); });
-    if (tab === 'wallet') { cvCalc('pi'); ['pi', 'usd', 'loc'].forEach(function (k) { var e = $('#cv-' + k); if (e) e.oninput = function () { cvCalc(k); }; }); }
+    if (tab === 'activity') $$('.act-ch .chip.on').forEach(function (c) { try { var p = c.parentNode; p.scrollLeft = c.offsetLeft - p.clientWidth / 2 + c.offsetWidth / 2; } catch (e) {} });
+    if (tab === 'wallet') { cvCalc('pi'); ['pi', 'usd', 'loc', 'tr'].forEach(function (k) { var e = $('#cv-' + k); if (e) e.oninput = function () { cvCalc(k); }; }); }
   }
   function go(tab) { if (tab === S.tab && $('#view').innerHTML) { scrollTo({ top: 0, behavior: 'smooth' }); } closeSheets(); render(tab); scrollTo(0, 0); }
 
@@ -1062,7 +1394,7 @@
   function contactEdit(i, preTo) {
     var L = contacts(), c = i >= 0 ? L[i] : { name: '', to: preTo || '' }, rec = get('payees', []).filter(function (p) { return !L.some(function (x) { return x.to.toLowerCase() === p.toLowerCase(); }); }).slice(0, 6);
     var w = sheet(i >= 0 ? 'Edit contact' : 'Add contact',
-      '<label class="l" for="ct-n">Name</label><input class="in" id="ct-n" maxlength="40" placeholder="e.g. Amina, Landlord, Shop" value="' + esc(c.name) + '">' +
+      '<label class="l" for="ct-n">Name</label><input class="in" id="ct-n" maxlength="40" placeholder="e.g. Alex, Landlord, Shop" value="' + esc(c.name) + '">' +
       '<label class="l" for="ct-t">' + (userSends() ? '@username or wallet address' : 'Pi wallet address') + '</label><textarea class="in num" id="ct-t" rows="2" maxlength="60" autocapitalize="none" spellcheck="false" style="font-size:14px;resize:none" placeholder="' + (userSends() ? '@username or G…' : 'G…') + '">' + esc(c.to ? (isG(c.to) ? c.to : '@' + c.to) : '') + '</textarea><div class="hint" id="ct-h"></div>' +
       (i < 0 && rec.length ? '<label class="l">From your recent payments</label><div class="chips">' + rec.map(function (p) { return '<button type="button" class="chip" data-rp="' + esc(p) + '">' + esc(toLabel(p)) + '</button>'; }).join('') + '</div>' : '') +
       '<button type="button" class="btn" id="ct-go">Save contact</button>' + (i >= 0 ? '<button type="button" class="btn ghost" id="ct-pay">' + ic('send') + 'Send Pi</button><button type="button" class="btn danger" id="ct-rm">' + ic('trash') + 'Delete contact</button>' : ''), { stack: true });
@@ -1108,7 +1440,7 @@
   function linksSheet() {
     if (needTarget('Payment links')) return;
     var L = links();
-    var w = sheet('Payment links', '<p class="sh-sub">Share a link or QR code. It opens FinPi with your payment ready to approve.</p>' +
+    var w = sheet('Payment links', '<p class="sh-sub">Get paid in Pi by link or QR code.</p>' +
       '<button type="button" class="btn" data-x="new">' + ic('link') + 'Create payment link</button>' +
       (L.length ? '<div class="day">Your links</div><div class="list">' + L.map(function (o, i) { return '<div class="li"><span class="ico">' + ic('link') + '</span><button type="button" class="grow lb" data-lk="' + i + '"><b>' + esc(o.x || 'Payment link') + '</b><small>' + (o.a ? fpi(o.a) + ' π' : 'Any amount') + ' · ' + esc(isG(o.u) ? short(o.u) : '@' + o.u) + ' · ' + ago(o.ts) + '</small></button><button type="button" class="tbtn" data-lr="' + i + '" aria-label="Delete link">' + ic('trash') + '</button></div>'; }).join('') + '</div>' : ''));
     $('[data-x="new"]', w).onclick = function () { requestSheet(true); };
@@ -1124,7 +1456,7 @@
     var w = sheet('Split a bill', '<p class="sh-sub">Share a cost and send everyone their part as a payment request.</p>' +
       '<label class="l" for="sp-a">Total amount</label><div class="amt"><input id="sp-a" type="number" inputmode="decimal" min="0" step="any" placeholder="0.00"><span>π</span></div><div class="hint num" id="sp-c"></div>' +
       '<label class="l" for="sp-x">What is it for?</label><input class="in" id="sp-x" maxlength="60" placeholder="e.g. Dinner, shared taxi, rent">' +
-      '<label class="l" for="sp-p">Who is sharing? (names, separated by commas)</label><input class="in" id="sp-p" maxlength="300" placeholder="e.g. Amina, Musa, Fatima">' +
+      '<label class="l" for="sp-p">Who is sharing? (names, separated by commas)</label><input class="in" id="sp-p" maxlength="300" placeholder="e.g. Alex, Maria, Sam">' +
       '<label class="chk"><input type="checkbox" id="sp-me" checked><span>Include my share</span></label>' +
       '<div class="sum" id="sp-sum" hidden></div><button type="button" class="btn" id="sp-go">' + ic('users') + 'Create requests</button>' +
       (splits().length ? '<button type="button" class="btn ghost" id="sp-old">Previous splits</button>' : ''));
@@ -1188,7 +1520,7 @@
   }
   function remsSheet() {
     var L = rems().slice().sort(function (a, b) { return a.next - b.next; });
-    var w = sheet('Payment reminders', '<p class="sh-sub">FinPi reminds you when a regular payment is due. You check and approve every payment yourself.</p>' +
+    var w = sheet('Payment reminders', '<p class="sh-sub">Rent, fees and regular payments, on schedule.</p>' +
       (L.length ? '<div class="list">' + L.map(function (r) { var due = r.next <= Date.now(); return '<div class="li"><span class="ico' + (due ? ' rf' : '') + '">' + ic('bell') + '</span><button type="button" class="grow lb" data-re="' + r.id + '"><b>' + esc(r.narr) + '</b><small>' + fpi(r.amt) + ' π to ' + esc(cName(r.to) || toLabel(r.to)) + ' · ' + FREQ[r.freq] + '</small><small>' + (due ? 'Due now' : 'Next: ' + new Date(r.next).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + '</small></button>' + (due ? '<button type="button" class="chip on" data-act="rem-pay" data-id="' + r.id + '">Pay</button>' : '') + '</div>'; }).join('') + '</div>'
         : '<div class="list"><div class="empty">' + ic('bell') + '<div>No reminders yet. Add rent, school fees, dues or any regular payment.</div></div></div>') +
       '<button type="button" class="btn" data-x="add">' + ic('bell') + 'Add reminder</button>');
@@ -1250,7 +1582,7 @@
   }
   function alertsSheet() {
     var L = alerts(), c = curr(), r = rateIn(c), dir = 'above';
-    var w = sheet('Price alerts', '<p class="sh-sub">Get notified when 1 π reaches your price. FinPi checks the live rate while it is open.</p>' +
+    var w = sheet('Price alerts', '<p class="sh-sub">Get notified when 1 π reaches your price.</p>' +
       '<div class="card"><p class="small">1 π now</p><div class="num" style="font-size:24px;font-weight:700">' + (r ? money(r, c, r < 1 ? 4 : 2) : '—') + '</div></div>' +
       '<label class="l">Notify me when 1 π goes</label><div class="seg" id="pa-d"><button type="button" data-d="above" class="on">Above</button><button type="button" data-d="below">Below</button></div>' +
       '<label class="l" for="pa-v">Price in ' + esc(c) + '</label><div class="amt"><input id="pa-v" type="number" inputmode="decimal" min="0" step="any" placeholder="' + (r ? (r * 1.1).toFixed(r < 1 ? 4 : 2) : '0') + '"><span style="font-size:15px">' + esc(c) + '</span></div>' +
@@ -1271,7 +1603,7 @@
     var R = rcpts(), opts = [];
     for (var k = 0; k > -12; k--) { var m = monthRange(k); if (k === 0 || R.some(function (r) { return r.ts >= m[0] && r.ts < m[1]; })) opts.push(k); }
     var sel = 0;
-    var w = sheet('Monthly statement', '<p class="sh-sub">A PDF of all your FinPi payments for a month, with values and transaction IDs.</p>' +
+    var w = sheet('Monthly statement', '<p class="sh-sub">All your payments for a month, with values and transaction IDs.</p>' +
       '<label class="l">Month</label><div class="chips" id="st-m">' + opts.map(function (k) { return '<button type="button" class="chip' + (k === 0 ? ' on' : '') + '" data-m="' + k + '">' + monthRange(k)[2].toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) + '</button>'; }).join('') + '</div>' +
       '<div class="card" id="st-s" style="margin-top:12px"></div>' +
       '<div class="two"><button type="button" class="btn" data-x="dl">' + ic('down') + 'Download</button><button type="button" class="btn ghost" data-x="sh">' + ic('share') + 'Share</button></div>');
@@ -1298,13 +1630,20 @@
     var P1 = 11, PN = 15, pages = [], i = 0; pages.push(R.slice(0, P1)); i = P1; while (i < R.length) { pages.push(R.slice(i, i + PN)); i += PN; }
     function txt(x, t, px, py, font, col, al) { x.font = font; x.fillStyle = col; x.textAlign = al || 'left'; x.fillText(t, px, py); }
     function fit(x, t, mw) { t = String(t || ''); if (x.measureText(t).width <= mw) return t; while (t.length > 1 && x.measureText(t + '…').width > mw) t = t.slice(0, -1); return t + '…'; }
-    return fontsReady().then(function () { return new Promise(function (ok) { var im = new Image(); im.onload = function () { ok(im); }; im.onerror = function () { ok(null); }; im.src = 'icons/icon-192.png'; }); }).then(function (logo) {
+    var DOC = '', FR = window.FPReceipt || {}, whoS = me() ? '@' + me() : 'FinPi user';
+    function docId() {
+      var src = ['finpi-statement', NETN, whoS, mon].concat(R.map(function (r) { return [r.txid || r.pid || '', r.amount, r.dir, r.ts].join('|'); })).join('\n');
+      try { return crypto.subtle.digest('SHA-256', new TextEncoder().encode(src)).then(function (b) { var u = new Uint8Array(b), A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', c = ''; for (var k = 0; k < 10; k++) c += A[u[k] % 32]; DOC = 'FPS-' + c.slice(0, 5) + '-' + c.slice(5); }).catch(function () {}); } catch (e) { return Promise.resolve(); }
+    }
+    return fontsReady().then(docId).then(function () { return new Promise(function (ok) { var im = new Image(); im.onload = function () { ok(im); }; im.onerror = function () { ok(null); }; im.src = 'icons/icon-192.png'; }); }).then(function (logo) {
       var jobs = pages.map(function (rows, pi) {
         var cv = document.createElement('canvas'); cv.width = W; cv.height = H; var x = cv.getContext('2d'); x.textBaseline = 'alphabetic';
         x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+        if (FR.guilloche) { FR.guilloche(x, 0, 0, W, H, '#1D4ED8', .045); FR.rosette(x, W / 2, H / 2 + 120, 330, '#0D9488', .05); }
         var y;
         if (pi === 0) {
           var g = x.createLinearGradient(0, 0, W, 300); g.addColorStop(0, '#0A1F55'); g.addColorStop(.75, '#1D4ED8'); g.addColorStop(1, '#0D9488'); x.fillStyle = g; x.fillRect(0, 0, W, 300);
+          if (FR.guilloche) FR.guilloche(x, 0, 0, W, 300, '#FFFFFF', .1);
           if (logo) x.drawImage(logo, X, 62, 76, 76);
           txt(x, 'FinPi', X + 96, 116, '700 44px ' + F, '#FFFFFF');
           txt(x, 'MONTHLY STATEMENT', W - X, 92, '600 22px ' + F, 'rgba(255,255,255,.8)', 'right');
@@ -1322,7 +1661,7 @@
           });
           y = 560;
         } else {
-          x.fillStyle = '#0A1F55'; x.fillRect(0, 0, W, 130);
+          x.fillStyle = '#0A1F55'; x.fillRect(0, 0, W, 130); if (FR.guilloche) FR.guilloche(x, 0, 0, W, 130, '#FFFFFF', .1);
           if (logo) x.drawImage(logo, X, 35, 60, 60);
           txt(x, 'FinPi', X + 76, 78, '700 32px ' + F, '#FFFFFF');
           txt(x, 'Statement · ' + mon, W - X, 78, '600 24px ' + F, '#FFFFFF', 'right');
@@ -1352,6 +1691,12 @@
         txt(x, 'Generated by FinPi on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '. Check any payment on the Pi blockchain with its transaction ID.', X, H - 80, '400 17px ' + F, '#64748B');
         txt(x, '© FinPi ' + new Date().getFullYear() + ' · finpi.pi', X, H - 52, '400 17px ' + F, '#94A3B8');
         txt(x, 'Page ' + (pi + 1) + ' of ' + pages.length, W - X, H - 80, '600 17px ' + F, '#64748B', 'right');
+        if (DOC) txt(x, 'Document ID ' + DOC, W - X, H - 52, '600 17px ' + MF, '#0B2A6F', 'right');
+        if (FR.watermark) {
+          FR.watermark(x, 0, pi === 0 ? 300 : 130, W, H - (pi === 0 ? 300 : 130) - 130, 'FINPI STATEMENT · ' + whoS + ' · ' + mon + (DOC ? ' · ' + DOC : ''), .04);
+          var mt = 'FINPI•STATEMENT•' + whoS + '•' + mon.toUpperCase() + '•' + (DOC || '') + '•PAGE ' + (pi + 1) + '/' + pages.length + '•';
+          FR.microline(x, mt, X, H - 108, W - 2 * X); FR.microline(x, mt, X, H - 22, W - 2 * X);
+        }
         return new Promise(function (ok, no) { cv.toBlob(function (b) { if (!b) return no(new Error('jpg')); b.arrayBuffer().then(function (ab) { ok({ w: W, h: H, bytes: new Uint8Array(ab) }); }, no); }, 'image/jpeg', 0.9); });
       });
       return Promise.all(jobs);
@@ -1382,24 +1727,34 @@
 
   /* ── welcome screens (first open) ── */
   var ONB = [
-    { t: 'Send and receive Pi', p: 'Pay anyone by @username, wallet address or QR code. You approve every payment in Pi’s own window.', img: '<svg viewBox="0 0 320 220" aria-hidden="true"><defs><linearGradient id="ob1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1D4ED8"/><stop offset="1" stop-color="#0A1F55"/></linearGradient><linearGradient id="obg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FCD34D"/><stop offset="1" stop-color="#F59E0B"/></linearGradient></defs><circle cx="160" cy="110" r="100" fill="#E8EEFC"/><rect x="40" y="52" width="92" height="140" rx="18" fill="url(#ob1)"/><rect x="50" y="68" width="72" height="54" rx="10" fill="#fff" opacity=".14"/><circle cx="86" cy="95" r="14" fill="#5EEAD4"/><rect x="58" y="134" width="56" height="8" rx="4" fill="#fff" opacity=".5"/><rect x="58" y="150" width="40" height="8" rx="4" fill="#fff" opacity=".3"/><rect x="188" y="52" width="92" height="140" rx="18" fill="#fff" stroke="#C7D5F5" stroke-width="3"/><circle cx="234" cy="95" r="14" fill="#1D4ED8" opacity=".85"/><rect x="206" y="134" width="56" height="8" rx="4" fill="#C7D5F5"/><rect x="206" y="150" width="40" height="8" rx="4" fill="#E2E8F0"/><path d="M136 96 C160 70 168 70 186 92" stroke="#0D9488" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="2 10"/><path d="M178 84 l10 9 -13 4" stroke="#0D9488" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="160" cy="146" r="26" fill="url(#obg)"/><text x="160" y="157" text-anchor="middle" font-family="Georgia,serif" font-size="30" font-weight="700" fill="#7C2D12">π</text></svg>' },
-    { t: 'Your Pi in your currency', p: 'See the live value of Pi in your own currency, convert any amount and set price alerts.', img: '<svg viewBox="0 0 320 220" aria-hidden="true"><defs><linearGradient id="ob2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0D9488" stop-opacity=".35"/><stop offset="1" stop-color="#0D9488" stop-opacity="0"/></linearGradient></defs><circle cx="160" cy="110" r="100" fill="#E6F7F4"/><rect x="44" y="40" width="232" height="150" rx="22" fill="#fff" stroke="#CFE9E4" stroke-width="3"/><rect x="64" y="58" width="70" height="10" rx="5" fill="#CBD5E1"/><rect x="64" y="76" width="110" height="18" rx="9" fill="#0A1F55"/><path d="M64 160 L100 140 L130 148 L160 118 L190 128 L222 96 L256 104 L256 172 L64 172 Z" fill="url(#ob2)"/><path d="M64 160 L100 140 L130 148 L160 118 L190 128 L222 96 L256 104" stroke="#0D9488" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="222" cy="96" r="8" fill="#fff" stroke="#0D9488" stroke-width="4"/><g font-family="Poppins,Arial,sans-serif" font-weight="700" font-size="20" text-anchor="middle"><circle cx="52" cy="54" r="22" fill="#1D4ED8"/><text x="52" y="61" fill="#fff">$</text><circle cx="272" cy="168" r="22" fill="#0A1F55"/><text x="272" y="175" fill="#fff">₦</text><circle cx="282" cy="48" r="18" fill="#F59E0B"/><text x="282" y="55" fill="#fff" font-size="17">€</text></g></svg>' },
-    { t: 'Receipts anyone can verify', p: 'Every payment gets a professional receipt to share or download, checked on the Pi blockchain.', img: '<svg viewBox="0 0 320 220" aria-hidden="true"><circle cx="160" cy="110" r="100" fill="#EEF0FF"/><path d="M98 30 h124 v170 l-15 -10 -15 10 -16 -10 -15 10 -16 -10 -15 10 -16 -10 -16 10z" fill="#fff" stroke="#C7CBF5" stroke-width="3" stroke-linejoin="round"/><rect x="98" y="30" width="124" height="44" fill="#0A1F55"/><rect x="114" y="46" width="50" height="12" rx="6" fill="#fff" opacity=".85"/><rect x="114" y="90" width="92" height="16" rx="8" fill="#0B1B33"/><rect x="114" y="116" width="62" height="8" rx="4" fill="#CBD5E1"/><rect x="114" y="132" width="78" height="8" rx="4" fill="#E2E8F0"/><g fill="#0A1F55"><rect x="168" y="150" width="10" height="10"/><rect x="182" y="150" width="10" height="10"/><rect x="196" y="150" width="10" height="10"/><rect x="168" y="164" width="10" height="10"/><rect x="196" y="164" width="10" height="10"/><rect x="182" y="178" width="10" height="6"/></g><circle cx="236" cy="66" r="30" fill="#0F766E"/><path d="M222 66 l10 10 18 -20" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' }
+    { t: 'Welcome to FinPi', p: 'Live Pi rate in your currency and a verified receipt for every payment', img: 'icons/onb-1.webp' },
+    { t: 'Send and receive Pi', p: 'Pay any Pioneer by @username or Pi wallet address', img: 'icons/onb-2.webp' },
+    { t: 'Scan to pay', p: 'Scan a FinPi QR code to pay a merchant or a friend', img: 'icons/onb-3.webp' },
+    { t: 'Run your business', p: 'Quick sale, invoices, products and business reports', img: 'icons/onb-4.webp' },
+    { t: 'Verify any receipt', p: 'Check any receipt against the Pi blockchain in seconds', img: 'icons/onb-5.webp' }
   ];
+  ONB.forEach(function (s0) { var im = new Image(); im.src = s0.img; });
   function onboarding(force) {
     if (!force && get('onb', false)) return;
     var i = 0, o = document.createElement('div'); o.id = 'onb'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); o.setAttribute('aria-label', 'Welcome to FinPi');
-    function draw() {
-      var s = ONB[i], last = i === ONB.length - 1;
+    function draw(dir) {
+      var s0 = ONB[i], last = i === ONB.length - 1;
       o.innerHTML = '<div class="onb-top"><div class="brand"><img src="icons/logo-256.png" alt="">FinPi</div>' + (last ? '' : '<button type="button" class="onb-skip" data-o="skip">Skip</button>') + '</div>' +
-        '<div class="onb-img">' + s.img + '</div><div class="onb-txt"><h2>' + esc(s.t) + '</h2><p>' + esc(s.p) + '</p></div>' +
+        '<div class="onb-art ' + (dir || '') + '"><img src="' + s0.img + '" alt=""></div>' +
+        '<div class="onb-panel"><div class="onb-txt ' + (dir || '') + '"><h2>' + esc(s0.t) + '</h2><p>' + esc(s0.p) + '</p></div>' +
         '<div class="onb-dots">' + ONB.map(function (x, k) { return '<i class="' + (k === i ? 'on' : '') + '"></i>'; }).join('') + '</div>' +
-        '<div class="onb-b"><button type="button" class="btn" data-o="next">' + (last ? 'Get started' : 'Next') + '</button></div>';
+        '<div class="onb-b">' + (last ? '<button type="button" class="btn" data-o="signin"><span class="pi-dot">π</span>Sign in with Pi</button><button type="button" class="onb-ex" data-o="explore">Explore without signing in</button>' : '<button type="button" class="btn" data-o="next">Continue</button>') + '</div></div>';
     }
-    function end() { put('onb', true); o.remove(); }
-    o.addEventListener('click', function (e) { var b = e.target.closest('[data-o]'); if (!b) return; if (b.dataset.o === 'skip' || i === ONB.length - 1) return end(); i++; draw(); });
+    function end() { put('onb', true); o.classList.add('out'); setTimeout(function () { o.remove(); }, 260); }
+    o.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-o]'); if (!b) return; var k = b.dataset.o;
+      if (k === 'skip') return end();
+      if (k === 'signin') { end(); if (!$('#app').hidden) return; var si = $('#signin'); if (si) si.click(); return; }
+      if (k === 'explore') { end(); if (!$('#app').hidden) return; var ex = $('#explore'); if (ex) ex.click(); return; }
+      if (i < ONB.length - 1) { i++; draw('fwd'); }
+    });
     var sx = null; o.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
-    o.addEventListener('touchend', function (e) { if (sx === null) return; var dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) < 50) return; if (dx < 0 && i < ONB.length - 1) i++; else if (dx > 0 && i > 0) i--; else return; draw(); });
+    o.addEventListener('touchend', function (e) { if (sx === null) return; var dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) < 50) return; if (dx < 0 && i < ONB.length - 1) { i++; draw('fwd'); } else if (dx > 0 && i > 0) { i--; draw('back'); } });
     draw(); document.body.appendChild(o);
   }
 
@@ -1412,35 +1767,32 @@
     signin: function () { signIn(); },
     price: function () { go('wallet'); }, 'price-retry': function (el, e) { e.stopPropagation(); loadPrice(true); paintPrice(); },
     currency: function (el, e) { e && e.stopPropagation(); curSheet(); },
-    'check-addr': function () { addrSheet(false); }, verify: verifySheet,
+    'check-addr': function () { addrSheet(false); }, verify: function () { verifySheet(); },
     'addr-set': function () { addrSheet(true); }, 'addr-use': function () { var s = get('addrSug', ''); if (validG(s)) { put('addr', s); put('addrSug', ''); render(S.tab); loadWal(); toast('Address saved'); } },
     'wal-load': function () { S.wal = null; loadWal(); },
     notifs: function () {
-      var N = notes(); N.forEach(function (n) { n.read = true; }); put('notes', N); bellDot();
-      sheet('Notifications', N.length ? '<div class="list">' + N.map(function (n) { return '<div class="li"><span class="ico">' + ic(n.ic || 'bell') + '</span><span class="grow"><b>' + esc(n.t) + '</b><small style="white-space:normal">' + esc(n.b) + '</small><small>' + ago(n.ts) + '</small></span></div>'; }).join('') + '</div><button type="button" class="btn ghost" data-act="notes-clear">Clear all</button>' : '<div class="empty">' + ic('bell') + '<div>No notifications yet.</div></div>');
+      var N = notes(); put('notes', N.map(function (n) { return Object.assign({}, n, { read: true }); })); bellDot();
+      sheet('Notifications', (!get('push', false) && 'Notification' in window && Notification.permission !== 'denied' ? '<button type="button" class="np-cta" data-act="push">' + ic('bell') + '<span><b>Phone notifications are off</b><small>Turn on to get alerts outside FinPi</small></span>' + ic('chev') + '</button>' : '') + (N.length ? '<div class="list anim">' + N.map(function (n) { return '<div class="li' + (n.read ? '' : ' unread') + '"><span class="ico nt ' + ntCls(n.ic) + '">' + ic(n.ic || 'bell') + '</span><span class="grow"><b>' + esc(n.t) + '</b><small style="white-space:normal">' + esc(n.b) + '</small><small>' + ago(n.ts) + '</small></span></div>'; }).join('') + '</div><button type="button" class="btn ghost" data-act="notes-clear">Clear all</button>' : '<div class="empty">' + ic('bell') + '<div>No notifications yet.</div></div>'));
     },
     'notes-clear': function () { put('notes', []); closeSheets(); bellDot(); },
     csv: function () {
-      var rows = [['date', 'type', 'direction', 'amount_pi', 'counterparty', 'narration', 'category', 'network', 'transaction_id']].concat(rcpts().map(function (r) { return [new Date(r.ts).toISOString(), r.kind, r.dir, r.amount, r.other || '', r.narr || '', r.cat || '', r.net || '', r.txid || '']; }));
+      var rows = [['date', 'type', 'direction', 'amount_pi', 'counterparty', 'narration', 'category', 'network', 'transaction_id']].concat(actRows().map(function (x) { return x[0]; }).map(function (r) { return [new Date(r.ts).toISOString(), r.kind, r.dir, r.amount, r.other || '', r.narr || '', r.cat || '', r.net || '', r.txid || '']; }));
       var csv = rows.map(function (r) { return r.map(function (x) { x = String(x == null ? '' : x); if (/^[=+\-@]/.test(x)) x = "'" + x; return /[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; }).join(','); }).join('\n');
       var blob = new Blob([csv], { type: 'text/csv' }), name = 'FinPi-activity-' + new Date().toISOString().slice(0, 10) + '.csv';
       var f = null; try { f = new File([blob], name, { type: 'text/csv' }); } catch (e) {}
       if (canShareFile(f)) return navigator.share({ files: [f], title: 'FinPi activity' }).catch(function () {});
       saveFile(blob, name, 'text/csv', 'activity file');
     },
-    name: function () {
-      var w = sheet('Name on receipts', '<p class="sh-sub">Shown on your receipts next to your @username. Stays on this phone.</p><input class="in" id="nm-i" maxlength="50" value="' + esc(get('name', '')) + '" placeholder="Your full name"><button type="button" class="btn" id="nm-go">Save</button>');
-      $('#nm-go', w).onclick = function () { put('name', $('#nm-i', w).value.trim()); closeSheets(); render(S.tab); toast('Saved'); };
-    },
+    name: function () { nameSheet(); },
     budget: function () {
-      var w = sheet('Monthly budget', '<p class="sh-sub">How much Pi do you plan to spend each month? FinPi shows your progress. Stays on this phone.</p><div class="amt"><input id="bg-i" type="number" inputmode="decimal" placeholder="0" value="' + (get('budget', 0) || '') + '"><span>π</span></div><div class="hint num" id="bg-c"></div><button type="button" class="btn" id="bg-go">Save budget</button>' + (get('budget', 0) ? '<button type="button" class="btn ghost" id="bg-rm">Remove budget</button>' : ''));
+      var w = sheet('Monthly budget', '<p class="sh-sub">Your monthly Pi spending limit.</p><div class="amt"><input id="bg-i" type="number" inputmode="decimal" placeholder="0" value="' + (get('budget', 0) || '') + '"><span>π</span></div><div class="hint num" id="bg-c"></div><button type="button" class="btn" id="bg-go">Save budget</button>' + (get('budget', 0) ? '<button type="button" class="btn ghost" id="bg-rm">Remove budget</button>' : ''));
       var i = $('#bg-i', w); i.oninput = function () { $('#bg-c', w).textContent = conv(+i.value); }; i.oninput();
       $('#bg-go', w).onclick = function () { var v = r7(i.value); if (!(v > 0)) return toast('Enter an amount'); put('budget', v); closeSheets(); render(S.tab); toast('Budget saved'); };
       var rm = $('#bg-rm', w); if (rm) rm.onclick = function () { put('budget', 0); closeSheets(); render(S.tab); };
     },
     push: function () {
       var sup = 'Notification' in window, perm = sup ? Notification.permission : 'unsupported', on = get('push', false);
-      var w = sheet('Phone notifications', '<p class="sh-sub">Get a phone alert when you receive Pi or a transfer is refunded. Alerts always appear inside FinPi too.</p>' +
+      var w = sheet('Notifications', '<p class="sh-sub">Alerts for payments, invoices, refunds and reminders.</p>' +
         '<div class="note ' + (perm === 'granted' ? 'ok' : perm === 'denied' || perm === 'unsupported' ? 'warn' : '') + '">' + ic('bell') + '<span>' + (perm === 'granted' ? 'Allowed on this phone.' : perm === 'denied' ? 'Blocked for FinPi. Allow notifications in your browser settings to turn them on.' : perm === 'unsupported' ? 'This browser does not support phone notifications. You will still see alerts in FinPi.' : 'Not allowed yet.') + '</span></div>' +
         (sup && perm !== 'denied' ? '<button type="button" class="btn" id="ps-on">' + (on && perm === 'granted' ? 'Turn off' : 'Turn on') + '</button>' : '') + (on && perm === 'granted' ? '<button type="button" class="btn ghost" id="ps-t">Send a test</button>' : ''));
       var b = $('#ps-on', w); if (b) b.onclick = function () {
@@ -1449,13 +1801,14 @@
       };
       var t = $('#ps-t', w); if (t) t.onclick = function () { addNote('bell', 'FinPi test', 'Notifications are working.', 'test-' + Date.now()); toast('Test sent'); };
     },
-    resolvepend: function () { window.fpResolvePending(); },
+    resolvepend: function () { window.fpResolvePending(); }, backup: function () { backupSheet(); }, travel: function () { curSheet(true); }, insights: function () { S.seg = 'ins'; go('activity'); }, repair: function () { repairSheet(); },
     security: function () {
-      sheet('Security center', '<div class="note ok">' + ic('shield') + '<span>FinPi never asks for your passphrase, never holds a balance for you and cannot move Pi from your wallet.</span></div>' +
-        '<div class="card" style="margin-top:12px"><h3>How transfers work</h3><p>You approve each payment in Pi’s own window. FinPi’s software then delivers it within seconds through Pi Network’s official payments, or refunds you automatically if delivery is impossible. Before any retry it checks the Pi blockchain, so nothing is ever paid twice. No person reviews, holds or reverses transfers.</p></div>' +
-        '<div class="card"><h3>Limits for everyone</h3><p>' + (S.cfg.max || S.cfg.daily ? (S.cfg.max ? 'Up to ' + S.cfg.max + ' π per transfer. ' : '') + (S.cfg.daily ? 'Up to ' + S.cfg.daily + ' π per person per day. ' : '') : 'No transfer limits: send any amount, any number of times. ') + 'Each transfer has a blockchain fee of ' + S.cfg.fee + ' π.</p></div>' +
-        '<div class="card"><h3>Stay safe</h3><p>• Only pay people and businesses you know.<br>• Check the @username and amount on the final screen.<br>• FinPi staff will never ask you to send Pi.<br>• A genuine receipt’s QR code checks out on the Pi blockchain.<br>• Never share your passphrase or secret key (it starts with S).</p></div>' +
-        '<p class="small muted" style="margin-top:12px">Found a security problem? Email ' + SUPPORT + '.</p>');
+      sheet('Trust center', '<div class="trust big-t">' + trustChips() + '</div>' +
+        '<div class="card" style="margin-top:12px"><h3>Payments</h3><p>Every transfer is processed through Pi Network’s official payments and delivered within seconds. If delivery is not possible, the Pi is refunded automatically. Each payment is checked on the Pi blockchain, so nothing is paid twice.</p></div>' +
+        '<div class="card"><h3>Limits and fees</h3><p>' + (S.cfg.max || S.cfg.daily ? (S.cfg.max ? 'Up to ' + S.cfg.max + ' π per transfer. ' : '') + (S.cfg.daily ? 'Up to ' + S.cfg.daily + ' π per Pioneer per day. ' : '') : 'No transfer limits. ') + 'Blockchain fee: ' + S.cfg.fee + ' π per transfer.</p></div>' +
+        '<div class="card"><h3>Your records</h3><p>Receipts verified on the Pi blockchain. History and business records backed up to your Pi account. Statements and reports for any period.</p></div>' +
+        '<div class="card"><h3>Good practice</h3><p>• Pay Pioneers and businesses you know.<br>• Check the @username and amount before you confirm.<br>• FinPi staff never ask you to send Pi.<br>• Keep your passphrase private.</p></div>' +
+        '');
     },
     supporter: function () {
       if (get('supporter', false)) return toast('You are already a Supporter. Thank you!');
@@ -1464,7 +1817,7 @@
       $('#sp-go', w).onclick = supporterPay;
     },
     status: function () { location.href = 'setup.html'; },
-    help: function () { sheet('Help & contact', '<p class="sh-sub">We reply within 30 days, usually much sooner.</p><a class="btn" href="mailto:' + SUPPORT + '?subject=FinPi%20help">' + ic('mail') + 'Email ' + SUPPORT + '</a><div class="card" style="margin-top:14px"><h3>Common questions</h3><p><b>Where is my Pi?</b> In your own Pi Wallet. FinPi never holds balances.<br><br><b>A transfer did not arrive.</b> FinPi keeps delivering automatically, or refunds you. You will be notified either way.<br><br><b>Can a transfer be reversed?</b> No. Delivered blockchain payments are final.</p></div>'); },
+    help: function () { sheet('Help & contact', '<p class="sh-sub">We reply within 30 days, usually much sooner.</p><a class="btn" href="mailto:' + SUPPORT + '?subject=FinPi%20help">' + ic('mail') + 'Email FinPi support</a><div class="card" style="margin-top:14px"><h3>Common questions</h3><p><b>Where is my Pi?</b> In your own Pi Wallet. FinPi never holds balances.<br><br><b>A transfer did not arrive.</b> FinPi keeps delivering automatically, or refunds you. You will be notified either way.<br><br><b>Can a transfer be reversed?</b> No. Delivered blockchain payments are final.</p></div>'); },
     signout: function () { S.user = null; S.token = null; registered = false; put('user', null); closeSheets(); $('#app').hidden = true; $('#landing').hidden = false; toast('Signed out'); }
   };
   function supporterPay() {
@@ -1489,8 +1842,11 @@
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-tab]'); if (t && !t.closest('.sh-wrap')) { if (t.dataset.seg) S.seg = t.dataset.seg; go(t.dataset.tab); return; }
     var s = e.target.closest('#view [data-seg]'); if (s) { S.seg = s.dataset.seg; render('activity'); return; }
-    var f = e.target.closest('[data-flt]'); if (f) { S.filter = f.dataset.flt; render('activity'); return; }
-    if (e.target.closest('[data-sort]')) { S.sort = S.sort === 'old' ? 'new' : 'old'; render('activity'); return; }
+    var f = e.target.closest('[data-flt]'); if (f) { S.filter = f.dataset.flt; S.page = 60; $$('[data-flt]').forEach(function (b) { b.classList.toggle('on', b === f); }); actPaint(); return; }
+    if (e.target.closest('[data-actper]')) { perSheet(); return; }
+    var pr = e.target.closest('[data-per]'); if (pr) { var was = S.per; S.per = pr.dataset.per; S.page = 60; if (S.per === 'custom' || was === 'custom') render('activity'); else { $$('[data-per]').forEach(function (b) { b.classList.toggle('on', b === pr); }); actPaint(); } return; }
+    if (e.target.closest('[data-sort]')) { sortSheet(); return; }
+    if (e.target.closest('[data-more]')) { S.page += 100; actPaint(); return; }
     var ol = e.target.closest('[data-older]'); if (ol) { hOlder(ol); return; }
     var mo = e.target.closest('[data-mon]'); if (mo) { S.month = Math.min(0, S.month + Number(mo.dataset.mon)); render('activity'); return; }
     var rc = e.target.closest('[data-rc]'); if (rc) { var ri = rc.dataset.rc; showRcpt(ri.charAt(0) === 'x' ? S.extra[+ri.slice(1)] : rcpts()[+ri]); return; }
@@ -1498,6 +1854,13 @@
     var a = e.target.closest('[data-act]'); if (a && A[a.dataset.act]) { A[a.dataset.act](a, e); }
   });
   document.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role="button"][data-act]')) { e.preventDefault(); e.target.click(); } });
+  var qT = null;
+  document.addEventListener('input', function (e) {
+    var t = e.target; if (!t || !t.id) return;
+    if (t.id === 'sv-q') { svcFilter(t.value); return; }
+    if (t.id === 'act-q') { clearTimeout(qT); qT = setTimeout(function () { S.q = t.value.slice(0, 80); S.page = 60; actPaint(); }, 160); }
+    else if (t.id === 'act-f' || t.id === 'act-t') { S[t.id === 'act-f' ? 'from' : 'to'] = t.value; S.page = 60; actPaint(); }
+  });
 
   /* ── start ── */
   function start() {
@@ -1510,10 +1873,15 @@
     checkPendingWallet(); checkPendingInApp();
     var hc = readHash(); if (hc) { pendingCode = hc; var lm = $('#ld-msg'); if (lm) { lm.style.color = 'var(--blue)'; lm.textContent = 'You opened a payment request. Sign in with Pi or explore to pay it.'; } }
     addEventListener('hashchange', function () { var c = readHash(); if (c) { if ($('#app').hidden) { pendingCode = c; } else openCode(c); } });
-    setInterval(function () { if (!document.hidden) { loadPrice(); sync(); checkPendingWallet(); checkPendingInApp(); checkRems(); } }, 60000);
+    var bgN = 0; setInterval(function () { if (!document.hidden) { loadPrice(); sync(); checkPendingWallet(); checkPendingInApp(); checkRems(); } else if (++bgN % 2 === 0) { sync(); checkRems(); } }, 60000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) { loadPrice(); sync(); checkPendingWallet(); checkPendingInApp(); checkRems(); } });
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
   }
-  window.FinPi = { S: S, render: render, sync: sync, showRcpt: showRcpt, sendSheet: sendSheet };
+  window.FinPi = { S: S, render: render, sync: sync, showRcpt: showRcpt, sendSheet: sendSheet,
+    kit: { HK: HK, P: P, A: A, T: T, get: get, put: put, esc: esc, ic: ic, toast: toast, sheet: sheet, closeSheets: closeSheets, copy: copy, fpi: fpi, conv: conv, money: money, rateIn: rateIn, curr: curr, short: short, r7: r7,
+      rcpts: rcpts, me: me, signedIn: signedIn, myTarget: myTarget, needTarget: needTarget, payLink: payLink, isG: isG, validG: validG, cName: cName, contacts: contacts, toLabel: toLabel,
+      shareText: shareText, shareImage: shareImage, shareLink: shareLink, shareFile: shareFile, saveFile: saveFile, canShareFile: canShareFile, makePdf: makePdf, fontsReady: fontsReady, addNote: addNote,
+      go: go, rerender: rerender, nType: nType, NTYPE: NTYPE, setName: setName, curSheet: curSheet, api: api, token: function () { return S.token; }, NETN: NETN, TEST: TEST, USER_RE: USER_RE, rcptTitle: rcptTitle } };
+  try { document.dispatchEvent(new Event('finpi:ready')); } catch (e) {}
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
