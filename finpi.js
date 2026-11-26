@@ -6,11 +6,36 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
   var K = 'fp_v1_';
-  function get(k, d) { try { var v = localStorage.getItem(K + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+  /* reads: large lists are parsed once and reused until they change, so screens open instantly */
+  var MEMO = {}, BIG = { rcpts: 1, inv: 1, cust: 1, prod: 1, notes: 1, recur: 1, contacts: 1, links: 1 };
+  function mirrorSoon() { try { if (typeof IDB === 'object' && IDB) { clearTimeout(IDB.t); IDB.t = setTimeout(mirror, 1500); } } catch (e) {} }
+  function get(k, d) {
+    try {
+      var v = localStorage.getItem(K + k); if (v === null) return d;
+      if (!BIG[k]) return JSON.parse(v);
+      var m = MEMO[k]; if (m && m.raw === v) return m.val.map(function (x) { return x && typeof x === 'object' ? Object.assign({}, x) : x; });
+      var val = JSON.parse(v); if (!Array.isArray(val)) return val;
+      MEMO[k] = { raw: v, val: val }; return val.map(function (x) { return x && typeof x === 'object' ? Object.assign({}, x) : x; });
+    } catch (e) { return d; }
+  }
+  addEventListener('storage', function () { MEMO = {}; });
+  /* second copy of your records in the phone's database, restored automatically if browser storage is cleared */
+  var IDB = { db: null, t: null };
+  function idb() { return new Promise(function (ok) { if (IDB.db) return ok(IDB.db); try { var q = indexedDB.open('finpi', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); }; q.onsuccess = function () { IDB.db = q.result; ok(IDB.db); }; q.onerror = function () { ok(null); }; } catch (e) { ok(null); } }); }
+  function mirror() {
+    idb().then(function (db) { if (!db) return; var snap = {}; for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf(K) === 0 && !/price|fx|errlog/.test(k)) snap[k] = localStorage.getItem(k); }
+      try { db.transaction('kv', 'readwrite').objectStore('kv').put({ ts: Date.now(), d: snap }, 'snap'); } catch (e) {} });
+  }
+  function restoreLocal() {
+    return idb().then(function (db) {
+      if (!db) return 0; return new Promise(function (ok) { try { var q = db.transaction('kv').objectStore('kv').get('snap'); q.onsuccess = function () { var v = q.result, n = 0; if (v && v.d) { Object.keys(v.d).forEach(function (k) { if (localStorage.getItem(k) === null) { try { localStorage.setItem(k, v.d[k]); n++; } catch (e) {} } }); } ok(n); }; q.onerror = function () { ok(0); }; } catch (e) { ok(0); } });
+    });
+  }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(function (p) { if (!p) navigator.storage.persist(); }).catch(function () {}); } catch (e) {}
   /* storage: if the phone's browser storage is full, the oldest receipts that are already backed up are trimmed
      (they stay in the server history) and the save is retried, so nothing new is ever lost */
   function put(k, v) {
-    try { localStorage.setItem(K + k, JSON.stringify(v)); if (k === 'name' || k === 'nameType') setTimeout(function () { try { HK.dirty.forEach(function (f) { f(); }); } catch (e) {} }, 0); return true; } catch (e) {}
+    try { localStorage.setItem(K + k, JSON.stringify(v)); mirrorSoon(); if (k === 'name' || k === 'nameType') setTimeout(function () { try { HK.dirty.forEach(function (f) { f(); }); } catch (e) {} }, 0); return true; } catch (e) {}
     try {
       ['errlog', 'price', 'fx', 'payers'].forEach(function (x) { if (x !== k) localStorage.removeItem(K + x); });
       var N = JSON.parse(localStorage.getItem(K + 'notes') || '[]'); if (k !== 'notes' && N.length > 15) localStorage.setItem(K + 'notes', JSON.stringify(N.slice(0, 15)));
@@ -20,7 +45,7 @@
       try {
         var R = k === 'rcpts' ? v : JSON.parse(localStorage.getItem(K + 'rcpts') || '[]');
         if (Array.isArray(R) && R.length > 20) { var cut = Math.max(20, Math.floor(R.length * keepF[i])), keep = R.slice(0, cut).concat(R.slice(cut).filter(function (r) { return !r.hs; })); if (k === 'rcpts') v = keep; else localStorage.setItem(K + 'rcpts', JSON.stringify(keep)); }
-        localStorage.setItem(K + k, JSON.stringify(v)); return true;
+        localStorage.setItem(K + k, JSON.stringify(v)); mirrorSoon(); return true;
       } catch (e2) {}
     }
     return false;
@@ -55,6 +80,25 @@
 
   /* ── icons (Feather, MIT) ── */
   var P = {
+    scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/>',
+    pos: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="16" y2="18"/>',
+    pin: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+    cart: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
+    idb: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 17c.6-1.8 2-2.7 3.5-2.7s2.9.9 3.5 2.7"/><line x1="15" y1="10" x2="19" y2="10"/><line x1="15" y1="14" x2="19" y2="14"/>',
+    report: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="18" x2="8" y2="14"/><line x1="12" y1="18" x2="12" y2="11"/><line x1="16" y1="18" x2="16" y2="15"/>',
+    scale: '<path d="M12 3v18M7 21h10M4 7h16"/><path d="M7 7l-3 6a3 3 0 0 0 6 0z"/><path d="M17 7l-3 6a3 3 0 0 0 6 0z"/>',
+    trend: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+    wallet2: '<path d="M20 7H5a2 2 0 0 1 0-4h13v4"/><path d="M3 5v14a2 2 0 0 0 2 2h15V7"/><circle cx="16" cy="14" r="1.5"/>',
+    plane: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>',
+    at: '<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/>',
+    userplus: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>',
+    book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+    sheet: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/>',
+    hash: '<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>',
+    target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+    pct: '<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+    exp: '<circle cx="12" cy="12" r="10"/><polyline points="8 12 12 16 16 12"/><line x1="12" y1="8" x2="12" y2="16"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
     home: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
     send: '<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>',
     req: '<line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/>',
@@ -151,7 +195,16 @@
   addEventListener('resize', vv); vv();
   document.addEventListener('focusin', function (e) { var t = e.target; if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && t.closest('.sh')) setTimeout(function () { try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (x) {} }, 300); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheets(); });
-  function api(path, body) { return fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' }).then(function (r) { return r.json(); }); }
+  /* network: every request has a time limit; read-only requests are retried once; a server error page never breaks the screen */
+  var SAFE = { list: 1, pull: 1, bget: 1, count: 1, check: 1, status: 1 };
+  function api1(path, body) {
+    var ctl = window.AbortController ? new AbortController() : null, tm = ctl ? setTimeout(function () { ctl.abort(); }, 20000) : null;
+    var o = body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' }; if (ctl) o.signal = ctl.signal;
+    return fetch(path, o).then(function (r) { clearTimeout(tm); return r.text().then(function (t) { try { return JSON.parse(t); } catch (e) { return { ok: false, error: r.status >= 500 ? 'FinPi is busy right now. Try again in a moment.' : 'Unexpected reply. Try again.' }; } }); }, function (e) { clearTimeout(tm); throw e; });
+  }
+  function api(path, body) {
+    var retry = !body || SAFE[body.a];
+    return api1(path, body).catch(function (e) { if (!retry || !navigator.onLine) throw e; return new Promise(function (ok) { setTimeout(ok, 1200); }).then(function () { return api1(path, body); }); }); }
   function copy(t) { try { navigator.clipboard.writeText(t).then(function () { toast('Copied'); }, function () { toast('Press and hold to copy'); }); } catch (e) { toast('Press and hold to copy'); } }
   function shareText(title, text) { if (navigator.share) navigator.share({ title: title, text: text }).catch(function () {}); else if (window.Pi && Pi.openShareDialog) { try { Pi.openShareDialog(title, text); } catch (e) { copy(text); } } else copy(text); }
   /* Saving and sharing files. Inside the Pi Browser a page cannot save files it made itself or share them as files,
@@ -175,7 +228,7 @@
       var img = /^image\//.test(type), w = sheet('Saved to your phone',
         '<p class="sh-sub">' + (img ? 'Your ' + esc(what) + ' image is in your phone’s <b>Downloads</b> and <b>Gallery</b>.' : 'Your ' + esc(what) + ' is in your phone’s <b>Downloads</b> folder.') + '</p>' +
         '<button type="button" class="btn" data-x="open">' + ic(img ? 'rcpt' : 'down') + (img ? 'Open the image' : 'Download again') + '</button>' +
-        '<p class="small muted" style="text-align:center;margin-top:10px">Not there? ' + (img ? 'Open the image, then press and hold it to save.' : 'Tap Download again.') + '</p>');
+        '<p class="small muted" style="text-align:center;margin-top:10px">Not there? ' + (img ? 'Open the image, then press and hold to save.' : 'Tap Download again.') + '</p>');
       $('[data-x="open"]', w).onclick = function () { if (img) location.href = d.page; else { var b = document.createElement('a'); b.href = url; b.download = d.name || name; document.body.appendChild(b); b.click(); b.remove(); } };
     }, function () { blobSave(blob, name); toast(what.charAt(0).toUpperCase() + what.slice(1) + ' saved to Downloads'); });
   }
@@ -193,7 +246,7 @@
   function shareImage(blob, name, title, text, short) {
     var f = null; try { f = new File([blob], name, { type: 'image/jpeg' }); } catch (e) {}
     var fallback = function () {
-      var wh = String(title || 'FinPi receipt').replace(/^FinPi /, '').toLowerCase();
+      var wh = String(title || 'FinPi receipt').replace(/^FinPi /, ''); wh = wh.charAt(0).toLowerCase() + wh.slice(1);
       saveFile(blob, name, 'image/jpeg', wh, true);
       var w = sheet('Share the ' + wh + ' image', '<p class="sh-sub">The ' + esc(wh) + ' image is saved to your phone’s <b>Gallery</b>. Open WhatsApp (or any app), tap attach, choose <b>Gallery</b> and pick the FinPi ' + esc(wh) + '.</p>' +
         '<button type="button" class="btn" data-x="lk">' + ic('link') + 'Share as a link instead</button>');
@@ -235,6 +288,11 @@
     h.innerHTML = '<span class="ico nt ' + ntCls(icn) + '">' + ic(icn || 'bell') + '</span><span class="grow"><b>' + esc(t) + '</b><small>' + esc(b) + '</small></span>';
     h.classList.remove('on'); void h.offsetWidth; h.classList.add('on'); clearTimeout(huT); huT = setTimeout(function () { h.classList.remove('on'); }, 4200);
   }
+  function netBar() {
+    var b = $('#netbar'); if (navigator.onLine) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement('div'); b.id = 'netbar'; b.setAttribute('role', 'status'); b.textContent = 'Offline · FinPi updates when you reconnect'; document.body.insertBefore(b, document.body.firstChild); }
+  }
+  addEventListener('offline', netBar); addEventListener('online', function () { netBar(); try { loadPrice(true); sync(); } catch (e) {} });
   function bellDot() { var d = $('#bell-dot'); if (d) d.hidden = !notes().some(function (x) { return !x.read; }); }
 
   /* ── receipts ── */
@@ -243,7 +301,13 @@
   function saveRcpt(r) {
     var R = rcpts(); if (r.txid && R.some(function (x) { return x.txid === r.txid; })) return false;
     var c = curr(); r.usd = r.usd || rateIn('USD'); r.lc = c; r.lr = rateIn(c); r.net = r.net || NETN; r.ts = r.ts || Date.now(); r.saved = Date.now();
-    R.unshift(r); R.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); put('rcpts', R.slice(0, LCAP)); try { remMatch(r); } catch (e) {} HK.rcpt.forEach(function (f) { try { f(r); } catch (e) {} }); hSoon(); return true;
+    R.unshift(r); R.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); put('rcpts', R.slice(0, LCAP)); try { remMatch(r); } catch (e) {} HK.rcpt.forEach(function (f) { try { f(r); } catch (e) {} }); if (r.dir === 'out' && Date.now() - r.ts < 864e5) { try { budgetCheck(); } catch (e) {} } hSoon(); return true;
+  }
+  // monthly budget: one notice at 80% and one when it is passed
+  function budgetCheck() {
+    var b = get('budget', 0); if (!(b > 0)) return; var s0 = monthStats(0), m = new Date(), key = m.getFullYear() + '-' + (m.getMonth() + 1), st = get('budN', {}) || {};
+    var lvl = s0.out >= b ? 2 : s0.out >= b * 0.8 ? 1 : 0; if (!lvl || (st.k === key && st.l >= lvl)) return;
+    put('budN', { k: key, l: lvl }); addNote('warn', lvl === 2 ? 'Monthly budget passed' : 'Monthly budget 80% used', fpi(r7(s0.out)) + ' of ' + fpi(b) + ' π spent this month', 'bud-' + key + '-' + lvl);
   }
   /* ── full history, backed up on the server for this Pi account (never lost, no size limit) ── */
   function hKey(r) { var t = String(r.txid || '').toLowerCase(); if (/^[a-f0-9]{64}$/.test(t)) return 'tx:' + t + (r.kind === 'refund' ? ':r' : '') + (r.dir ? ':' + r.dir : ''); var f = String(r.ref || r.pid || ''); return f ? 'ref:' + f : ''; }
@@ -292,24 +356,40 @@
     var sub = r.usd ? '≈ ' + money(r.amount * r.usd, 'USD') + (r.lr && r.lc && r.lc !== 'USD' ? ' · ' + money(r.amount * r.lr, r.lc) : '') + ' at payment time' : '';
     var mine = (get('name', '') || '@' + (r.me || me())) + (get('name', '') && (r.me || me()) ? ' (@' + (r.me || me()) + ')' : '');
     var base = { amount: fpi(r.amount), sub: sub, verify: verifyUrl(r), status: { text: '✓  Verified on the Pi blockchain', ok: true } };
-    if (r.kind === 'refund') return Object.assign(base, { title: 'Automatic refund', rows: [['From', 'FinPi app wallet (automatic)'], ['To', mine], ['Reason', 'Your transfer to ' + r.other + ' could not be delivered'], ['Narration', r.narr || '—'], ['Pi rate', rateTxt(r)], ['Reference', r.pid]].concat(when, [['Network', r.net], ['Your address', r.addr, 1], ['Transaction ID', r.txid, 1]]), thanks: 'Refunded by FinPi', note: 'Refunded automatically under FinPi’s published rules, with no manual decision.' });
+    if (r.kind === 'refund') return Object.assign(base, { title: 'Automatic refund', rows: [['From', 'FinPi app wallet (automatic)'], ['To', mine], ['Reason', 'Your transfer to ' + r.other + ' could not be delivered'], ['Narration', r.narr || '—'], ['Pi rate', rateTxt(r)], ['Reference', r.pid]].concat(when, [['Network', r.net], ['Your address', r.addr, 1], ['Transaction ID', r.txid, 1]]), thanks: 'Refunded by FinPi', note: 'Refunded automatically.' });
     if (r.kind === 'supporter') return Object.assign(base, { title: 'Payment receipt', status: { text: '✓  Completed', ok: true }, rows: [['Paid by', mine], ['For', 'FinPi Supporter badge'], ['Pi rate', rateTxt(r)], ['Payment ID', r.pid, 1]].concat(when, [['Network', r.net], ['Transaction ID', r.txid, 1]]), thanks: 'Thank you for supporting FinPi', note: 'The badge supports the app. It gives no reward or financial return.' });
     var rate = rateTxt(r);
     if (r.kind === 'wallet') {
       var wi = r.dir === 'in';
       return Object.assign(base, { title: wi ? 'Payment received' : 'Payment receipt',
         rows: [['From', wi ? short(r.from || r.addr) : mine], ['To', wi ? mine : short(r.addr)], ['Narration', r.narr || '—'], ['Category', wi ? '' : r.cat], ['Value', valTxt(r)], ['Pi rate', rate], ['Paid with', 'Pi Wallet'], ['Reference', r.pid]].concat(when, [['Network', r.net], ['Sender address', r.from, 1], ['Recipient address', wi ? r.to : r.addr, 1], ['Transaction ID', r.txid, 1]]),
-        thanks: wi ? 'Received · verified by FinPi' : 'Paid · verified by FinPi', note: 'Paid from Pi Wallet and verified by FinPi on the public Pi blockchain. Scan the code to check it.' });
+        thanks: wi ? 'Received · verified by FinPi' : 'Paid · verified by FinPi', note: 'Paid from Pi Wallet · verified on the Pi blockchain.' });
     }
     var inn = r.dir === 'in', fee = inn ? 0 : (r.fee || 0.01), A = r.tk === 'address';
     return Object.assign(base, { title: inn ? 'Transfer received' : 'Transfer receipt',
       rows: [['From', inn ? r.other : mine], ['To', inn ? mine : (A ? 'Pi wallet address' : r.other)], ['Narration', r.narr || '—'], ['Category', inn ? '' : r.cat], ['Value', valTxt(r)], ['Pi rate', rate]].concat(fee ? [['Blockchain fee', fpi(fee) + ' π'], ['Total paid', fpi(r7(Number(r.amount) + fee)) + ' π']] : [], [['Reference', r.pid]], when, [['Network', r.net], [inn ? 'Your address' : 'Recipient address', r.addr, 1], ['Transaction ID', r.txid, 1]]),
-      thanks: inn ? 'Received with FinPi' : 'Sent with FinPi', note: (A ? 'Paid in FinPi and delivered automatically to the wallet address on the Pi blockchain.' : 'Paid in FinPi and delivered automatically through Pi Network’s official payments.') + ' Scan the code to check it on the Pi blockchain.' });
+      thanks: inn ? 'Received with FinPi' : 'Sent with FinPi', note: (A ? 'Paid in FinPi · delivered to the wallet address on the Pi blockchain.' : 'Paid in FinPi · delivered through Pi Network payments.') + ' Scan the code to check it on the Pi blockchain.' });
   }
   function fontsReady() { try { return document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(function (r) { setTimeout(r, 1500); })]) : Promise.resolve(); } catch (e) { return Promise.resolve(); } }
   function rcName(r) { var d = new Date(r.ts); return 'FinPi-receipt-' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '-' + String(r.txid || r.pid || Date.now()).slice(0, 8) + '.jpg'; }
   function rcType(r) { return r.kind === 'refund' ? 'Automatic refund' : r.kind === 'supporter' ? 'Supporter payment' : r.kind === 'wallet' ? (r.dir === 'in' ? 'Payment received' : 'Payment sent · Pi Wallet') : r.dir === 'in' ? 'Transfer received' : 'Transfer sent'; }
   /* Transaction details: every fact about the payment, then share or download the receipt image */
+  /* animated payment status: a drawn check (succeeded), a turning ring (pending), a drawn cross (not completed) */
+  function stMark(kind) {
+    var C = '<circle class="sa-c" cx="40" cy="40" r="34"/>';
+    if (kind === 'ok' || kind === 'in') return '<svg class="sa ok" viewBox="0 0 80 80" aria-hidden="true">' + C + '<path class="sa-d" d="M25 41l10 10 21-22"/></svg>';
+    if (kind === 'pending') return '<svg class="sa pend" viewBox="0 0 80 80" aria-hidden="true"><circle class="sa-t" cx="40" cy="40" r="34"/><circle class="sa-c" cx="40" cy="40" r="34"/><path class="sa-h" d="M40 24v17l11 7"/></svg>';
+    if (kind === 'refund') return '<svg class="sa rf" viewBox="0 0 80 80" aria-hidden="true">' + C + '<path class="sa-d" d="M30 32h17a10 10 0 0 1 0 20H33M30 32l7-7M30 32l7 7"/></svg>';
+    return '<svg class="sa bad" viewBox="0 0 80 80" aria-hidden="true">' + C + '<path class="sa-d" d="M29 29l22 22M51 29L29 51"/></svg>';
+  }
+  function payState(w, kind, title, sub, reset) {
+    var box = $('.pst', w); if (!box) { box = document.createElement('div'); var big = $('.big', w); if (big) big.parentNode.insertBefore(box, big.nextSibling); else $('.sh', w).appendChild(box); }
+    box.className = 'pst ' + kind; box.setAttribute('role', 'status');
+    box.innerHTML = stMark(kind) + '<b class="pst-t">' + esc(title) + '</b>' + (sub ? '<span class="pst-s">' + sub + '</span>' : '') + (reset ? '<button type="button" class="btn soft pst-r" data-act="repair">' + ic('refresh') + 'Reset now</button>' : '');
+    try { if (navigator.vibrate) navigator.vibrate(kind === 'ok' ? [40, 40, 90] : kind === 'pending' ? 30 : [120, 60, 120]); } catch (e) {}
+  }
+  var PEND_MSG = 'A payment is still pending. Go to Profile, tap Reset, then try again.';
+  function noFunds(m) { return /insufficient|not enough|balance is too low|underfunded|low balance|funds/i.test(m || ''); }
   function showRcpt(r) {
     if (!r) return;
     var inn = r.dir === 'in', v = verifyUrl(r), fee = !inn && r.kind === 'transfer' ? (r.fee || 0.01) : 0, d = new Date(r.ts);
@@ -332,7 +412,7 @@
     HK.rows.forEach(function (f) { try { f(rows, r); } catch (e) {} });
     var cls = r.kind === 'refund' ? 'rf' : r.kind === 'supporter' ? 'sp' : inn ? 'in' : '';
     var w = sheet('Transaction details',
-      '<div class="txd"><span class="ico ' + cls + '">' + ic(r.kind === 'refund' ? 'undo' : r.kind === 'supporter' ? 'heart' : inn ? 'req' : 'send') + '</span><p class="small">' + esc(rcType(r)) + '</p>' +
+      '<div class="txd"><div class="txd-st">' + stMark(r.kind === 'refund' ? 'refund' : 'ok') + '<b>' + (r.kind === 'refund' ? 'Payment refunded' : inn ? 'Payment received' : 'Payment succeeded') + '</b></div><p class="small">' + esc(rcType(r)) + '</p>' +
       '<div class="txd-v num' + (inn ? ' pos' : '') + '">' + (inn ? '+' : '−') + fpi(r.amount) + ' π</div>' +
       (r.usd ? '<p class="small muted num">≈ ' + money(r.amount * r.usd, 'USD') + (r.lr && r.lc && r.lc !== 'USD' ? ' · ' + money(r.amount * r.lr, r.lc) : '') + ' at payment time</p>' : '') +
       '<span class="txd-ok">' + ic('check', 'width:15px;height:15px') + 'Verified on the Pi blockchain</span></div>' +
@@ -416,7 +496,7 @@
     }
     var p = authP;
     return new Promise(function (ok) {
-      var slow = setTimeout(function () { if (!silent) msg.textContent = 'Still connecting to Pi… you will be signed in as soon as Pi answers. If nothing happens, tap Sign in again.'; reset(); }, 15000);
+      var slow = setTimeout(function () { if (!silent) msg.textContent = 'Connecting to Pi… If nothing happens, tap Sign in again.'; reset(); }, 15000);
       p.then(function (res) {
         clearTimeout(slow);
         if (res) msg.textContent = ''; else if (!silent) msg.textContent = 'Sign-in was cancelled or failed. Please try again.';
@@ -549,7 +629,7 @@
           if (!d.ok) { h.innerHTML = '<span class="bad">' + esc(d.error || 'Could not check right now.') + '</span>'; return; }
           if (d.exists && d.username.toLowerCase() === me().toLowerCase()) { h.innerHTML = '<span class="bad">That is you.</span>'; return; }
           if (d.exists) { ok = d.username; h.innerHTML = '<span class="ok">✓ @' + esc(d.username) + ' is on FinPi</span>'; }
-          else h.innerHTML = '<span class="bad">@' + esc(name) + ' has not used FinPi yet.' + (addrOn ? ' You can send to their wallet address instead.' : ' Ask them to open FinPi and sign in with Pi once.') + '</span>';
+          else h.innerHTML = '<span class="bad">@' + esc(name) + ' has not used FinPi yet.' + (addrOn ? ' You can send to their wallet address instead.' : ' They need to sign in to FinPi once to receive by @username.') + '</span>';
         }).catch(function () { h.textContent = 'No connection. Try again.'; });
       }, 400);
     };
@@ -580,11 +660,11 @@
       var v = r7(a.value), x = $('#s-x', w).value.trim(), btn = this, to = ok;
       if (!to) return toast(kind === 'addr' ? 'Enter a valid Pi wallet address' : 'Enter the Pioneer’s @username');
       if (!(v >= 0.01)) return toast('The smallest payment is 0.01 π');
-      if (!x) return toast('Add a narration: what is this payment for?');
+      if (!x) return toast('What is this payment for?');
       if (isG(to) && !S.cfg.enabled) return review(to, v, x, cat, { wallet: true, first: get('payees', []).indexOf(to) < 0 });
       if (!signedIn()) { needSignIn('Sign in with Pi to send inside FinPi.'); return; }
       if (S.cfg.max && v > S.cfg.max) return toast('The most you can send at once is ' + S.cfg.max + ' π');
-      if (!x) return toast('Add a narration: what is this payment for?');
+      if (!x) return toast('What is this payment for?');
       btn.disabled = true; btn.textContent = 'Checking…';
       api('/transfer', isG(to) ? { a: 'check', accessToken: S.token, addr: to, amt: v } : { a: 'check', accessToken: S.token, to: to, amt: v }).then(function (d) {
         btn.disabled = false; btn.textContent = 'Continue';
@@ -594,25 +674,98 @@
     };
     if (!pre.u) setTimeout(function () { (kind === 'addr' ? g : u).focus(); }, 120);
   }
+  /* ── protection: trusted recipients, community scam reports and a risk check before every payment ── */
+  function contactOf(to) { var l = String(to || '').replace(/^@/, '').toLowerCase(); return contacts().filter(function (x) { return x.to.replace(/^@/, '').toLowerCase() === l; })[0] || null; }
+  function isTrusted(to) { var c = contactOf(to); return !!(c && c.trusted); }
+  function lev(a, b) { if (Math.abs(a.length - b.length) > 1) return 9; var d = []; for (var i = 0; i <= a.length; i++) { d[i] = [i]; } for (var j = 0; j <= b.length; j++) d[0][j] = j; for (i = 1; i <= a.length; i++) for (j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length]; }
+  // an address or username that looks like one you know but is not the same: a common trick
+  function lookAlike(to) {
+    var A = isG(to), known = contacts().map(function (c) { return { n: c.name, to: c.to }; }).concat(get('payees', []).map(function (p) { return { n: toLabel(p), to: p }; }));
+    for (var i = 0; i < known.length; i++) {
+      var k = known[i].to; if (!k || k.toLowerCase() === String(to).toLowerCase()) continue;
+      if (A && isG(k) && k.slice(0, 4) === to.slice(0, 4) && k.slice(-4) === to.slice(-4)) return known[i];
+      if (!A && !isG(k) && to.length > 3 && lev(k.replace(/^@/, '').toLowerCase(), String(to).toLowerCase()) === 1) return known[i];
+    }
+    return null;
+  }
+  function riskCheck(to, amt, o, box, done) {
+    var R = [], A = isG(to), tr = isTrusted(to);
+    function add(lv, t) { R.push([lv, t]); }
+    if (tr) add(0, 'Trusted recipient'); else if (!o.first) add(0, 'You have paid ' + (A ? 'this address' : '@' + to) + ' before'); else add(1, 'First payment to ' + (A ? 'this address' : '@' + to));
+    var la = lookAlike(to); if (la) add(2, 'Looks like ' + la.n + ' but it is a different ' + (A ? 'address' : 'username'));
+    var out = rcpts().filter(function (r) { return r.dir === 'out' && r.kind !== 'refund' && Date.now() - r.ts < 90 * 864e5; }), mx = Math.max.apply(null, out.map(function (r) { return Number(r.amount); }).concat([0]));
+    if (out.length >= 3 && amt > Math.max(10, mx * 3)) add(1, 'Much larger than your usual payments');
+    var b = get('budget', 0); if (b > 0) { var sp = monthStats(0).out; if (sp + amt > b) add(1, 'This goes over your monthly budget'); }
+    function paint(rep) {
+      var L = R.slice(); if (rep) L.splice(1, 0, rep);
+      var hi = L.some(function (x) { return x[0] === 2; }), mid = L.some(function (x) { return x[0] === 1; }), lvl = hi ? 'high' : mid ? 'mid' : 'low';
+      box.className = 'risk ' + lvl;
+      box.innerHTML = '<div class="risk-h"><b>Payment risk check</b><span class="risk-l">' + (hi ? 'High risk' : mid ? 'Check carefully' : 'Low risk') + '</span></div>' +
+        L.map(function (x) { return '<div class="risk-r r' + x[0] + '">' + ic(x[0] === 0 ? 'check' : 'warn') + '<span>' + esc(x[1]) + '</span></div>'; }).join('') +
+        '<button type="button" class="lnk risk-rep" data-rr>Report this ' + (A ? 'address' : 'username') + '</button>';
+      $('[data-rr]', box).onclick = function () { reportSheet(to); };
+      done(lvl);
+    }
+    paint([1, 'Checking scam reports…']);
+    api('/report?k=' + encodeURIComponent(to)).then(function (d) {
+      if (!d || !d.ok) return paint([1, 'Scam reports could not be checked']);
+      // a warning appears only once 50 different Pioneers have reported it
+      paint(d.flagged ? [2, 'Reported as a scam by ' + d.n + ' Pioneers'] : [0, 'No scam warnings']);
+    }).catch(function () { paint([1, 'Scam reports could not be checked']); });
+  }
+  var RREASON = [['scam', 'Scam or fraud'], ['nodelivery', 'Paid, nothing delivered'], ['impersonation', 'Pretends to be someone else'], ['fake', 'Fake receipt or payment'], ['other', 'Other']];
+  function reportSheet(pre) {
+    var why = 'scam';
+    var w = sheet('Report a scam', '<p class="sh-sub">Reports help protect every Pioneer. A warning is shown once 50 different Pioneers report the same address or username.</p>' +
+      '<label class="l" for="rp-k">@username or Pi wallet address</label><textarea class="in num" id="rp-k" rows="2" maxlength="60" autocapitalize="none" spellcheck="false" style="font-size:14px;resize:none" placeholder="@username or G…">' + esc(pre ? (isG(pre) ? pre : '@' + pre) : '') + '</textarea>' +
+      '<label class="l">What happened?</label><div class="chips" id="rp-r">' + RREASON.map(function (x) { return '<button type="button" class="chip' + (x[0] === why ? ' on' : '') + '" data-rw="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="hint" id="rp-h"></div><button type="button" class="btn danger" id="rp-go">' + ic('warn') + 'Send report</button>', { stack: true });
+    $$('[data-rw]', w).forEach(function (b) { b.onclick = function () { why = b.dataset.rw; $$('[data-rw]', w).forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
+    $('#rp-go', w).onclick = function () {
+      var k = $('#rp-k', w).value.replace(/\s/g, ''), bt = this;
+      if (!(isG(k.toUpperCase()) && validG(k.toUpperCase())) && !USER_RE.test(k.replace(/^@/, ''))) return toast('Enter a valid @username or Pi wallet address');
+      if (!signedIn()) return needSignIn('Sign in with Pi to send a report.');
+      bt.disabled = true;
+      api('/report', { a: 'report', accessToken: S.token, k: isG(k.toUpperCase()) ? k.toUpperCase() : k, reason: why }).then(function (d) {
+        bt.disabled = false; if (!d || !d.ok) return toast((d && d.error) || 'Could not send the report. Try again.');
+        var c = contactOf(k); if (c && c.trusted) put('contacts', contacts().map(function (x) { if (x === c || x.to === c.to) x.trusted = false; return x; }));
+        w.remove(); toast('Report sent. Thank you for protecting the community.');
+      }).catch(function () { bt.disabled = false; toast('No connection. Try again.'); });
+    };
+  }
+  function trustedSheet() {
+    var L = contacts().filter(function (c) { return c.trusted; });
+    var w = sheet('Trusted recipients', '<p class="sh-sub">Payments to trusted recipients are marked safe in the risk check. Add only people and businesses you know.</p>' +
+      '<div class="list">' + (L.length ? L.map(function (c) { return '<button type="button" class="li" data-tp="' + esc(c.to) + '"><span class="ico in">' + ic('shield') + '</span><span class="grow"><b>' + esc(c.name) + '</b><small class="num">' + esc(toLabel(c.to)) + '</small></span><span class="go">' + ic('chev') + '</span></button>'; }).join('') : '<div class="empty">' + ic('shield') + '<div>No trusted recipients yet.</div></div>') + '</div>' +
+      '<button type="button" class="btn" data-x="add">' + ic('plus') + 'Add trusted recipient</button>');
+    $$('[data-tp]', w).forEach(function (b) { b.onclick = function () { var all = contacts(), i = -1; all.forEach(function (c, k) { if (c.to === b.dataset.tp) i = k; }); contactEdit(i); }; });
+    $('[data-x="add"]', w).onclick = function () { contactEdit(-1); setTimeout(function () { var t = $('#ct-tr'); if (t) t.checked = true; }, 50); };
+  }
   function review(to, amt, narr, cat, o) {
     var A = isG(to), warn = [], lc = String(to).toLowerCase();
     var dup = rcpts().filter(function (r) { return r.dir === 'out' && r.kind !== 'refund' && Date.now() - (r.ts || 0) < 30 * 60e3 && Math.abs(Number(r.amount) - amt) < 1e-7 && (A ? r.addr === to : String(r.other || '').toLowerCase() === '@' + lc); })[0]
       || pendingList().filter(function (q) { return String(q.to).toLowerCase() === lc && Math.abs(Number(q.amt) - amt) < 1e-7; })[0];
     if (dup) warn.push('<div class="note warn">' + ic('warn') + '<span>You already sent <b>' + fpi(amt) + ' π</b> to ' + esc(toLabel(to)) + ' at ' + new Date(dup.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '. Check this is not a repeat payment.</span></div>');
     if (A) warn.push('<div class="note warn">' + ic('warn') + '<span>You are sending to a <b>wallet address</b>. Check every character with the person. Pi sent to a wrong address cannot be recovered.</span></div>');
-    if (o.first) warn.push('<div class="note warn">' + ic('warn') + '<span>First time paying ' + (A ? 'this address' : '<b>@' + esc(to) + '</b>') + '. Only send to people and businesses you know and trust. FinPi staff will never ask you to send Pi.</span></div>');
+    if (o.first) warn.push('<div class="note gray">' + ic('shield') + '<span>FinPi staff will never ask you to send Pi.</span></div>');
     warn.push('<div class="note gray">' + ic('info') + '<span>Blockchain payments cannot be reversed.</span></div>');
     var w = sheet('Check before you send',
       '<div class="big"><div class="v">' + fpi(amt) + ' π</div><div class="c">' + esc(conv(amt)) + '</div><div class="w">To ' + esc(toLabel(to)) + '</div></div>' +
       '<div class="sum">' + (A ? '<div style="display:block"><span>To wallet address</span><b class="num" style="display:block;text-align:left;margin-top:4px;font-size:13px;overflow-wrap:anywhere">' + esc(to) + '</b></div>' : '<div><span>To</span><b class="t">@' + esc(to) + '</b></div>') +
       '<div><span>For</span><b class="t">' + esc(narr) + '</b></div>' + (cat ? '<div><span>Category</span><b class="t">' + esc(cat) + '</b></div>' : '') +
       '<div><span>They receive</span><b>' + fpi(amt) + ' π</b></div><div><span>' + (o.wallet ? 'Network fee (Pi Wallet)' : 'Blockchain fee') + '</span><b>' + S.cfg.fee + ' π</b></div><div class="tot"><span>You pay</span><b>' + fpi(r7(amt + S.cfg.fee)) + ' π</b></div></div>' +
+      '<div class="risk" id="rv-risk"></div>' +
+      (!isTrusted(to) ? '<label class="tg rt-tg"><input type="checkbox" id="rv-tr"><span>Save to trusted recipients</span></label>' : '') +
+      '<label class="tg rt-tg" id="rv-ackw" hidden><input type="checkbox" id="rv-ack"><span>I understand the risk and still want to pay</span></label>' +
       '<div style="margin-top:12px">' + warn.join('') + '</div>' +
       (A && (o.wallet || !S.cfg.enabled) ? '<button type="button" class="btn" id="rv-w">' + ic('card') + 'Continue in Pi Wallet</button>'
         : '<button type="button" class="btn" id="rv-ok">' + ic('lock') + 'Confirm and pay</button>') +
       '<button type="button" class="btn ghost" id="rv-ed">Edit</button>');
-    var ok1 = $('#rv-ok', w); if (ok1) ok1.onclick = function () { if (!window.Pi || !initPi()) return toast('Open FinPi in the Pi Browser to pay inside FinPi'); pay(to, amt, narr, cat); };
-    var ok2 = $('#rv-w', w); if (ok2) ok2.onclick = function () { walletPay(to, amt, narr, cat); };
+    var risk = 'low';
+    riskCheck(to, amt, o, $('#rv-risk', w), function (l) { risk = l; var ak = $('#rv-ackw', w); if (ak) ak.hidden = l !== 'high'; var tt = $('#rv-tr', w); if (tt && l === 'high') { tt.checked = false; tt.closest('label').hidden = true; } });
+    function gate() { if (risk === 'high' && !$('#rv-ack', w).checked) { toast('Tick the box to confirm you understand the risk'); return false; } var tt = $('#rv-tr', w); if (tt && tt.checked) { var L2 = contacts().filter(function (x) { return x.to.toLowerCase() !== String(to).toLowerCase(); }); L2.push({ name: toLabel(to), to: to, trusted: true }); L2.sort(function (a, b) { return a.name.localeCompare(b.name); }); put('contacts', L2.slice(0, 200)); } return true; }
+    var ok1 = $('#rv-ok', w); if (ok1) ok1.onclick = function () { if (!gate()) return; if (!window.Pi || !initPi()) return toast('Open FinPi in the Pi Browser to pay inside FinPi'); pay(to, amt, narr, cat); };
+    var ok2 = $('#rv-w', w); if (ok2) ok2.onclick = function () { if (!gate()) return; walletPay(to, amt, narr, cat); };
     $('#rv-ed', w).onclick = function () { sendSheet({ u: to, a: amt, x: narr, cat: cat }); };
   }
   function pay(to, amt, narr, cat) {
@@ -630,18 +783,19 @@
       var pl = get('payees', []).filter(function (x) { return x.toLowerCase() !== to.toLowerCase(); }); pl.unshift(to); put('payees', pl.slice(0, 12));
       addNote('send', 'Transfer delivered', fpi(amt) + ' π to ' + lab + ' · ' + narr, 'out-' + row.pid);
       step(4, '✓ Delivered to ' + esc(lab) + ' and recorded on the Pi blockchain.', 'ok');
+      payState(w, 'ok', 'Payment succeeded!', fpi(amt) + ' π delivered to ' + esc(lab));
       var b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.innerHTML = ic('rcpt') + 'View receipt';
       b.onclick = function () { var r = rcpts().filter(function (x) { return x.txid === row.txid; })[0]; showRcpt(r); };
       var d2 = document.createElement('button'); d2.type = 'button'; d2.className = 'btn ghost'; d2.textContent = 'Done'; d2.onclick = function () { closeSheets(); render(S.tab); };
       var sh = $('.sh', w); if (sh) { sh.appendChild(b); sh.appendChild(d2); }
     }
-    function refunded(row) { put('ipend', get('ipend', []).filter(function (x) { return x.pid !== row.pid; })); saveRefund(row); step(3, '↩ This transfer could not be delivered, so ' + fpi(amt) + ' π was refunded to you automatically on the Pi blockchain.', 'err'); }
+    function refunded(row) { put('ipend', get('ipend', []).filter(function (x) { return x.pid !== row.pid; })); saveRefund(row); step(3, '↩ This transfer could not be delivered, so ' + fpi(amt) + ' π was refunded to you automatically on the Pi blockchain.', 'err'); payState(w, 'refund', 'Payment refunded', fpi(amt) + ' π is back in your wallet.'); }
     try {
       Pi.createPayment({ amount: r7(amt + S.cfg.fee), memo: ('FinPi transfer to ' + lab).slice(0, 60), metadata: A ? { type: 'transfer', addr: to, amt: amt, narr: narr } : { type: 'transfer', to: to, amt: amt, narr: narr } }, {
         onReadyForServerApproval: function (pid) {
           var pend = get('pend', {}); pend[pid] = { cat: cat, to: to, amt: amt, narr: narr, ts: Date.now() }; put('pend', pend);
           curPid = pid;
-          api('/approve', { paymentId: pid }).then(function (d) { if (d && d.approved === false) { refused = true; dropPending(pid); step(1, '✕ ' + esc(d.error || 'This payment could not be sent.') + (/Nothing was charged/.test(d.error || '') ? '' : ' Nothing was charged.'), 'err'); } }).catch(function () {});
+          api('/approve', { paymentId: pid }).then(function (d) { if (d && d.approved === false) { refused = true; dropPending(pid); step(1, '✕ ' + esc(d.error || 'This payment could not be sent.') + (/Nothing was charged/.test(d.error || '') ? '' : ' Nothing was charged.'), 'err'); payState(w, 'fail', 'Payment not completed', 'No Pi was moved.'); } }).catch(function () {});
         },
         onReadyForServerCompletion: function (pid, txid) {
           var ip = get('ipend', []).filter(function (x) { return x.pid !== pid; }); ip.unshift({ pid: pid, ts: Date.now() }); put('ipend', ip.slice(0, 20));
@@ -655,16 +809,17 @@
               api('/transfer', { a: 'payout', paymentId: pid }).then(function (x) {
                 if (x && x.ok && x.row && x.row.txid) return finish(x.row);
                 if (x && x.refunded && x.row) return refunded(x.row);
-                if (++tries < 40) { step(3, 'Delivering to ' + esc(lab) + '… You can close this screen: your receipt will appear in Activity.'); setTimeout(retry, 8000); }
-                else step(3, 'Your payment is processing. Your receipt will appear in Activity as soon as it is delivered.');
+                if (++tries < 40) { step(3, 'Delivering to ' + esc(lab) + '… The receipt will appear in Activity.'); if (tries === 2) payState(w, 'pending', 'Payment pending', 'FinPi is finishing it automatically. Your receipt appears in Activity.'); setTimeout(retry, 8000); }
+                else { step(3, 'Payment processing. The receipt will appear in Activity once delivered.'); payState(w, 'pending', 'Payment pending', 'If it stays pending, go to Profile and tap Reset.', true); }
               }).catch(function () { if (++tries < 40) setTimeout(retry, 8000); });
             })();
-          }).catch(function () { step(2, 'Connection problem. Your payment is recorded; FinPi finishes it automatically when you reopen the app.', 'err'); });
+          }).catch(function () { step(2, 'Connection problem. Your payment is recorded; FinPi finishes it automatically when you reopen the app.', 'err'); payState(w, 'pending', 'Payment pending', 'If it stays pending, go to Profile and tap Reset.', true); });
         },
-        onCancel: function (cp) { dropPending(cp || curPid); if (!refused) step(1, 'You cancelled. Nothing was paid.', 'err'); },
+        onCancel: function (cp) { dropPending(cp || curPid); if (!refused) { step(1, 'You cancelled. Nothing was paid.', 'err'); payState(w, 'fail', 'Payment cancelled', 'Nothing was paid.'); } },
         onError: function (e) { if (refused) return; var m = String((e && e.message) || 'Payment error').replace(/\.+$/, '');
-          if (/pending payment/i.test(m)) { resolvePending(); step(1, 'An earlier payment is being finished automatically. Nothing was paid. Please try again in 2 minutes.', 'err'); }
-          else step(1, '✕ ' + esc(m) + '. Nothing was paid.', 'err'); }
+          if (/pending payment|incomplete|unfinished/i.test(m)) { resolvePending(); step(1, 'Nothing was paid.', 'err'); payState(w, 'pending', 'Payment pending', PEND_MSG, true); }
+          else if (noFunds(m)) { step(1, 'Nothing was paid.', 'err'); payState(w, 'fail', 'Not enough Pi', 'Your Pi balance is too low for this payment. No Pi was moved.'); }
+          else { step(1, '✕ ' + esc(m) + '. Nothing was paid.', 'err'); payState(w, 'fail', 'Payment not completed', 'No Pi was moved.'); } }
       });
     } catch (e) { step(1, '✕ ' + esc(e.message || e), 'err'); }
   }
@@ -747,12 +902,12 @@
     var iv = setInterval(function () {
       if (!document.body.contains(w)) return clearInterval(iv);
       if (document.hidden) return;
-      findWalletPay(p).then(function (r) { if (!r || !document.body.contains(w)) return; clearInterval(iv); var rc = saveWalletPay(p, r); closeSheets(); render(S.tab); toast('Payment confirmed on the Pi blockchain'); showRcpt(rc); }).catch(function () {});
+      findWalletPay(p).then(function (r) { if (!r || !document.body.contains(w)) return; clearInterval(iv); var rc = saveWalletPay(p, r); payState(w, 'ok', 'Payment succeeded!', fpi(amt) + ' π · confirmed on the Pi blockchain'); setTimeout(function () { closeSheets(); render(S.tab); showRcpt(rc); }, 1400); }).catch(function () {});
     }, 5000);
   }
   /* add a receipt from a transaction ID (a payment made in Pi Wallet) */
   function addTxSheet(p) {
-    var w = sheet(p ? 'Add the transaction ID' : 'Get a receipt', '<p class="sh-sub">' + (p ? 'In Pi Wallet, open the payment and copy its transaction ID (64 letters and numbers).' : 'Paste the transaction ID of any Pi payment you sent or received.') + '</p>' +
+    var w = sheet(p ? 'Add the transaction ID' : 'Get a receipt', '<p class="sh-sub">' + (p ? 'Found in Pi Wallet under the payment · 64 characters.' : 'Transaction ID of any Pi payment you sent or received.') + '</p>' +
       '<label class="l" for="tx-i">Transaction ID</label><textarea class="in num" id="tx-i" rows="2" maxlength="80" spellcheck="false" style="font-size:14px;resize:none" placeholder="64 letters and numbers"></textarea><div class="hint" id="tx-h"></div>' +
       '<button type="button" class="btn" id="tx-go">' + ic('search') + 'Find payment</button><div id="tx-r"></div>', { stack: true });
     $('#tx-go', w).onclick = function () {
@@ -804,7 +959,7 @@
   function requestSheet(isLink) {
     if (needTarget(isLink ? 'Payment links' : 'Request Pi')) return;
     var to = myTarget();
-    var w = sheet(isLink ? 'Create payment link' : 'Request Pi', '<p class="sh-sub">' + (isLink ? 'Leave the amount empty to let the payer choose.' : 'A payment code with the amount, ready to scan.') + '</p>' +
+    var w = sheet(isLink ? 'Create payment link' : 'Request Pi', '<p class="sh-sub">' + (isLink ? 'Leave empty for any amount.' : 'A payment code with the amount, ready to scan.') + '</p>' +
       '<label class="l" for="q-a">Amount' + (isLink ? ' (optional)' : '') + '</label><div class="amt"><input id="q-a" type="number" inputmode="decimal" placeholder="0.00"><span>π</span></div><div class="hint num" id="q-c"></div>' +
       '<label class="l" for="q-x">What is it for?</label><input class="in" id="q-x" maxlength="80" placeholder="e.g. Rent, groceries, shop payment">' +
       '<button type="button" class="btn" id="q-go">' + ic(isLink ? 'link' : 'qr') + (isLink ? 'Create link' : 'Create payment code') + '</button>', { stack: !!isLink });
@@ -903,7 +1058,7 @@
     }).join('') + '</div>';
   }
   function addrSheet(save) {
-    var w = sheet(save ? 'Your Pi wallet address' : 'Check a Pi address', '<p class="sh-sub">' + (save ? 'Copy it from Pi Wallet (it starts with G). It is public and safe to share. FinPi only reads it.' : 'See the balance and recent payments of any Pi address on the public blockchain.') + '</p>' +
+    var w = sheet(save ? 'Your Pi wallet address' : 'Check a Pi address', '<p class="sh-sub">' + (save ? 'Starts with G · 56 characters · found in Pi Wallet' : 'Balance and recent payments of any Pi address.') + '</p>' +
       '<label class="l" for="ad-i">Wallet address</label><textarea class="in num" id="ad-i" rows="2" maxlength="56" autocapitalize="characters" spellcheck="false" placeholder="G…" style="font-size:14px;resize:none">' + esc(save ? get('addr', '') : '') + '</textarea><div class="hint" id="ad-h"></div>' +
       '<div class="note warn" style="margin-top:8px">' + ic('lock') + '<span>Never paste your passphrase or secret key anywhere. An address starts with G; a secret key starts with S.</span></div>' +
       '<button type="button" class="btn" id="ad-go">' + (save ? 'Save address' : ic('search') + 'Check address') + '</button>' + (save && get('addr', '') ? '<button type="button" class="btn danger" id="ad-rm">Remove address</button>' : '') + '<div id="ad-r" style="margin-top:12px"></div>');
@@ -1061,7 +1216,7 @@
     if (codes.indexOf('USD') < 0) codes.push('USD');
     var list = codes.map(function (c) { return { c: c, n: cname(c) }; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
     var cur = travel ? get('cur2', '') : curr();
-    var w = sheet(travel ? 'Travel currency' : 'Your currency', '<p class="sh-sub">' + (travel ? 'Show Pi values in the currency of the country you are visiting, next to your own.' : 'Pi values are shown in this currency. Payments are always in Pi.') + '</p>' + (travel && cur ? '<button type="button" class="btn ghost" id="cu-off">' + ic('x') + 'Turn off travel currency</button>' : '') + '<div class="to" style="margin-top:6px">' + ic('search', 'color:var(--mute)') + '<input id="cu-q" placeholder="Search currency" autocomplete="off"></div><div class="list cur-list" id="cu-l"></div>');
+    var w = sheet(travel ? 'Travel currency' : 'Your currency', '<p class="sh-sub">' + (travel ? 'Pi values in the currency of the country you visit.' : 'Payments are always in Pi.') + '</p>' + (travel && cur ? '<button type="button" class="btn ghost" id="cu-off">' + ic('x') + 'Turn off travel currency</button>' : '') + '<div class="to" style="margin-top:6px">' + ic('search', 'color:var(--mute)') + '<input id="cu-q" placeholder="Search currency" autocomplete="off"></div><div class="list cur-list" id="cu-l"></div>');
     function draw() {
       var q = $('#cu-q', w).value.trim().toLowerCase();
       $('#cu-l', w).innerHTML = list.filter(function (x) { return !q || x.c.toLowerCase().indexOf(q) >= 0 || x.n.toLowerCase().indexOf(q) >= 0; }).slice(0, 80).map(function (x) {
@@ -1085,12 +1240,49 @@
 
   /* ── month maths ── */
   function monthRange(off) { var d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); d.setMonth(d.getMonth() + (off || 0)); var e = new Date(d); e.setMonth(e.getMonth() + 1); return [d.getTime(), e.getTime(), d]; }
+  function catKey(r) { return String(r.other || r.addr || '').replace(/^@/, '').toLowerCase(); }
+  function catOf(r) { return r.cat || (get('catMap', {}) || {})[catKey(r)] || ''; }
+  function rkeyOf(r) { return String(r.txid || r.pid || r.ts); }
+  function catSort(off) {
+    var m = monthRange(off || 0), L = rcpts().filter(function (r) { return r.dir === 'out' && r.kind !== 'refund' && r.kind !== 'supporter' && r.ts >= m[0] && r.ts < m[1] && !catOf(r); }).sort(function (a, b) { return b.ts - a.ts; });
+    if (!L.length) { toast('All payments are sorted'); return render(S.tab); }
+    var w = sheet('Sort payments', '<p class="small muted" style="margin:0 2px 10px">Choose a category. FinPi remembers it for the same recipient.</p><div class="list">' + L.slice(0, 40).map(function (r) { return '<div class="li cs-li" data-ck="' + esc(rkeyOf(r)) + '"><span class="grow"><b>' + esc(r.other || short(r.addr)) + '</b><small>' + new Date(r.ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (r.narr ? ' · ' + esc(r.narr) : '') + '</small></span><b class="num">−' + fpi(r.amount) + ' π</b><div class="chips cs-ch">' + CATS.map(function (c) { return '<button type="button" class="chip" data-cc="' + c + '">' + c + '</button>'; }).join('') + '</div></div>'; }).join('') + '</div>');
+    $$('[data-cc]', w).forEach(function (b) {
+      b.onclick = function () {
+        var li = b.closest('[data-ck]'), k = li.dataset.ck, c = b.dataset.cc, R = rcpts(), hit = null;
+        R.forEach(function (r) { if (rkeyOf(r) === k) { r.cat = c; hit = r; } });
+        if (!hit) return; put('rcpts', R); var mp = get('catMap', {}) || {}; mp[catKey(hit)] = c; put('catMap', mp);
+        var gone = $$('[data-ck]', w).filter(function (x) { var r = R.filter(function (y) { return rkeyOf(y) === x.dataset.ck; })[0]; return r && catOf(r); });
+        gone.forEach(function (x) { x.classList.add('done'); setTimeout(function () { x.remove(); if (!$('[data-ck]', w)) { w.remove(); render(S.tab); toast('All payments are sorted'); } }, 260); });
+      };
+    });
+  }
+  // forecast from your own history: the daily average of the last 90 days, plus scheduled reminders
+  function forecastHTML(b) {
+    var now = Date.now(), out = rcpts().filter(function (r) { return r.dir === 'out' && r.kind !== 'refund' && r.kind !== 'supporter' && now - r.ts < 90 * 864e5; });
+    var first = out.reduce(function (a, r) { return Math.min(a, r.ts); }, now), days = Math.min(90, (now - first) / 864e5);
+    if (out.length < 3 || days < 14) return '<div class="card fc-card"><div class="row small"><b class="grow">Spending forecast</b></div><p class="small muted" style="margin:6px 0 0">Available after two weeks of payments.</p></div>';
+    var daily = out.reduce(function (a, r) { return a + Number(r.amount); }, 0) / Math.max(days, 1), m = monthRange(0), m1 = monthRange(1), left = Math.max(0, (m[1] - now) / 864e5), nd = (m1[1] - m1[0]) / 864e5;
+    var remIn = function (a, z) { return rems().filter(function (q) { return q.next >= a && q.next < z; }).reduce(function (s0, q) { return s0 + Number(q.amt || 0); }, 0); };
+    var spent = monthStats(0).out, endM = r7(spent + daily * left + remIn(now, m[1])), nextM = r7(daily * nd + remIn(m1[0], m1[1]));
+    var over = b > 0 && endM > b;
+    return '<div class="card fc-card"><div class="row small"><b class="grow">Spending forecast</b><span class="muted">from your last ' + Math.round(days) + ' days</span></div>' +
+      '<div class="stats" style="margin-top:8px"><div><small>By month end</small><b class="' + (over ? 'neg' : '') + '">' + fpi(Math.round(endM * 100) / 100) + ' π</b></div><div><small>Next month</small><b>' + fpi(Math.round(nextM * 100) / 100) + ' π</b></div><div><small>Per day</small><b>' + fpi(Math.round(daily * 100) / 100) + ' π</b></div></div>' +
+      (over ? '<div class="note warn" style="margin-top:10px">' + ic('warn') + '<span>At this pace you will pass your budget of ' + fpi(b) + ' π this month.</span></div>' : '') + '</div>';
+  }
+  function trendSvg() {
+    var B = [], L = [];
+    for (var i = -5; i <= 0; i++) { var s0 = monthStats(i); B.push(Math.max(0, s0.out)); L.push(monthRange(i)[2].toLocaleDateString('en-GB', { month: 'short' })); }
+    var mx = Math.max.apply(null, B.concat([0])), W = 300, H = 90, bw = W / 6;
+    return '<svg class="tr-ch" viewBox="0 0 ' + W + ' ' + (H + 18) + '" role="img" aria-label="Spending in the last 6 months">' + B.map(function (v, i) { var h = mx ? Math.max(v ? 4 : 2, v / mx * (H - 16)) : 2; return '<rect x="' + (i * bw + bw * .22).toFixed(1) + '" y="' + (H - h).toFixed(1) + '" width="' + (bw * .56).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="5" fill="' + (i === 5 ? '#1543E0' : '#BFD0FF') + '"><title>' + fpi(r7(v)) + ' π</title></rect>' + (v ? '<text x="' + (i * bw + bw / 2).toFixed(1) + '" y="' + (H - h - 4).toFixed(1) + '" text-anchor="middle" font-size="8.5" fill="#475569">' + fpi(Math.round(v)) + '</text>' : ''); }).join('') +
+      L.map(function (l, i) { return '<text x="' + (i * bw + bw / 2).toFixed(1) + '" y="' + (H + 14) + '" text-anchor="middle" font-size="9.5" fill="#64748B"' + (i === 5 ? ' font-weight="700"' : '') + '>' + l + '</text>'; }).join('') + '</svg>';
+  }
   function monthStats(off) {
     var m = monthRange(off), o = { out: 0, inn: 0, n: 0, cats: {} };
     rcpts().forEach(function (r) {
       if (r.ts < m[0] || r.ts >= m[1]) return; o.n++;
       if (r.kind === 'refund') { o.out -= Number(r.amount); return; }
-      if (r.dir === 'in') o.inn += Number(r.amount); else { o.out += Number(r.amount); var c = r.kind === 'supporter' ? 'Other' : (r.cat || 'Other'); o.cats[c] = (o.cats[c] || 0) + Number(r.amount); }
+      if (r.dir === 'in') o.inn += Number(r.amount); else { o.out += Number(r.amount); var c = r.kind === 'supporter' ? 'Other' : (catOf(r) || 'Not sorted'); o.cats[c] = (o.cats[c] || 0) + Number(r.amount); }
     });
     o.out = r7(Math.max(0, o.out)); o.inn = r7(o.inn); return o;
   }
@@ -1122,11 +1314,11 @@
       '<button type="button" class="btn" data-x="chk">' + ic('refresh') + 'Check now</button>');
     $('[data-x="chk"]', w).onclick = function () { closeSheets(); toast('Checking…'); checkPendingInApp(); };
   }
-  var TIPS = ['FinPi staff will never ask you to send Pi or share your passphrase.', 'Check the @username and amount before you confirm.', 'A receipt is genuine only if its QR code checks out on the Pi blockchain.', 'Your passphrase and secret key (starting with S) are for you alone. Never type them into any app.'];
+  var TIPS = ['FinPi staff will never ask you to send Pi or share your passphrase.', 'Check the @username and amount before you confirm.', 'A receipt is genuine only when its QR code is verified on the Pi blockchain.', 'Never share your passphrase or secret key.'];
   var T = {
     home: function () {
       var R = rcpts();
-      return '<div class="band"><div class="hello"><h1>' + hour() + (signedIn() ? ', @' + esc(me()) : '') + '</h1><p>' + (signedIn() ? 'Here is your Pi today.' : 'You are exploring. Sign in to send and receive Pi.') + '</p></div>' +
+      return '<div class="band"><div class="hello"><h1>' + hour() + (signedIn() ? ', @' + esc(me()) : '') + '</h1><p>' + (signedIn() ? 'Your Pi at a glance.' : 'Sign in with Pi to send and receive.') + '</p></div>' +
         '<div class="hero" data-act="price" data-p="hero" role="button" tabindex="0" aria-label="Pi price details">' + heroHTML() + '</div></div>' +
         '<div class="qa"><button type="button" data-act="send"><i>' + ic('send') + '</i>Send</button><button type="button" data-act="request"><i class="t">' + ic('req') + '</i>Request</button><button type="button" data-act="scan"><i class="n">' + ic('qr') + '</i>Scan</button><button type="button" data-act="receive"><i class="a">' + ic('card') + '</i>Receive</button></div>' +
         dueHTML() + '<div class="sec"><h2>Services</h2><button type="button" data-tab="pay">All services</button></div>' + svcGrid(HOME_SVC.map(svcById), 'home') + hook('home') + '<div class="sec"><h2>Overview</h2></div><div class="card" data-p="month">' + monthHTML() + '</div>' +
@@ -1166,10 +1358,10 @@
       return '<div class="pcard"><div class="avatar">' + esc(signedIn() ? me().charAt(0) : 'G') + '</div><div class="grow"><b>' + (signedIn() ? '@' + esc(me()) : 'Guest') + '</b><small>' + (get('name', '') ? esc(get('name', '')) + ' · ' : '') + NETN + '</small>' + (sup ? '<div class="badge">' + ic('star') + 'FinPi Supporter</div>' : '') + '</div></div>' +
         (!signedIn() ? '<button type="button" class="btn" data-act="signin" style="margin-top:14px"><span class="pi-dot">π</span>Sign in with Pi</button>' : '') +
         '<div class="sec"><h2>Settings</h2></div><div class="list">' +
-        row('edit', 'Name on receipts', get('name', '') ? NTYPE[nType()].l + ' · ' + get('name', '') : 'Your name, business, store or shop', 'name') + row('globe', 'Currency', cname(curr()) + ' (' + curr() + ')', 'currency') +
+        row('edit', 'Name on receipts', get('name', '') ? NTYPE[nType()].l + ' · ' + get('name', '') : 'Your name, business, store or shop', 'name') + row('globe', 'Currency', cname(curr()) + ' (' + curr() + ')', 'currency') + (window.FPL ? row('globe', 'Language', FPL.LANGS[FPL.lang()], 'lang') : '') + (canInstall() ? row('down', 'Install FinPi', 'Add to home screen', 'install') : '') +
         row('bell', 'Notifications', !('Notification' in window) ? 'In-app alerts on' : get('push', false) ? 'Phone and in-app alerts' : 'In-app alerts on', 'push') + row('pie', 'Monthly budget', get('budget', 0) ? fpi(get('budget', 0)) + ' π' : 'Not set', 'budget') + row('card', 'Wallet address', get('addr', '') ? short(get('addr', '')) : 'Not added', 'addr-set') + hook('settings') + '</div>' +
         '<div class="sec"><h2>Support</h2></div><div class="list">' + row('info', 'Welcome tour', 'A quick look at FinPi', 'tour') +
-        row('shield', 'Trust center', 'Payments, limits and records', 'security') + row('refresh', 'Repair app', 'Refresh FinPi and restore your data', 'repair') + row('act', 'Resolve a pending payment', 'Finishes or clears an unfinished payment', 'resolvepend') + row('heart', sup ? 'You are a Supporter' : 'Become a Supporter', sup ? 'Thank you!' : '1 π · badge only, no reward', 'supporter') +
+        row('shield', 'Trust center', 'Payments, limits and records', 'security') + row('refresh', 'Reset', 'Pending payment or a problem? Reset fixes it', 'repair') + row('heart', sup ? 'You are a Supporter' : 'Become a Supporter', sup ? 'Thank you!' : '1 π · Supporter badge', 'supporter') +
         row('mail', 'Help & contact', 'Contact the FinPi team', 'help') + '</div>' +
         '<div class="sec"><h2>Legal</h2></div><div class="list">' + lrow('Terms of Service', 'terms-of-service.html') + lrow('Privacy Policy', 'privacy-policy.html') + lrow('Risk Disclosure', 'risk-disclosure.html') + '</div>' +
         (signedIn() ? '<button type="button" class="btn danger" data-act="signout" style="margin-top:18px">' + ic('out') + 'Sign out</button>' : '') +
@@ -1237,52 +1429,81 @@
   }
   function actPaint() { var l = $('#act-l'); if (l) l.innerHTML = actList(); else render('activity'); }
   /* ── services: one list, used by Home, the Services tab and search ── */
-  var SVC_G = [['pay', 'Payments'], ['get', 'Get paid'], ['biz', 'Business'], ['rec', 'Receipts & records'], ['plan', 'Planning'], ['wal', 'Wallet tools'], ['help', 'Help']];
+  var SVC_G = [['pay', 'Payments'], ['get', 'Get paid'], ['biz', 'Business'], ['rec', 'Receipts & records'], ['plan', 'Planning'], ['wal', 'Wallet tools'], ['sec', 'Security'], ['help', 'Help']];
   var SVC = [
     { id: 'send', n: 'Send Pi', s: 'To a @username or wallet address', i: 'send', c: 'b', g: 'pay', a: 'send' },
     { id: 'request', n: 'Request Pi', s: 'Payment code with the amount', i: 'req', c: 't', g: 'pay', a: 'request' },
-    { id: 'scan', n: 'Scan to pay', s: 'Payment code or wallet QR', i: 'qr', c: 'n', g: 'pay', a: 'scan' },
+    { id: 'scan', n: 'Scan to pay', s: 'Payment code or wallet QR', i: 'scan', c: 'n', g: 'pay', a: 'scan' },
     { id: 'receive', n: 'Receive Pi', s: 'Your @username and address', i: 'card', c: 'a', g: 'pay', a: 'receive' },
-    { id: 'contacts', n: 'Contacts', s: 'People you pay often', i: 'user', c: 'b', g: 'pay', a: 'contacts' },
-    { id: 'links', n: 'Payment links', s: 'Share a link to get paid', i: 'link', c: 'b', g: 'get', a: 'links' },
+    { id: 'contacts', n: 'Contacts', s: 'People you pay often', i: 'book', c: 'b', g: 'pay', a: 'contacts' },
+    { id: 'directory', n: 'Merchant directory', s: 'Businesses that accept Pi', i: 'pin', c: 'g', g: 'pay', a: 'directory' },
+    { id: 'pidomain', n: 'Pay a .pi name', s: 'Coming soon', i: 'at', c: 'n', g: 'pay', a: 'pi-domain', soon: 1 },
     { id: 'myqr', n: 'My Pi QR', s: 'Poster to print or share', i: 'qr', c: 't', g: 'get', a: 'myqr' },
+    { id: 'links', n: 'Payment links', s: 'Share a link to get paid', i: 'link', c: 'b', g: 'get', a: 'links' },
     { id: 'invoice', n: 'Invoices', s: 'Paid automatically on arrival', i: 'inv', c: 'n', g: 'get', a: 'invs' },
     { id: 'split', n: 'Split a bill', s: 'Request each share', i: 'users', c: 'a', g: 'get', a: 'split' },
-    { id: 'sale', n: 'Quick sale', s: 'Charge a customer by QR', i: 'card', c: 'g', g: 'biz', a: 'sale' },
-    { id: 'prod', n: 'Products', s: 'Catalog, prices and stock', i: 'tag', c: 'a', g: 'biz', a: 'prods' },
-    { id: 'biz', n: 'Dashboard', s: 'Sales and outstanding', i: 'bars', c: 'b', g: 'biz', a: 'biz' },
+    { id: 'collect', n: 'Group collection', s: 'One link for a family or event fund', i: 'heart', c: 't', g: 'get', a: 'collect' },
+    { id: 'sale', n: 'Quick sale', s: 'Charge a customer by QR', i: 'pos', c: 'g', g: 'biz', a: 'sale' },
     { id: 'newinv', n: 'New invoice', s: 'Items, tax and due date', i: 'plus', c: 'n', g: 'biz', a: 'inv-new' },
-    { id: 'cust', n: 'Customers', s: 'Who pays you', i: 'users', c: 't', g: 'biz', a: 'cust' },
-    { id: 'recur', n: 'Recurring', s: 'Weekly or monthly invoices', i: 'repeat', c: 'a', g: 'biz', a: 'recur' },
-    { id: 'bizreport', n: 'Business report', s: 'One-page PDF for any period', i: 'bars', c: 'n', g: 'biz', a: 'bizreport' },
+    { id: 'prod', n: 'Products', s: 'Catalog, prices and stock', i: 'tag', c: 'a', g: 'biz', a: 'prods' },
+    { id: 'cust', n: 'Customers', s: 'Who pays you', i: 'userplus', c: 't', g: 'biz', a: 'cust' },
+    { id: 'biz', n: 'Dashboard', s: 'Sales and outstanding', i: 'bars', c: 'b', g: 'biz', a: 'biz' },
+    { id: 'daysum', n: 'Day summary', s: 'Sales, expenses and profit', i: 'sun', c: 'g', g: 'biz', a: 'daysum' },
+    { id: 'expenses', n: 'Expenses', s: 'Spending and profit', i: 'exp', c: 'a', g: 'biz', a: 'expenses' },
     { id: 'reports', n: 'Reports', s: 'Sales and invoices CSV', i: 'down', c: 'b', g: 'biz', a: 'reports' },
+    { id: 'bizreport', n: 'Business report', s: 'One-page PDF for any period', i: 'report', c: 'n', g: 'biz', a: 'bizreport' },
+    { id: 'taxsum', n: 'Tax summary', s: 'Tax collected, by rate', i: 'pct', c: 'b', g: 'biz', a: 'taxsum' },
+    { id: 'recur', n: 'Recurring', s: 'Weekly or monthly invoices', i: 'repeat', c: 'a', g: 'biz', a: 'recur' },
+    { id: 'checkout', n: 'Online checkout', s: 'Pay with Pi button for websites', i: 'cart', c: 'b', g: 'biz', a: 'checkout' },
+    { id: 'staff', n: 'Staff mode', s: 'Staff take sales on their phone', i: 'idb', c: 'n', g: 'biz', a: 'staff' },
     { id: 'bizprof', n: 'Business profile', s: 'Name, logo, tax ID, store, shop', i: 'store', c: 'n', g: 'biz', a: 'bizprof' },
     { id: 'rname', n: 'Name on receipts', s: 'Name, business, store or shop', i: 'edit', c: 'k', g: 'biz', a: 'name' },
     { id: 'verify', n: 'Verify receipt', s: 'Scan, upload or enter', i: 'check', c: 'g', g: 'rec', a: 'verify' },
-    { id: 'getrcpt', n: 'Get a receipt', s: 'From a transaction ID', i: 'tag', c: 'b', g: 'rec', a: 'get-rcpt' },
+    { id: 'getrcpt', n: 'Get a receipt', s: 'From a transaction ID', i: 'hash', c: 'b', g: 'rec', a: 'get-rcpt' },
     { id: 'statement', n: 'Statement', s: 'Monthly PDF', i: 'rcpt', c: 'n', g: 'rec', a: 'statement' },
     { id: 'activity', n: 'Activity', s: 'Any period, search, sort', i: 'act', c: 't', g: 'rec', tab: 'activity' },
-    { id: 'csv', n: 'Export CSV', s: 'Your payments as a file', i: 'down', c: 'a', g: 'rec', a: 'csv' },
-    { id: 'rems', n: 'Reminders', s: 'Rent, fees, regular payments', i: 'bell', c: 'a', g: 'plan', a: 'rems' },
+    { id: 'csv', n: 'Export CSV', s: 'Your payments as a file', i: 'sheet', c: 'a', g: 'rec', a: 'csv' },
     { id: 'budget', n: 'Budget', s: 'Monthly spending limit', i: 'pie', c: 't', g: 'plan', a: 'budget' },
-    { id: 'insights', n: 'Insights', s: 'Where your Pi goes', i: 'bars', c: 'b', g: 'plan', a: 'insights' },
-    { id: 'alerts', n: 'Price alerts', s: 'When Pi reaches your price', i: 'act', c: 'n', g: 'plan', a: 'alerts' },
+    { id: 'insights', n: 'Spending', s: 'Categories and monthly trend', i: 'trend', c: 'b', g: 'plan', a: 'insights' },
+    { id: 'rems', n: 'Reminders', s: 'Rent, fees, regular payments', i: 'bell', c: 'a', g: 'plan', a: 'rems' },
+    { id: 'goals', n: 'Savings goals', s: 'Track progress to a goal', i: 'star', c: 'g', g: 'plan', a: 'goals' },
+    { id: 'networth', n: 'Net worth', s: 'What you own and owe', i: 'scale', c: 'n', g: 'plan', a: 'networth' },
+    { id: 'alerts', n: 'Price alerts', s: 'When Pi reaches your price', i: 'target', c: 'n', g: 'plan', a: 'alerts' },
     { id: 'wallet', n: 'Pi rate', s: 'Live rate and converter', i: 'conv', c: 'b', g: 'wal', tab: 'wallet' },
+    { id: 'addr', n: 'My address', s: 'Your Pi wallet address', i: 'wallet2', c: 'n', g: 'wal', a: 'addr-set' },
     { id: 'checkaddr', n: 'Check address', s: 'Any Pi wallet address', i: 'search', c: 't', g: 'wal', a: 'check-addr' },
-    { id: 'addr', n: 'My address', s: 'Your Pi wallet address', i: 'card', c: 'n', g: 'wal', a: 'addr-set' },
     { id: 'currency', n: 'Currency', s: 'Show values in your currency', i: 'globe', c: 'a', g: 'wal', a: 'currency' },
-    { id: 'travel', n: 'Travel currency', s: 'Values in the country you visit', i: 'globe', c: 't', g: 'wal', a: 'travel' },
-    { id: 'trust', n: 'Trust center', s: 'Payments, limits, records', i: 'shield', c: 'b', g: 'help', a: 'security' },
-    { id: 'repair', n: 'Repair app', s: 'Refresh and restore data', i: 'refresh', c: 't', g: 'help', a: 'repair' },
-    { id: 'pending', n: 'Pending payment', s: 'Finish or clear it', i: 'undo', c: 'a', g: 'help', a: 'resolvepend' },
-    { id: 'help', n: 'Help & contact', s: 'We reply quickly', i: 'mail', c: 'n', g: 'help', a: 'help' }
+    { id: 'travel', n: 'Travel currency', s: 'Values in the country you visit', i: 'plane', c: 't', g: 'wal', a: 'travel' },
+    { id: 'trust', n: 'Trust center', s: 'Payments, limits, records', i: 'lock', c: 'b', g: 'sec', a: 'security' },
+    { id: 'trusted', n: 'Trusted recipients', s: 'Addresses and usernames you trust', i: 'shield', c: 'g', g: 'sec', a: 'trusted' },
+    { id: 'report', n: 'Report a scam', s: 'Warn other Pioneers', i: 'warn', c: 'a', g: 'sec', a: 'report' },
+    { id: 'repair', n: 'Reset', s: 'Pending payment or a problem', i: 'refresh', c: 't', g: 'help', a: 'repair' },
+    { id: 'help', n: 'Help & contact', s: 'Contact FinPi support', i: 'mail', c: 'n', g: 'help', a: 'help' }
   ];
   var HOME_SVC = ['sale', 'verify', 'invoice', 'myqr', 'links', 'split', 'biz', 'more'];
   function svcById(id) { return id === 'more' ? { id: 'more', n: 'All services', i: 'grid', c: 'k', tab: 'pay' } : SVC.filter(function (x) { return x.id === id; })[0]; }
   function svcGrid(L, kind) {
     return '<div class="sv-grid' + (kind ? ' ' + kind : '') + '">' + L.filter(Boolean).map(function (x) {
-      return '<button type="button" class="sv c-' + x.c + '" ' + (x.tab ? 'data-tab="' + x.tab + '"' : 'data-act="' + x.a + '"') + ' data-k="' + esc((x.n + ' ' + (x.s || '') + ' ' + x.g).toLowerCase()) + '"><i>' + ic(x.i) + '</i><b>' + esc(x.n) + '</b></button>';
+      return '<button type="button" class="sv c-' + x.c + '" ' + (x.tab ? 'data-tab="' + x.tab + '"' : 'data-act="' + x.a + '"') + ' data-k="' + esc((x.n + ' ' + (x.s || '') + ' ' + x.g).toLowerCase()) + '"><i>' + ic(x.i) + '</i><b>' + esc(x.n) + '</b>' + (x.soon ? '<em class="sv-soon">Soon</em>' : '') + '</button>';
     }).join('') + '</div>';
+  }
+  /* ── install to the home screen (browsers that support it; the Pi Browser opens FinPi from its own menu) ── */
+  var instEv = null;
+  addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); instEv = e; });
+  addEventListener('appinstalled', function () { instEv = null; toast('FinPi is on your home screen'); });
+  function standalone() { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } }
+  function isIOS() { return /iPhone|iPad|iPod/i.test(navigator.userAgent); }
+  function canInstall() { return !standalone() && !/PiBrowser/i.test(navigator.userAgent) && (!!instEv || isIOS()); }
+  function installApp() {
+    if (instEv) { var e = instEv; instEv = null; e.prompt(); (e.userChoice || Promise.resolve()).then(function (c) { if (c && c.outcome === 'accepted') toast('FinPi is on your home screen'); render(S.tab); }).catch(function () {}); return; }
+    sheet('Install FinPi', '<div class="pd-hero">' + ic('down') + '<b>Add FinPi to your home screen</b><span>Open it like an app, in one tap.</span></div><div class="list" style="margin-top:12px">' +
+      '<div class="li"><span class="ico">1</span><span class="grow"><b>Tap the Share button</b><small>At the bottom of Safari</small></span></div><div class="li"><span class="ico">2</span><span class="grow"><b>Choose Add to Home Screen</b><small>Then tap Add</small></span></div></div>');
+  }
+  function piDomainSheet() {
+    var w = sheet('Pay a .pi name', '<div class="pd-hero">' + ic('globe') + '<b>Pay anyone by their .pi name</b><span>Send Pi to names such as shop.pi, with the same verified receipt.</span><em class="sv-soon">Coming soon</em></div>' +
+      '<label class="l" for="pd-i">.pi name</label><div class="pd-in"><input class="in" id="pd-i" placeholder="name" disabled><span>.pi</span></div>' +
+      '<button type="button" class="btn" disabled>' + ic('send') + 'Coming soon</button><button type="button" class="btn ghost" data-pd="send">' + ic('send') + 'Send by @username or address</button>');
+    $('[data-pd="send"]', w).onclick = function () { A.send(); };
   }
   function svcFilter(q) {
     q = String(q || '').trim().toLowerCase(); var any = false;
@@ -1325,29 +1546,36 @@
   /* Repair app: clears temporary files and cached screens, checks saved data and restores history and business
      records from the backup. Payments, receipts and business records are kept. */
   function repairSheet() {
-    var w = sheet('Repair app', '<p class="sh-sub">Refreshes FinPi and restores your data. Your payments, receipts and business records are kept.</p>' +
-      '<div class="list rp-l">' + ['Clear temporary files', 'Check saved data', 'Restore from backup', 'Restart FinPi'].map(function (t, i) { return '<div class="li" data-rs="' + i + '"><span class="ico">' + ic('refresh') + '</span><span class="grow"><b>' + t + '</b></span><span class="rp-s"></span></div>'; }).join('') + '</div>' +
-      '<button type="button" class="btn" id="rp-go">' + ic('refresh') + 'Repair now</button>');
+    var w = sheet('Reset', '<p class="sh-sub">Finishes any pending payment and fixes technical problems. Your payments, receipts and business records are kept.</p>' +
+      '<div class="list rp-l">' + ['Finish pending payments', 'Clear temporary files', 'Check saved data', 'Restore from backup', 'Restart FinPi'].map(function (t, i) { return '<div class="li" data-rs="' + i + '"><span class="ico">' + ic('refresh') + '</span><span class="grow"><b>' + t + '</b></span><span class="rp-s"></span></div>'; }).join('') + '</div>' +
+      '<button type="button" class="btn" id="rp-go">' + ic('refresh') + 'Reset now</button>');
     function step(i, st) { var r = $('[data-rs="' + i + '"]', w); if (!r) return; r.classList.toggle('busy', st === 'busy'); r.classList.toggle('done', st === 'done'); $('.ico', r).innerHTML = ic(st === 'done' ? 'check' : 'refresh'); }
     $('#rp-go', w).onclick = function () {
-      var b = this; b.disabled = true; b.textContent = 'Repairing…'; var t0 = Date.now();
+      var b = this; b.disabled = true; b.textContent = 'Resetting…'; var t0 = Date.now();
+      // 1. pending payments: ask Pi for any unfinished payment and let the server finish or cancel it
       step(0, 'busy');
-      var p0 = Promise.all([
+      var pend0 = new Promise(function (ok) {
+        try { checkPendingInApp(); checkPendingWallet(); } catch (e) {}
+        if (!signedIn() || !window.Pi || !initPi()) return setTimeout(ok, 600);
+        resolving = 0; resolvePending(); var p = authP || Promise.resolve();
+        Promise.race([p, new Promise(function (z) { setTimeout(z, 8000); })]).then(function () { setTimeout(ok, 2500); });
+      });
+      var p0 = pend0.then(function () { step(0, 'done'); step(1, 'busy'); }).then(function () { return Promise.all([
         window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : null,
         navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }) : null
-      ]).catch(function () {});
+      ]).catch(function () {}); });
       p0.then(function () {
         upCache = {}; ['price', 'fx', 'errlog'].forEach(function (k) { try { localStorage.removeItem(K + k); } catch (e) {} });
-        step(0, 'done'); step(1, 'busy'); var bad = 0;
+        step(1, 'done'); step(2, 'busy'); var bad = 0;
         try { for (var i = localStorage.length - 1; i >= 0; i--) { var k = localStorage.key(i); if (k && k.indexOf(K) === 0) { try { JSON.parse(localStorage.getItem(k)); } catch (e) { localStorage.removeItem(k); bad++; } } } } catch (e) {}
         var R = rcpts(), seen = {}, clean = R.filter(function (r) { if (!r || !(Number(r.amount) > 0) || !r.ts) { bad++; return false; } var h = hKey(r) || JSON.stringify(r); if (seen[h]) { bad++; return false; } seen[h] = 1; return true; });
         if (clean.length !== R.length) put('rcpts', clean);
-        step(1, 'done'); step(2, 'busy');
+        step(2, 'done'); step(3, 'busy');
         if (!signedIn()) return null;
         hBusy = false; return Promise.all([new Promise(function (ok) { hPush().then(function () { return api('/history', { a: 'pull', accessToken: S.token, limit: 500 }); }).then(function (d) { if (d && d.ok) { S.hMore = !!d.more; hMerge(d.items || []); } }).catch(function () {}).then(ok); })].concat(HK.repair.map(function (f) { try { return f(); } catch (e) { return null; } })));
       }).then(function () {
-        step(2, 'done'); step(3, 'busy');
-        setTimeout(function () { step(3, 'done'); toast('FinPi repaired'); setTimeout(function () { location.replace(location.pathname + '?r=' + Date.now().toString(36)); }, 600); }, Math.max(300, 1400 - (Date.now() - t0)));
+        step(3, 'done'); step(4, 'busy');
+        setTimeout(function () { step(4, 'done'); toast('Reset complete'); setTimeout(function () { location.replace(location.pathname + '?r=' + Date.now().toString(36)); }, 600); }, Math.max(300, 1400 - (Date.now() - t0)));
       });
     };
   }
@@ -1358,8 +1586,10 @@
       '<div class="stats"><div><small>Spent</small><b>' + fpi(s.out) + ' π</b></div><div><small>Received</small><b class="pos">' + fpi(s.inn) + ' π</b></div><div><small>Net</small><b>' + (s.inn - s.out >= 0 ? '+' : '−') + fpi(Math.abs(r7(s.inn - s.out))) + ' π</b></div></div>' +
       (u ? '<p class="small muted" style="margin-top:8px">Spent ≈ ' + money(s.out * u, 'USD') + (r && c !== 'USD' ? ' · ' + money(s.out * r, c) : '') + ' at today’s rate</p>' : '') +
       (b && S.month === 0 ? '<div class="row small" style="margin-top:12px"><span class="grow muted">Monthly budget ' + fpi(b) + ' π</span><b class="num">' + Math.round(s.out / b * 100) + '%</b></div><div class="bar"><i class="' + (s.out > b ? 'over' : '') + '" style="width:' + Math.min(100, s.out / b * 100) + '%"></i></div>' + (s.out > b ? '<div class="note warn" style="margin-top:10px">' + ic('warn') + '<span>You are ' + fpi(r7(s.out - b)) + ' π over your budget this month.</span></div>' : '') : '') + '</div>' +
+      (S.month === 0 ? forecastHTML(b) : '') +
+      '<div class="card tr-card"><div class="row small"><b class="grow">Spending · last 6 months</b><span class="muted">π</span></div>' + trendSvg() + '</div>' +
       '<div class="sec"><h2>Where your Pi went</h2><button type="button" data-act="budget">' + (b ? 'Edit budget' : 'Set budget') + '</button></div>' +
-      (cats.length ? '<div class="card">' + cats.map(function (x) { return '<div class="cat"><div class="row"><span>' + esc(x[0]) + '</span><b>' + fpi(x[1]) + ' π</b></div><div class="bar"><i style="width:' + Math.max(4, x[1] / top * 100) + '%"></i></div><small>' + Math.round(x[1] / (s.out || 1) * 100) + '% of spending</small></div>'; }).join('') + '</div>'
+      (cats.length ? '<div class="card">' + cats.map(function (x) { return '<div class="cat' + (x[0] === 'Not sorted' ? ' ns' : '') + '"><div class="row"><span>' + esc(x[0]) + '</span><b>' + fpi(x[1]) + ' π</b></div><div class="bar"><i style="width:' + Math.max(4, x[1] / top * 100) + '%"></i></div><small>' + Math.round(x[1] / (s.out || 1) * 100) + '% of spending' + (x[0] === 'Not sorted' ? ' · <button type="button" class="lnk" data-act="catsort">Sort these payments</button>' : '') + '</small></div>'; }).join('') + '</div>'
         : '<div class="list"><div class="empty">' + ic('pie') + '<div>No spending this month. Choose a category when you send Pi to see it here.</div></div></div>');
   }
 
@@ -1384,7 +1614,7 @@
   function contactsSheet() {
     var L = contacts();
     var w = sheet('Contacts', '<p class="sh-sub">People and businesses you pay often. Saved on this phone only.</p>' +
-      (L.length ? '<div class="list">' + L.map(function (c, i) { return '<div class="li"><span class="ico">' + ic(isG(c.to) ? 'card' : 'user') + '</span><button type="button" class="grow lb" data-cs="' + i + '"><b>' + esc(c.name) + '</b><small class="num">' + esc(toLabel(c.to)) + '</small></button><button type="button" class="tbtn" data-ce="' + i + '" aria-label="Edit ' + esc(c.name) + '">' + ic('edit') + '</button></div>'; }).join('') + '</div>'
+      (L.length ? '<div class="list">' + L.map(function (c, i) { return '<div class="li"><span class="ico">' + ic(isG(c.to) ? 'card' : 'user') + '</span><button type="button" class="grow lb" data-cs="' + i + '"><b>' + esc(c.name) + (c.trusted ? ' <span class="tr-b">' + ic('shield') + 'Trusted</span>' : '') + '</b><small class="num">' + esc(toLabel(c.to)) + '</small></button><button type="button" class="tbtn" data-ce="' + i + '" aria-label="Edit ' + esc(c.name) + '">' + ic('edit') + '</button></div>'; }).join('') + '</div>'
         : '<div class="list"><div class="empty">' + ic('users') + '<div>No contacts yet. Add the people you pay often.</div></div></div>') +
       '<button type="button" class="btn" data-x="add">' + ic('users') + 'Add contact</button>');
     $$('[data-cs]', w).forEach(function (b) { b.onclick = function () { payTo(L[+b.dataset.cs].to); }; });
@@ -1397,6 +1627,7 @@
       '<label class="l" for="ct-n">Name</label><input class="in" id="ct-n" maxlength="40" placeholder="e.g. Alex, Landlord, Shop" value="' + esc(c.name) + '">' +
       '<label class="l" for="ct-t">' + (userSends() ? '@username or wallet address' : 'Pi wallet address') + '</label><textarea class="in num" id="ct-t" rows="2" maxlength="60" autocapitalize="none" spellcheck="false" style="font-size:14px;resize:none" placeholder="' + (userSends() ? '@username or G…' : 'G…') + '">' + esc(c.to ? (isG(c.to) ? c.to : '@' + c.to) : '') + '</textarea><div class="hint" id="ct-h"></div>' +
       (i < 0 && rec.length ? '<label class="l">From your recent payments</label><div class="chips">' + rec.map(function (p) { return '<button type="button" class="chip" data-rp="' + esc(p) + '">' + esc(toLabel(p)) + '</button>'; }).join('') + '</div>' : '') +
+      '<label class="tg rt-tg"><input type="checkbox" id="ct-tr"' + (c.trusted ? ' checked' : '') + '><span>Trusted recipient</span></label>' +
       '<button type="button" class="btn" id="ct-go">Save contact</button>' + (i >= 0 ? '<button type="button" class="btn ghost" id="ct-pay">' + ic('send') + 'Send Pi</button><button type="button" class="btn danger" id="ct-rm">' + ic('trash') + 'Delete contact</button>' : ''), { stack: true });
     var t = $('#ct-t', w), h = $('#ct-h', w);
     function val() {
@@ -1411,7 +1642,7 @@
       var n = $('#ct-n', w).value.trim(), v = val();
       if (!n) return toast('Enter a name'); if (!v) return toast(userSends() ? 'Enter a valid @username or wallet address' : 'Enter a valid wallet address');
       var L2 = contacts().filter(function (x, k) { return k !== i && x.to.toLowerCase() !== v.toLowerCase(); });
-      L2.push({ name: n, to: v }); L2.sort(function (a, b) { return a.name.localeCompare(b.name); }); put('contacts', L2.slice(0, 200));
+      L2.push({ name: n, to: v, trusted: $('#ct-tr', w).checked }); L2.sort(function (a, b) { return a.name.localeCompare(b.name); }); put('contacts', L2.slice(0, 200));
       toast('Contact saved'); contactsSheet(); rerenderUnder();
     };
     var pb = $('#ct-pay', w); if (pb) pb.onclick = function () { payTo(c.to); };
@@ -1727,30 +1958,42 @@
 
   /* ── welcome screens (first open) ── */
   var ONB = [
-    { t: 'Welcome to FinPi', p: 'Live Pi rate in your currency and a verified receipt for every payment', img: 'icons/onb-1.webp' },
-    { t: 'Send and receive Pi', p: 'Pay any Pioneer by @username or Pi wallet address', img: 'icons/onb-2.webp' },
-    { t: 'Scan to pay', p: 'Scan a FinPi QR code to pay a merchant or a friend', img: 'icons/onb-3.webp' },
-    { t: 'Run your business', p: 'Quick sale, invoices, products and business reports', img: 'icons/onb-4.webp' },
-    { t: 'Verify any receipt', p: 'Check any receipt against the Pi blockchain in seconds', img: 'icons/onb-5.webp' }
+    { t: 'Welcome to FinPi', p: 'Live Pi rate in your currency and a verified receipt for every payment', img: 'icons/onb-v3-1.webp' },
+    { t: 'Send and receive Pi', p: 'Pay any Pioneer by @username or Pi wallet address', img: 'icons/onb-v3-2.webp' },
+    { t: 'Scan to pay', p: 'Scan a FinPi QR code to pay a merchant or a friend', img: 'icons/onb-v3-3.webp' },
+    { t: 'Run your business', p: 'Quick sale, invoices, products and business reports', img: 'icons/onb-v3-4.webp' },
+    { t: 'Verify any receipt', p: 'Check any receipt against the Pi blockchain in seconds', img: 'icons/onb-v3-5.webp' }
   ];
   ONB.forEach(function (s0) { var im = new Image(); im.src = s0.img; });
+  function onbRate() {
+    var p = S.p; if (!p || !p.usd) return '<div class="onb-rate wait"><span class="live off"></span><span>Pi price</span><span class="skel"></span></div>';
+    var c = curr(), r = rateIn(c), ch = typeof p.change24h === 'number' ? p.change24h : null;
+    return '<div class="onb-rate"><span class="live"></span><span class="onb-rl">Pi price</span><b class="num">1 π = ' + money(p.usd, 'USD', p.usd < 1 ? 4 : 2) + '</b>' + (c !== 'USD' && r ? '<small class="num">≈ ' + money(r, c, r < 1 ? 4 : 2) + '</small>' : '') + (ch !== null ? '<em class="' + (ch >= 0 ? 'up' : 'dn') + '">' + (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch).toFixed(2) + '%</em>' : '') + '</div>';
+  }
   function onboarding(force) {
-    if (!force && get('onb', false)) return;
+    // shown every time FinPi is opened (once per visit); Skip closes it
+    try { if (localStorage.getItem('fp_v1_staffK') || /[?&]staff=/.test(location.search)) return; } catch (e) {}
+    if (!force && window.__fpOnbShown) return; window.__fpOnbShown = true;
+    var rt = null, at = null;
     var i = 0, o = document.createElement('div'); o.id = 'onb'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); o.setAttribute('aria-label', 'Welcome to FinPi');
     function draw(dir) {
       var s0 = ONB[i], last = i === ONB.length - 1;
-      o.innerHTML = '<div class="onb-top"><div class="brand"><img src="icons/logo-256.png" alt="">FinPi</div>' + (last ? '' : '<button type="button" class="onb-skip" data-o="skip">Skip</button>') + '</div>' +
-        '<div class="onb-art ' + (dir || '') + '"><img src="' + s0.img + '" alt=""></div>' +
-        '<div class="onb-panel"><div class="onb-txt ' + (dir || '') + '"><h2>' + esc(s0.t) + '</h2><p>' + esc(s0.p) + '</p></div>' +
-        '<div class="onb-dots">' + ONB.map(function (x, k) { return '<i class="' + (k === i ? 'on' : '') + '"></i>'; }).join('') + '</div>' +
-        '<div class="onb-b">' + (last ? '<button type="button" class="btn" data-o="signin"><span class="pi-dot">π</span>Sign in with Pi</button><button type="button" class="onb-ex" data-o="explore">Explore without signing in</button>' : '<button type="button" class="btn" data-o="next">Continue</button>') + '</div></div>';
+      o.innerHTML = '<div class="onb-art ' + (dir || '') + '"><img src="' + s0.img + '" alt=""><button type="button" class="onb-tap l" data-o="prev" aria-label="Previous"></button><button type="button" class="onb-tap r" data-o="next" aria-label="Next"></button>' +
+        '<div class="onb-top"><div class="brand"><img src="icons/logo-256.png" alt="">FinPi</div>' + (last ? '' : '<button type="button" class="onb-skip" data-o="skip">Skip</button>') + '</div>' +
+        (i === 0 ? '<div id="onb-rt">' + onbRate() + '</div>' : '') + '</div>' +
+        '<div class="onb-panel"><div class="onb-dots">' + ONB.map(function (x, k) { return '<i class="' + (k === i ? 'on' : k < i ? 'done' : '') + '"></i>'; }).join('') + '</div>' +
+        '<div class="onb-txt ' + (dir || '') + '"><h2>' + esc(s0.t) + '</h2><p>' + esc(s0.p) + '</p></div>' +
+        (last ? '<div class="onb-b">' + (signedIn() ? '<button type="button" class="btn" data-o="skip">Continue to FinPi</button>' : '<button type="button" class="btn" data-o="signin"><span class="pi-dot">π</span>Sign in with Pi</button><button type="button" class="onb-ex" data-o="explore">Explore without signing in</button>') + '</div>' : '<div class="onb-sw">Swipe to continue</div>') + '</div>';
+      clearTimeout(at); if (!last) at = setTimeout(function () { if (document.body.contains(o) && i < ONB.length - 1) { i++; draw('fwd'); } }, 4500);
     }
-    function end() { put('onb', true); o.classList.add('out'); setTimeout(function () { o.remove(); }, 260); }
+    function end() { put('onb', true); clearInterval(rt); clearTimeout(at); o.classList.add('out'); setTimeout(function () { o.remove(); }, 260); }
+    rt = setInterval(function () { var e = $('#onb-rt', o), h = onbRate(); if (e && e.getAttribute('data-h') !== h) { e.setAttribute('data-h', h); e.innerHTML = h; } if (!document.body.contains(o)) clearInterval(rt); }, 1500);
     o.addEventListener('click', function (e) {
       var b = e.target.closest('[data-o]'); if (!b) return; var k = b.dataset.o;
       if (k === 'skip') return end();
       if (k === 'signin') { end(); if (!$('#app').hidden) return; var si = $('#signin'); if (si) si.click(); return; }
       if (k === 'explore') { end(); if (!$('#app').hidden) return; var ex = $('#explore'); if (ex) ex.click(); return; }
+      if (k === 'prev') { if (i > 0) { i--; draw('back'); } return; }
       if (i < ONB.length - 1) { i++; draw('fwd'); }
     });
     var sx = null; o.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
@@ -1767,7 +2010,7 @@
     signin: function () { signIn(); },
     price: function () { go('wallet'); }, 'price-retry': function (el, e) { e.stopPropagation(); loadPrice(true); paintPrice(); },
     currency: function (el, e) { e && e.stopPropagation(); curSheet(); },
-    'check-addr': function () { addrSheet(false); }, verify: function () { verifySheet(); },
+    lang: function () { if (window.FPL) FPL.sheet(); }, install: installApp, trusted: trustedSheet, report: function () { reportSheet(''); }, 'pi-domain': piDomainSheet, 'check-addr': function () { addrSheet(false); }, verify: function () { verifySheet(); },
     'addr-set': function () { addrSheet(true); }, 'addr-use': function () { var s = get('addrSug', ''); if (validG(s)) { put('addr', s); put('addrSug', ''); render(S.tab); loadWal(); toast('Address saved'); } },
     'wal-load': function () { S.wal = null; loadWal(); },
     notifs: function () {
@@ -1793,15 +2036,15 @@
     push: function () {
       var sup = 'Notification' in window, perm = sup ? Notification.permission : 'unsupported', on = get('push', false);
       var w = sheet('Notifications', '<p class="sh-sub">Alerts for payments, invoices, refunds and reminders.</p>' +
-        '<div class="note ' + (perm === 'granted' ? 'ok' : perm === 'denied' || perm === 'unsupported' ? 'warn' : '') + '">' + ic('bell') + '<span>' + (perm === 'granted' ? 'Allowed on this phone.' : perm === 'denied' ? 'Blocked for FinPi. Allow notifications in your browser settings to turn them on.' : perm === 'unsupported' ? 'This browser does not support phone notifications. You will still see alerts in FinPi.' : 'Not allowed yet.') + '</span></div>' +
+        '<div class="note ' + (perm === 'granted' ? 'ok' : perm === 'denied' || perm === 'unsupported' ? 'warn' : '') + '">' + ic('bell') + '<span>' + (perm === 'granted' ? 'Allowed on this phone.' : perm === 'denied' ? 'Blocked for FinPi. Allow notifications in your browser settings to turn them on.' : perm === 'unsupported' ? 'Alerts appear inside FinPi.' : 'Not allowed yet.') + '</span></div>' +
         (sup && perm !== 'denied' ? '<button type="button" class="btn" id="ps-on">' + (on && perm === 'granted' ? 'Turn off' : 'Turn on') + '</button>' : '') + (on && perm === 'granted' ? '<button type="button" class="btn ghost" id="ps-t">Send a test</button>' : ''));
       var b = $('#ps-on', w); if (b) b.onclick = function () {
         if (on && perm === 'granted') { put('push', false); closeSheets(); render(S.tab); return; }
         Notification.requestPermission().then(function (p) { if (p === 'granted') { put('push', true); toast('Phone notifications on'); } else toast('Notifications were not allowed'); closeSheets(); render(S.tab); });
       };
-      var t = $('#ps-t', w); if (t) t.onclick = function () { addNote('bell', 'FinPi test', 'Notifications are working.', 'test-' + Date.now()); toast('Test sent'); };
+      var t = $('#ps-t', w); if (t) t.onclick = function () { addNote('bell', 'FinPi notifications', 'Alerts are working.', 'test-' + Date.now()); toast('Test sent'); };
     },
-    resolvepend: function () { window.fpResolvePending(); }, backup: function () { backupSheet(); }, travel: function () { curSheet(true); }, insights: function () { S.seg = 'ins'; go('activity'); }, repair: function () { repairSheet(); },
+    resolvepend: function () { repairSheet(); }, backup: function () { backupSheet(); }, travel: function () { curSheet(true); }, insights: function () { S.seg = 'ins'; go('activity'); }, catsort: function () { catSort(S.month); }, repair: function () { repairSheet(); },
     security: function () {
       sheet('Trust center', '<div class="trust big-t">' + trustChips() + '</div>' +
         '<div class="card" style="margin-top:12px"><h3>Payments</h3><p>Every transfer is processed through Pi Network’s official payments and delivered within seconds. If delivery is not possible, the Pi is refunded automatically. Each payment is checked on the Pi blockchain, so nothing is paid twice.</p></div>' +
@@ -1817,7 +2060,7 @@
       $('#sp-go', w).onclick = supporterPay;
     },
     status: function () { location.href = 'setup.html'; },
-    help: function () { sheet('Help & contact', '<p class="sh-sub">We reply within 30 days, usually much sooner.</p><a class="btn" href="mailto:' + SUPPORT + '?subject=FinPi%20help">' + ic('mail') + 'Email FinPi support</a><div class="card" style="margin-top:14px"><h3>Common questions</h3><p><b>Where is my Pi?</b> In your own Pi Wallet. FinPi never holds balances.<br><br><b>A transfer did not arrive.</b> FinPi keeps delivering automatically, or refunds you. You will be notified either way.<br><br><b>Can a transfer be reversed?</b> No. Delivered blockchain payments are final.</p></div>'); },
+    help: function () { sheet('Help & contact', '<p class="sh-sub">FinPi support will reply as soon as possible.</p><a class="btn" href="mailto:' + SUPPORT + '?subject=FinPi%20help">' + ic('mail') + 'Email FinPi support</a><div class="card" style="margin-top:14px"><h3>Common questions</h3><p><b>Where is my Pi?</b> In your own Pi Wallet. FinPi never holds balances.<br><br><b>A transfer did not arrive.</b> FinPi keeps delivering automatically, or refunds you. You will be notified either way.<br><br><b>Can a transfer be reversed?</b> No. Delivered blockchain payments are final.</p></div>'); },
     signout: function () { S.user = null; S.token = null; registered = false; put('user', null); closeSheets(); $('#app').hidden = true; $('#landing').hidden = false; toast('Signed out'); }
   };
   function supporterPay() {
@@ -1863,11 +2106,13 @@
   });
 
   /* ── start ── */
+  (function () { var b = document.getElementById('ld-lang'); if (b && window.FPL) { var t = document.getElementById('ld-lang-t'); if (t) { t.textContent = FPL.lang().toUpperCase(); t.setAttribute('data-noi18n', ''); } b.onclick = function () { FPL.sheet(); }; } else if (b) b.hidden = true; })();
   function start() {
     if (TEST) { $('#ld-net').textContent = 'Pi Testnet'; }
     $('#signin').onclick = function () { signIn(); };
     $('#explore').onclick = function () { S.guest = true; showApp(); if (pendingCode) { var c = pendingCode; pendingCode = null; openCode(c); } };
-    onboarding(); loadPrice(true); paintPrice(); initPi(); loadCfg(); checkRems();
+    loadPrice(true); onboarding(); paintPrice(); initPi(); loadCfg(); checkRems(); netBar();
+    restoreLocal().then(function (n) { if (n) { MEMO = {}; try { render(S.tab); } catch (e) {} toast('Your records were restored on this phone'); } else mirrorSoon(); });
     var u = get('user', null);
     if (u && u.username && window.Pi) { $('#signin-t').textContent = 'Signing in as @' + u.username + '…'; signIn(true).then(function (ok) { if (!ok) $('#signin-t').textContent = 'Sign in with Pi'; }); }
     checkPendingWallet(); checkPendingInApp();
@@ -1881,7 +2126,7 @@
     kit: { HK: HK, P: P, A: A, T: T, get: get, put: put, esc: esc, ic: ic, toast: toast, sheet: sheet, closeSheets: closeSheets, copy: copy, fpi: fpi, conv: conv, money: money, rateIn: rateIn, curr: curr, short: short, r7: r7,
       rcpts: rcpts, me: me, signedIn: signedIn, myTarget: myTarget, needTarget: needTarget, payLink: payLink, isG: isG, validG: validG, cName: cName, contacts: contacts, toLabel: toLabel,
       shareText: shareText, shareImage: shareImage, shareLink: shareLink, shareFile: shareFile, saveFile: saveFile, canShareFile: canShareFile, makePdf: makePdf, fontsReady: fontsReady, addNote: addNote,
-      go: go, rerender: rerender, nType: nType, NTYPE: NTYPE, setName: setName, curSheet: curSheet, api: api, token: function () { return S.token; }, NETN: NETN, TEST: TEST, USER_RE: USER_RE, rcptTitle: rcptTitle } };
+      go: go, rerender: rerender, openLink: function (u) { var c = parseCode(u); if (c) openCode(c); }, wal: function () { return S.wal; }, loadWal: function () { var a = get('addr', ''); if (!a) return Promise.resolve(); return lookAddr(a).then(function (W) { S.wal = W; }).catch(function () {}); }, scanBox: scanBox, scanOk: scanOk, budgetCheck: budgetCheck, nType: nType, NTYPE: NTYPE, setName: setName, curSheet: curSheet, api: api, token: function () { return S.token; }, NETN: NETN, TEST: TEST, USER_RE: USER_RE, rcptTitle: rcptTitle } };
   try { document.dispatchEvent(new Event('finpi:ready')); } catch (e) {}
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
